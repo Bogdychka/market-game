@@ -1,0 +1,85 @@
+# ======================================================================
+# Unity 6 — generated / machine-local (never commit)
+# ======================================================================
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+[Mm]emoryCaptures/
+[Rr]ecordings/
+
+# Asset meta files must follow their asset; keep them under Assets/
+!/[Aa]ssets/**/*.meta
+
+# Unity crash / temp artifacts
+sysinfo.txt
+*.stackdump
+crashlytics-build.properties
+
+# ======================================================================
+# IDE / tooling
+# ======================================================================
+.vs/
+.vscode/
+.idea/
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.user
+*.userprefs
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+.consulo/
+
+# ======================================================================
+# Builds & packaged output
+# ======================================================================
+ForBuild/
+*.apk
+*.aab
+*.app
+*.ipa
+*.unitypackage
+*.unitypackage.meta
+
+# ======================================================================
+# Project-specific
+# ======================================================================
+# Archived / unused assets (outside Assets, not imported by Unity)
+_ArchiveAssets/
+
+# Unrelated nested git project that lives in this folder
+AI-Engineering-Coach/
+
+# Plastic SCM leftovers (project uses git now)
+.plastic/
+ignore.conf
+plastic.workspace
+plastic.selector
+
+# Node dependencies — MCP Unity server reinstalls these on Editor load
+**/node_modules/
+
+# Runtime log written by FileLogger
+game.log
+
+# Claude Code local (per-user) settings — shared settings.json is committed
+.claude/settings.local.json
+
+# ======================================================================
+# OS junk
+# ======================================================================
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+ehthumbs.db
+desktop.ini

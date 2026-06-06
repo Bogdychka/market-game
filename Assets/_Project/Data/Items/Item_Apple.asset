@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 637d7028e9fb3464786e39712df348ec, type: 3}
+  m_Name: Item_Apple
+  m_EditorClassIdentifier: Assembly-CSharp::Market.Economy.ItemSO
+  id: Item_Apple
+  displayName: "\u042F\u0431\u043B\u043E\u043A\u043E"
+  icon: {fileID: 0}
+  worldPrefab: {fileID: 866874922109178162, guid: d8cc884ce77197d468de2264fecd632e, type: 3}
+  category: 0
+  baseBuyPrice: 10
+  baseSellPrice: 15
+  description:
+  availableInSeasons: []
