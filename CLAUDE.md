@@ -2,6 +2,19 @@
 
 ---
 
+## Version Control & Collaboration with Codex
+
+This repo is under **git** (remote: `Bogdychka/market-game`, private). Binary assets go through **Git LFS**. A second agent, **Codex**, works in this repo too — see [`COLLAB.md`](COLLAB.md) for the full protocol.
+
+**Workflow: branch-per-task + PR.** Essentials:
+- `main` stays green (compiles, MCP `get_health_report` is `ok`). **No direct commits to `main`.**
+- One task = one branch named `claude/<step>-<slug>` = one PR.
+- Start a task: `git switch main && git pull && git switch -c claude/<step>-<slug>`.
+- Verify via MCP (`recompile_scripts` → `get_health_report`) **before** committing; tick the `dev_plan_3.md` box in the same branch; Conventional Commit (+ `Co-Authored-By: Claude` trailer); `gh pr create`.
+- Don't edit the same files Codex is editing. Scenes/prefabs: one agent at a time.
+
+---
+
 ## Tech Stack
 
 | What | Version / Details |

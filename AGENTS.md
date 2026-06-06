@@ -9,6 +9,19 @@ MCP health reports, and `game.log` are the sources of truth for current state.
 
 ---
 
+## Version Control & Collaboration with Claude
+
+Repo is under **git** (remote `Bogdychka/market-game`, private); binary assets via **Git LFS**. A second agent, **Claude Code**, works in this repo too. Full protocol: `COLLAB.md`.
+
+**Workflow: branch-per-task + PR.** Essentials:
+- `main` stays green (compiles, MCP health `ok`). **No direct commits to `main`.**
+- One task = one branch named `codex/<step>-<slug>` = one PR.
+- Start a task: `git switch main; git pull; git switch -c codex/<step>-<slug>`.
+- Verify via MCP / WS fallback before committing; tick the matching `dev_plan_3.md` box in the same branch; Conventional Commit; `gh pr create`.
+- Don't edit the same files Claude is editing. Scenes/prefabs: one agent at a time.
+
+---
+
 ## Tech Stack
 
 | Area | Project Version / Rule |
