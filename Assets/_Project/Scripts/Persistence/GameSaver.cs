@@ -23,6 +23,9 @@ namespace Market.Persistence
         [Header("Scene References")]
         [SerializeField] private MoneySystem  moneySystem;
         [SerializeField] private Inventory    inventory;
+        // TEMP single-stall API (B9). Multi-stall save/load will iterate a
+        // MarketStallRegistry instead of this single reference.
+        [Tooltip("TEMP: single stall. Future multi-stall iterates MarketStallRegistry.")]
         [SerializeField] private MarketStall  marketStall;
         [SerializeField] private Transform    playerTransform;
         [SerializeField] private ItemDatabase itemDatabase;
