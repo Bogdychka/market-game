@@ -6,51 +6,51 @@ using UnityEngine;
 namespace Market.World
 {
     /// <summary>
-    /// Конфигурация одного сезона: солнечное склонение и оттенок неба.
-    /// Индексируется по (int)Season: 0=Весна, 1=Лето, 2=Осень, 3=Зима.
+    /// Config for one season: solar declination and sky tint.
+    /// Indexed by (int)Season: 0=Spring, 1=Summer, 2=Autumn, 3=Winter.
     /// </summary>
     [Serializable]
     public struct SeasonConfig
     {
         [Range(-23.45f, 23.45f)]
-        [Tooltip("Солнечное склонение (°): +23.45 = лето, 0 = равноденствие, -23.45 = зима.")]
+        [Tooltip("Solar declination (°): +23.45 = summer, 0 = equinox, -23.45 = winter.")]
         public float solarDeclination;
 
-        [Tooltip("Оттенок неба (_SkyTint в Procedural Skybox). Влияет на цвет атмосферы.")]
+        [Tooltip("Sky tint (_SkyTint in Procedural Skybox). Affects atmosphere colour.")]
         public Color skyTint;
     }
 
     /// <summary>
-    /// Управляет сменой времён года.
-    /// — Каждый сезон длится <see cref="daysPerSeason"/> игровых дней.
-    /// — При смене сезона: обновляет <see cref="DaylightSystem.SetSolarDeclination"/>,
-    ///   skybox-tint и публикует <see cref="SeasonChangedEvent"/>.
-    /// — Регистрируется в ServiceLocator — доступен для SupplierShop, TimeHUD и т.д.
+    /// Manages season transitions.
+    /// — Each season lasts <see cref="daysPerSeason"/> game days.
+    /// — On season change: updates <see cref="DaylightSystem.SetSolarDeclination"/>,
+    ///   skybox tint, and publishes <see cref="SeasonChangedEvent"/>.
+    /// — Registered in ServiceLocator — accessible from SupplierShop, TimeHUD, etc.
     /// </summary>
     public class SeasonManager : MonoBehaviour
     {
         [Header("Settings")]
-        [Tooltip("Длительность одного сезона в игровых днях.")]
+        [Tooltip("Duration of one season in game days.")]
         [SerializeField] private int daysPerSeason = 30;
 
         [Header("Season Config")]
-        [Tooltip("Ровно 4 элемента: 0=Весна, 1=Лето, 2=Осень, 3=Зима.")]
+        [Tooltip("Exactly 4 elements: 0=Spring, 1=Summer, 2=Autumn, 3=Winter.")]
         [SerializeField] private SeasonConfig[] seasons = new SeasonConfig[]
         {
-            new SeasonConfig { solarDeclination =  13.0f, skyTint = new Color(0.50f, 0.51f, 0.55f) }, // Весна: закат ~19:17
-            new SeasonConfig { solarDeclination =  23.45f, skyTint = new Color(0.48f, 0.50f, 0.58f) }, // Лето:  закат ~20:33
-            new SeasonConfig { solarDeclination =   8.0f, skyTint = new Color(0.54f, 0.51f, 0.47f) }, // Осень: закат ~18:45
-            new SeasonConfig { solarDeclination = -23.45f, skyTint = new Color(0.46f, 0.47f, 0.55f) }, // Зима:  закат ~15:27
+            new SeasonConfig { solarDeclination =  13.0f,  skyTint = new Color(0.50f, 0.51f, 0.55f) }, // Spring: sunset ~19:17
+            new SeasonConfig { solarDeclination =  23.45f, skyTint = new Color(0.48f, 0.50f, 0.58f) }, // Summer: sunset ~20:33
+            new SeasonConfig { solarDeclination =   8.0f,  skyTint = new Color(0.54f, 0.51f, 0.47f) }, // Autumn: sunset ~18:45
+            new SeasonConfig { solarDeclination = -23.45f, skyTint = new Color(0.46f, 0.47f, 0.55f) }, // Winter: sunset ~15:27
         };
 
         [Header("References")]
-        [Tooltip("Необходим для обновления солнечного склонения при смене сезона.")]
+        [Tooltip("Required for updating solar declination on season change.")]
         [SerializeField] private DaylightSystem daylightSystem;
 
-        /// <summary>Текущий сезон.</summary>
+        /// <summary>Current season.</summary>
         public Season CurrentSeason { get; private set; }
 
-        /// <summary>День внутри текущего сезона (1..daysPerSeason).</summary>
+        /// <summary>Day within the current season (1..daysPerSeason).</summary>
         public int DayInCurrentSeason
         {
             get
@@ -60,10 +60,10 @@ namespace Market.World
             }
         }
 
-        /// <summary>Сколько дней осталось до следующего сезона.</summary>
+        /// <summary>Days remaining until the next season.</summary>
         public int DaysUntilNextSeason => daysPerSeason - DayInCurrentSeason + 1;
 
-        /// <summary>Срабатывает при смене сезона (не вызывается при старте).</summary>
+        /// <summary>Fired on season change (not fired on start).</summary>
         public event Action<Season> OnSeasonChanged;
 
         private TimeSystem _timeSystem;
@@ -77,20 +77,20 @@ namespace Market.World
             ServiceLocator.Register(this);
 
             if (!ServiceLocator.TryGet<TimeSystem>(out _timeSystem))
-                Debug.LogWarning("[SeasonManager] TimeSystem не найден.", this);
+                Debug.LogWarning("[SeasonManager] TimeSystem not found.", this);
 
             ServiceLocator.TryGet<EventBus>(out _eventBus);
 
             if (daylightSystem == null)
-                Debug.LogWarning("[SeasonManager] daylightSystem не назначен — склонение не будет меняться.", this);
+                Debug.LogWarning("[SeasonManager] daylightSystem not assigned — declination will not change.", this);
         }
 
         private void Start()
         {
-            // DaylightSystem.Awake уже создал runtime-инстанс skybox — берём его здесь
+            // DaylightSystem.Awake already created the runtime skybox instance — grab it here
             _skyboxMaterial = RenderSettings.skybox;
 
-            // Применяем стартовый сезон без события
+            // Apply starting season without firing an event
             ApplySeason(ComputeSeason(_timeSystem?.Day ?? 1), fireEvent: false);
         }
 
@@ -110,8 +110,8 @@ namespace Market.World
         }
 
         /// <summary>
-        /// Пересчитывает сезон по текущему дню TimeSystem. Вызывается после загрузки сейва,
-        /// когда день мог измениться в обход OnDayChanged.
+        /// Recomputes the season from the current TimeSystem day. Called after loading a save
+        /// when the day may have changed without triggering OnDayChanged.
         /// </summary>
         public void RefreshSeason()
         {
@@ -139,7 +139,7 @@ namespace Market.World
                 _skyboxMaterial.SetColor(SkyTintID, cfg.skyTint);
 
             Debug.Log($"[SeasonManager] {GetName(season)} " +
-                      $"(склонение: {cfg.solarDeclination:+0.0;-0.0}°, день {DayInCurrentSeason}/{daysPerSeason})");
+                      $"(declination: {cfg.solarDeclination:+0.0;-0.0}°, day {DayInCurrentSeason}/{daysPerSeason})");
 
             if (!fireEvent) return;
             OnSeasonChanged?.Invoke(season);
@@ -160,7 +160,7 @@ namespace Market.World
             return (seasons != null && i >= 0 && i < seasons.Length) ? seasons[i] : default;
         }
 
-        /// <summary>Локализованное название сезона.</summary>
+        /// <summary>Localised season name (player-facing).</summary>
         public static string GetName(Season s) => s switch
         {
             Season.Spring => "Весна",

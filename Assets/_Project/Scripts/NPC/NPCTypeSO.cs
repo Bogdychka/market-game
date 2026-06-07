@@ -4,26 +4,26 @@ using UnityEngine;
 namespace Market.NPC
 {
     /// <summary>
-    /// Тип NPC: префаб, бюджет, скорость, предпочтения категорий.
-    /// Используется NPCSpawner'ом для разнообразия посетителей.
+    /// NPC type descriptor: prefab, budget, walk speed, and category preferences.
+    /// Used by NPCSpawner to generate varied visitors.
     /// </summary>
     [CreateAssetMenu(menuName = "Market/NPC Type", fileName = "NPCType_New")]
     public class NPCTypeSO : ScriptableObject
     {
         [Header("Identity")]
         [SerializeField] private string typeName = "Обычный покупатель";
-        [Tooltip("Префаб NPC. Должен содержать компоненты NavMeshAgent + NPCVisitor.")]
+        [Tooltip("NPC prefab. Must contain NavMeshAgent + NPCVisitor components.")]
         [SerializeField] private GameObject npcPrefab;
 
         [Header("Behaviour")]
-        [Tooltip("Максимальная сумма, которую готов потратить за один товар.")]
+        [Tooltip("Maximum amount the NPC is willing to spend on a single item.")]
         [SerializeField] private float budget = 50f;
         [SerializeField] private float walkSpeed  = 3.5f;
-        [Tooltip("Время раздумий у прилавка перед покупкой (в секундах).")]
+        [Tooltip("Time spent browsing at the stall before making a purchase decision (seconds).")]
         [SerializeField] private float browseTime = 1.5f;
 
         [Header("Preferences")]
-        [Tooltip("Предпочитаемые категории товаров. Пусто = покупает любой товар.")]
+        [Tooltip("Preferred item categories. Empty = buys any category.")]
         [SerializeField] private ItemCategory[] preferredCategories;
 
         public string         TypeName            => typeName;

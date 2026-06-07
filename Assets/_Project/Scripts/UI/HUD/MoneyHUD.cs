@@ -5,7 +5,7 @@ using UnityEngine;
 namespace Market.UI
 {
     /// <summary>
-    /// Текстовый HUD текущей суммы денег. Подписывается на MoneySystem.OnChanged.
+    /// Text HUD showing the current money amount. Subscribes to MoneySystem.OnChanged.
     /// </summary>
     public class MoneyHUD : MonoBehaviour
     {
@@ -15,11 +15,11 @@ namespace Market.UI
 
         private void Awake()
         {
-            if (moneySystem == null) Debug.LogError("[MoneyHUD] moneySystem не назначен", this);
-            if (label       == null) Debug.LogError("[MoneyHUD] label не назначен",       this);
+            if (moneySystem == null) Debug.LogError("[MoneyHUD] moneySystem not assigned", this);
+            if (label       == null) Debug.LogError("[MoneyHUD] label not assigned",       this);
         }
 
-        // Стартовый Refresh в Start — после Awake'а MoneySystem (где он инициализирует _amount).
+        // Initial refresh in Start — after MoneySystem.Awake initialises _amount.
         private void Start()
         {
             if (moneySystem != null) Refresh(moneySystem.Amount);

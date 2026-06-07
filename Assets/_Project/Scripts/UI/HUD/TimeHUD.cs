@@ -6,8 +6,8 @@ using UnityEngine;
 namespace Market.UI
 {
     /// <summary>
-    /// Отображает игровое время и сезон в HUD.
-    /// Обновляется только при смене минуты — экономит на string allocation.
+    /// Displays game time and season in the HUD.
+    /// Updates only when the minute changes to save string allocations.
     /// </summary>
     public class TimeHUD : MonoBehaviour
     {
@@ -29,7 +29,7 @@ namespace Market.UI
 
         private void Start()
         {
-            // SeasonManager может не существовать (опционален)
+            // SeasonManager is optional — may not exist
             ServiceLocator.TryGet<SeasonManager>(out _seasonManager);
             Refresh();
         }
@@ -68,13 +68,13 @@ namespace Market.UI
         {
             if (ServiceLocator.TryGet<TimeSystem>(out _timeSystem)) return;
 
-            Debug.LogWarning("[TimeHUD] TimeSystem не найден — HUD времени будет пустым.", this);
+            Debug.LogWarning("[TimeHUD] TimeSystem not found — time HUD will be blank.", this);
         }
 
         private void ValidateReferences()
         {
             if (timeLabel == null)
-                Debug.LogError("[TimeHUD] timeLabel не назначен", this);
+                Debug.LogError("[TimeHUD] timeLabel not assigned", this);
         }
     }
 }

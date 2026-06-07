@@ -12,6 +12,11 @@ reviews it, verifies via Unity MCP, bumps the version, tags it, and pushes. See 
 
 _Nothing pending._
 
+## [1.3.2] - 2026-06-07
+
+### Changed
+- Translated all Russian developer-facing text (XML doc comments, `[Tooltip]` attributes, `Debug.Log/Warning/Error` messages, inline `//` comments) to English across all 42 C# scripts. Player-visible UI strings (panel titles, button labels, season names, currency suffix) intentionally remain in Russian. Eliminates the mojibake patch-targeting issue documented in AGENTS.md gotcha #8. (Claude)
+
 ## [1.3.1] - 2026-06-07
 
 ### Changed

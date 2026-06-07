@@ -6,8 +6,8 @@ using UnityEngine.InputSystem;
 namespace Market.Interaction
 {
     /// <summary>
-    /// Лучом из камеры ищет IInteractable. Триггерит CurrentChanged при смене цели.
-    /// По кнопке Interact (Input Action) вызывает Interact() на текущей цели.
+    /// Raycasts from the camera to find IInteractable objects. Fires CurrentChanged when the target changes.
+    /// On the Interact input action, calls Interact() on the current target.
     /// </summary>
     public class InteractionSystem : MonoBehaviour
     {
@@ -26,8 +26,8 @@ namespace Market.Interaction
         private InputAction _interactAction;
         private IInteractable _current;
 
-        // Кеш для Probe: чтобы не дёргать GetComponentInParent каждый кадр,
-        // пока луч смотрит в тот же коллайдер
+        // Probe cache: avoids calling GetComponentInParent every frame
+        // while the ray hits the same collider.
         private Collider      _cachedCollider;
         private IInteractable _cachedInteractable;
 
@@ -37,11 +37,11 @@ namespace Market.Interaction
             if (playerInput == null) playerInput = GetComponentInParent<PlayerInput>();
 
             if (cam == null)
-                Debug.LogError("[InteractionSystem] cam не найден", this);
+                Debug.LogError("[InteractionSystem] Camera not found", this);
 
             if (playerInput == null)
             {
-                Debug.LogError("[InteractionSystem] playerInput не найден — компонент отключён.", this);
+                Debug.LogError("[InteractionSystem] PlayerInput not found — component disabled.", this);
                 enabled = false;
                 return;
             }
@@ -81,7 +81,7 @@ namespace Market.Interaction
                 return null;
             }
 
-            // Если попали в тот же коллайдер — берём из кеша, не дёргаем GetComponentInParent
+            // Same collider as last frame — use cache, skip GetComponentInParent
             if (info.collider != _cachedCollider)
             {
                 _cachedCollider     = info.collider;

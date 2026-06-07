@@ -5,7 +5,7 @@ namespace Market.DebugTools
 {
     public class TestInteractable : MonoBehaviour, IInteractable
     {
-        [SerializeField] private string prompt = "Потыкать куб";
+        [SerializeField] private string prompt = "Interact with cube";
         [SerializeField] private bool canInteract = true;
 
         public string PromptText => prompt;

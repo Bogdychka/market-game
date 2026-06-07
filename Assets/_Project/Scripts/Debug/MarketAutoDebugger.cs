@@ -9,8 +9,8 @@ using UnityEngine.InputSystem;
 namespace Market.DebugTools
 {
     /// <summary>
-    /// Автоматический debug-runner для короткого market loop:
-    /// купить товар у поставщика -> выложить на прилавок -> заспавнить NPC -> записать снапшот в лог.
+    /// Automated debug runner for a short market loop:
+    /// buy from supplier → place on stall → spawn NPC → log snapshot.
     /// </summary>
     public class MarketAutoDebugger : MonoBehaviour
     {
@@ -22,23 +22,23 @@ namespace Market.DebugTools
         [SerializeField] private MoneySystem moneySystem;
 
         [Header("Controls")]
-        [Tooltip("Запустить автотест сразу при старте сцены.")]
+        [Tooltip("Run the auto-test immediately on scene start.")]
         [SerializeField] private bool runOnStart = false;
         [SerializeField] private Key toggleKey = Key.F9;
         [SerializeField] private Key singleStepKey = Key.F10;
 
         [Header("Scenario")]
-        [Tooltip("Пауза между автоматическими циклами.")]
+        [Tooltip("Pause between automatic cycles.")]
         [SerializeField] private float stepInterval = 6f;
-        [Tooltip("Индекс товара у поставщика, который автодебаггер будет покупать.")]
+        [Tooltip("Index of the supplier stock item the auto-debugger will buy.")]
         [SerializeField] private int supplierStockIndex = 0;
-        [Tooltip("Класть товар на прилавок по рекомендованной цене. Иначе — debugSellPrice.")]
+        [Tooltip("Place item on stall at the suggested price. Otherwise uses debugSellPrice.")]
         [SerializeField] private bool useCalculatedSellPrice = true;
         [SerializeField] private float debugSellPrice = 20f;
         [SerializeField] private bool autoBuyIfNeeded = true;
         [SerializeField] private bool autoPlaceOnStall = true;
         [SerializeField] private bool autoSpawnNpc = true;
-        [Tooltip("Защита от бесконечного форс-спавна, если NPC застряли или долго не уходят.")]
+        [Tooltip("Guard against infinite force-spawning if NPCs get stuck or take too long to leave.")]
         [SerializeField] private int maxForcedNpcCount = 3;
 
         [Header("Logging")]
@@ -60,7 +60,7 @@ namespace Market.DebugTools
         private void Start()
         {
             if (runOnStart) StartAutoRun();
-            else Debug.Log($"[AutoDebug] Готов. {toggleKey}=auto on/off, {singleStepKey}=один цикл.");
+            else Debug.Log($"[AutoDebug] Ready. {toggleKey}=auto on/off, {singleStepKey}=single cycle.");
         }
 
         private void Update()
@@ -85,24 +85,24 @@ namespace Market.DebugTools
             }
         }
 
-        /// <summary>Запускает повторяющийся автотест.</summary>
+        /// <summary>Start repeating auto-test.</summary>
         public void StartAutoRun()
         {
             _running = true;
             _stepTimer = 0f;
             _snapshotTimer = 0f;
-            Debug.Log("[AutoDebug] Автотест запущен.");
+            Debug.Log("[AutoDebug] Auto-test started.");
         }
 
-        /// <summary>Останавливает повторяющийся автотест.</summary>
+        /// <summary>Stop repeating auto-test.</summary>
         public void StopAutoRun()
         {
             _running = false;
-            Debug.Log("[AutoDebug] Автотест остановлен.");
+            Debug.Log("[AutoDebug] Auto-test stopped.");
             LogSnapshot("stop");
         }
 
-        /// <summary>Выполняет один полный debug-цикл.</summary>
+        /// <summary>Run one full debug cycle.</summary>
         public void RunSingleStep()
         {
             RunCycle("manual");
@@ -147,7 +147,7 @@ namespace Market.DebugTools
             {
                 if (supplierShop == null)
                 {
-                    Debug.LogWarning("[AutoDebug] supplierShop не назначен — автопокупка невозможна.", this);
+                    Debug.LogWarning("[AutoDebug] supplierShop not assigned — auto-buy impossible.", this);
                     return;
                 }
 
@@ -165,25 +165,25 @@ namespace Market.DebugTools
                 : marketStall.PlaceItem(slotIndex, item, debugSellPrice);
 
             if (!placed)
-                Debug.LogWarning($"[AutoDebug] Не удалось выложить {item.DisplayName} в слот {slotIndex}.", this);
+                Debug.LogWarning($"[AutoDebug] Failed to place {item.DisplayName} in slot {slotIndex}.", this);
         }
 
         private void ForceSpawnNpc()
         {
             if (npcSpawner == null)
             {
-                Debug.LogWarning("[AutoDebug] npcSpawner не назначен — автоспавн невозможен.", this);
+                Debug.LogWarning("[AutoDebug] npcSpawner not assigned — auto-spawn impossible.", this);
                 return;
             }
 
             if (npcSpawner.ActiveCount >= maxForcedNpcCount)
             {
-                Debug.Log($"[AutoDebug] NPC не спавнится: active={npcSpawner.ActiveCount}, limit={maxForcedNpcCount}.");
+                Debug.Log($"[AutoDebug] NPC not spawned: active={npcSpawner.ActiveCount}, limit={maxForcedNpcCount}.");
                 return;
             }
 
             if (!npcSpawner.ForceSpawnForDebug())
-                Debug.LogWarning("[AutoDebug] NPC не заспавнился. Проверь npcTypes/spawnPoints/prefab.", this);
+                Debug.LogWarning("[AutoDebug] NPC did not spawn. Check npcTypes/spawnPoints/prefab.", this);
         }
 
         private bool HasFreeSlot() => FindFirstFreeSlotIndex() >= 0;
@@ -274,15 +274,15 @@ namespace Market.DebugTools
         private void ValidateReferences()
         {
             if (supplierShop == null && autoBuyIfNeeded)
-                Debug.LogWarning("[AutoDebug] supplierShop не назначен.", this);
+                Debug.LogWarning("[AutoDebug] supplierShop not assigned.", this);
             if (inventory == null)
-                Debug.LogWarning("[AutoDebug] inventory не назначен.", this);
+                Debug.LogWarning("[AutoDebug] inventory not assigned.", this);
             if (marketStall == null)
-                Debug.LogWarning("[AutoDebug] marketStall не назначен.", this);
+                Debug.LogWarning("[AutoDebug] marketStall not assigned.", this);
             if (npcSpawner == null && autoSpawnNpc)
-                Debug.LogWarning("[AutoDebug] npcSpawner не назначен.", this);
+                Debug.LogWarning("[AutoDebug] npcSpawner not assigned.", this);
             if (moneySystem == null)
-                Debug.LogWarning("[AutoDebug] moneySystem не назначен.", this);
+                Debug.LogWarning("[AutoDebug] moneySystem not assigned.", this);
         }
     }
 }

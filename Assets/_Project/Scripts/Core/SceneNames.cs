@@ -1,7 +1,7 @@
 namespace Market.Core
 {
     /// <summary>
-    /// Имена сцен в одном месте. При переименовании в Editor — обновить здесь.
+    /// Scene name constants in one place. Update here when a scene is renamed in the Editor.
     /// </summary>
     public static class SceneNames
     {

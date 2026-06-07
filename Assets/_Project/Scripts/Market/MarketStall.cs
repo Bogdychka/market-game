@@ -6,9 +6,9 @@ using UnityEngine;
 namespace Market.Market
 {
     /// <summary>
-    /// Прилавок игрока с массивом слотов. На каждый слот можно положить ItemSO с ценой,
-    /// NPC покупает через TakeSale(). Эмитит OnStockChanged при любом изменении стока.
-    /// B9: пока один прилавок — несколько прилавков будут координироваться через будущий MarketStallRegistry.
+    /// Player stall with a slot array. Each slot holds an ItemSO with a price.
+    /// NPCs purchase via TakeSale(). Fires OnStockChanged on any stock change.
+    /// B9: single stall for now — multiple stalls will be coordinated via a future MarketStallRegistry.
     /// </summary>
     public class MarketStall : MonoBehaviour, IInteractable
     {
@@ -22,9 +22,9 @@ namespace Market.Market
         [SerializeField] private Inventory playerInventory;
 
         [Header("Debug Starting Stock")]
-        [Tooltip("ВКЛ выкладку тестового стока при старте. По умолчанию выключено — иначе New Game стартует с товаром.")]
+        [Tooltip("Enable placing debug stock on start. Off by default — otherwise New Game starts with items on the stall.")]
         [SerializeField] private bool     enableDebugStartStock = false;
-        [Tooltip("Товары, которые автоматически выкладываются при старте сцены. Только для тестирования.")]
+        [Tooltip("Items automatically placed on the stall at scene start. For testing only.")]
         [SerializeField] private ItemSO[] debugStartItems;
         [SerializeField] private float    debugStartSellPrice = 20f;
 
@@ -58,7 +58,7 @@ namespace Market.Market
 #endif
         }
 
-        /// <summary>Рекомендованная цена продажи товара. Фолбэк на BaseSellPrice.</summary>
+        /// <summary>Suggested sell price for an item. Falls back to BaseSellPrice.</summary>
         public float SuggestedSellPrice(ItemSO item)
         {
             if (item == null) return 0f;
@@ -81,7 +81,7 @@ namespace Market.Market
 
         // ── Public API ─────────────────────────────────────────────────
         /// <summary>
-        /// Кладёт товар из инвентаря в слот по рекомендованной цене.
+        /// Place an item from the player inventory into a slot at the suggested price.
         /// </summary>
         public bool PlaceItem(int slotIndex, ItemSO item)
         {
@@ -89,7 +89,7 @@ namespace Market.Market
         }
 
         /// <summary>
-        /// Кладёт товар из инвентаря игрока в указанный слот за указанную цену.
+        /// Place an item from the player inventory into the specified slot at the specified price.
         /// </summary>
         public bool PlaceItem(int slotIndex, ItemSO item, float sellPrice)
         {
@@ -101,11 +101,11 @@ namespace Market.Market
             slots[slotIndex].Place(item, sellPrice);
             OnStockChanged?.Invoke();
 
-            Debug.Log($"[MarketStall] Выложено: {item.DisplayName} в слот {slotIndex} за {sellPrice}. Stock={TotalStock}");
+            Debug.Log($"[MarketStall] Placed: {item.DisplayName} in slot {slotIndex} for {sellPrice}. Stock={TotalStock}");
             return true;
         }
 
-        /// <summary>Снимает товар со слота и возвращает его в инвентарь игрока.</summary>
+        /// <summary>Remove an item from a slot and return it to the player inventory.</summary>
         public bool RemoveItem(int slotIndex)
         {
             if (!IsValidSlotIndex(slotIndex)) return false;
@@ -117,12 +117,12 @@ namespace Market.Market
             playerInventory.Add(item);
             OnStockChanged?.Invoke();
 
-            Debug.Log($"[MarketStall] Снято с прилавка: {item.DisplayName} из слота {slotIndex}. Stock={TotalStock}");
+            Debug.Log($"[MarketStall] Removed from stall: {item.DisplayName} from slot {slotIndex}. Stock={TotalStock}");
             return true;
         }
 
         /// <summary>
-        /// Забирает товар из слота (NPC покупает). Возвращает price и item.
+        /// Take an item from a slot (NPC purchase). Returns price and item.
         /// </summary>
         public bool TakeSale(int slotIndex, out ItemSO item, out float price)
         {
@@ -155,23 +155,23 @@ namespace Market.Market
 
         private void PrintCurrentState()
         {
-            Debug.Log("=== Прилавок ===");
+            Debug.Log("=== Stall ===");
             for (int i = 0; i < slots.Length; i++)
             {
                 var s = slots[i];
                 Debug.Log(s.IsOccupied
-                    ? $"[{i}] {s.Item.DisplayName} — цена {s.SellPrice}"
-                    : $"[{i}] пусто");
+                    ? $"[{i}] {s.Item.DisplayName} — price {s.SellPrice}"
+                    : $"[{i}] empty");
             }
-            Debug.Log($"Инвентарь: {InventoryContents()}");
+            Debug.Log($"Inventory: {InventoryContents()}");
         }
 
         private string InventoryContents()
         {
             var sb = new System.Text.StringBuilder();
             foreach (var kv in playerInventory.Items)
-                sb.Append($"{kv.Key.DisplayName}×{kv.Value} ");
-            return sb.Length > 0 ? sb.ToString() : "пусто";
+                sb.Append($"{kv.Key.DisplayName}x{kv.Value} ");
+            return sb.Length > 0 ? sb.ToString() : "empty";
         }
     }
 }

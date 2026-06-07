@@ -7,8 +7,8 @@ using UnityEngine.UI;
 namespace Market.UI
 {
     /// <summary>
-    /// Контроллер главного меню. Висит в сцене MainMenu.
-    /// Кнопки подключаются через инспектор.
+    /// Main menu controller. Lives in the MainMenu scene.
+    /// Buttons are wired via the Inspector.
     /// </summary>
     public class MainMenuController : MonoBehaviour
     {
@@ -56,7 +56,7 @@ namespace Market.UI
         // ── Button handlers ────────────────────────────────────────────
         private void OnNewGame()
         {
-            Debug.Log("[MainMenu] Новая игра");
+            Debug.Log("[MainMenu] New Game");
 
             if (ServiceLocator.TryGet<TimeSystem>(out var timeSystem))
                 timeSystem.Reset();
@@ -66,7 +66,7 @@ namespace Market.UI
 
         private void OnContinue()
         {
-            Debug.Log("[MainMenu] Продолжить");
+            Debug.Log("[MainMenu] Continue");
 
             _saveSystem.ShouldLoadOnStart = true;
             LoadMarketScene();
@@ -128,7 +128,7 @@ namespace Market.UI
 
             if (_sceneLoader == null)
             {
-                Debug.LogError("[MainMenu] SceneLoader недоступен — не могу загрузить Market.", this);
+                Debug.LogError("[MainMenu] SceneLoader unavailable — cannot load Market.", this);
                 return;
             }
 
@@ -140,16 +140,16 @@ namespace Market.UI
             if (!ServiceLocator.TryGet<SceneLoader>(out _sceneLoader))
             {
                 _sceneLoader = new SceneLoader(this);
-                Debug.LogWarning("[MainMenu] SceneLoader не найден. " +
-                                 "Создан локальный SceneLoader для прямого запуска MainMenu.", this);
+                Debug.LogWarning("[MainMenu] SceneLoader not found. " +
+                                 "Created a local SceneLoader for direct MainMenu startup.", this);
             }
 
             if (!ServiceLocator.TryGet<SaveSystem>(out _saveSystem))
             {
                 _saveSystem = new SaveSystem();
                 ServiceLocator.Register(_saveSystem);
-                Debug.LogWarning("[MainMenu] SaveSystem не найден. " +
-                                 "Создан локальный SaveSystem для прямого запуска MainMenu.", this);
+                Debug.LogWarning("[MainMenu] SaveSystem not found. " +
+                                 "Created a local SaveSystem for direct MainMenu startup.", this);
             }
         }
 
@@ -161,13 +161,13 @@ namespace Market.UI
 
         private void ValidateReferences()
         {
-            if (newGameButton  == null) Debug.LogError("[MainMenu] newGameButton не назначен", this);
-            if (continueButton == null) Debug.LogError("[MainMenu] continueButton не назначен", this);
-            if (settingsButton == null) Debug.LogError("[MainMenu] settingsButton не назначен", this);
-            if (quitButton     == null) Debug.LogError("[MainMenu] quitButton не назначен", this);
-            if (mainPanel      == null) Debug.LogError("[MainMenu] mainPanel не назначен", this);
-            if (settingsPanel  == null) Debug.LogError("[MainMenu] settingsPanel не назначен", this);
-            if (uiModeService  == null) Debug.LogError("[MainMenu] uiModeService не назначен", this);
+            if (newGameButton  == null) Debug.LogError("[MainMenu] newGameButton not assigned",  this);
+            if (continueButton == null) Debug.LogError("[MainMenu] continueButton not assigned", this);
+            if (settingsButton == null) Debug.LogError("[MainMenu] settingsButton not assigned", this);
+            if (quitButton     == null) Debug.LogError("[MainMenu] quitButton not assigned",     this);
+            if (mainPanel      == null) Debug.LogError("[MainMenu] mainPanel not assigned",      this);
+            if (settingsPanel  == null) Debug.LogError("[MainMenu] settingsPanel not assigned",  this);
+            if (uiModeService  == null) Debug.LogError("[MainMenu] uiModeService not assigned",  this);
         }
     }
 }

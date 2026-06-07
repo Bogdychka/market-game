@@ -5,9 +5,9 @@ using UnityEngine;
 namespace Market.Core
 {
     /// <summary>
-    /// Простой реестр сервисов. Регистрируется в Bootstrap, доступен из любого места.
-    /// Не использовать как "глобальный god-object" — только для систем уровня всей игры
-    /// (Money, Inventory, Time, EventBus, SceneLoader, и т.п.).
+    /// Lightweight service registry. Registered from Bootstrap, accessible anywhere.
+    /// Do not treat as a god-object — use only for game-wide systems
+    /// (Money, Inventory, Time, EventBus, SceneLoader, etc.).
     /// </summary>
     public static class ServiceLocator
     {
@@ -18,7 +18,7 @@ namespace Market.Core
             var type = typeof(T);
             if (_services.ContainsKey(type))
             {
-                Debug.LogWarning($"[ServiceLocator] Перезаписываю сервис {type.Name}");
+                Debug.LogWarning($"[ServiceLocator] Overwriting service {type.Name}");
             }
             _services[type] = service;
         }
@@ -28,7 +28,7 @@ namespace Market.Core
             if (_services.TryGetValue(typeof(T), out var service))
                 return (T)service;
 
-            Debug.LogError($"[ServiceLocator] Сервис {typeof(T).Name} не зарегистрирован");
+            Debug.LogError($"[ServiceLocator] Service {typeof(T).Name} is not registered");
             return null;
         }
 

@@ -6,8 +6,8 @@ using UnityEngine.SceneManagement;
 namespace Market.Core
 {
     /// <summary>
-    /// Загрузка сцен. Регистрируется в ServiceLocator из Bootstrap.
-    /// Сама не MonoBehaviour, использует Coroutine через переданный runner.
+    /// Scene loading service. Registered in ServiceLocator from Bootstrap.
+    /// Not a MonoBehaviour — uses a coroutine runner provided at construction.
     /// </summary>
     public class SceneLoader
     {
@@ -17,7 +17,7 @@ namespace Market.Core
         private readonly MonoBehaviour _coroutineRunner;
         private bool _isLoading;
 
-        /// <summary>true пока идёт асинхронная загрузка сцены.</summary>
+        /// <summary>True while an async scene load is in progress.</summary>
         public bool IsLoading => _isLoading;
 
         public SceneLoader(MonoBehaviour coroutineRunner)
@@ -29,23 +29,23 @@ namespace Market.Core
         {
             if (string.IsNullOrWhiteSpace(sceneName))
             {
-                Debug.LogError("[SceneLoader] Имя сцены пустое — загрузка отменена.");
+                Debug.LogError("[SceneLoader] Scene name is empty — load cancelled.");
                 return;
             }
 
             if (!Application.CanStreamedLevelBeLoaded(sceneName))
             {
-                Debug.LogError($"[SceneLoader] Сцена '{sceneName}' не найдена в Build Settings или недоступна.");
+                Debug.LogError($"[SceneLoader] Scene '{sceneName}' not found in Build Settings or not accessible.");
                 return;
             }
 
             if (_isLoading)
             {
-                Debug.LogWarning($"[SceneLoader] Загрузка уже идёт — запрос '{sceneName}' проигнорирован.");
+                Debug.LogWarning($"[SceneLoader] Load already in progress — request '{sceneName}' ignored.");
                 return;
             }
 
-            Debug.Log($"[SceneLoader] Запрос загрузки: {SceneManager.GetActiveScene().name} -> {sceneName}");
+            Debug.Log($"[SceneLoader] Load request: {SceneManager.GetActiveScene().name} -> {sceneName}");
             _coroutineRunner.StartCoroutine(LoadRoutine(sceneName));
         }
 
@@ -60,7 +60,7 @@ namespace Market.Core
 
             _isLoading = false;
             OnSceneLoadCompleted?.Invoke(sceneName);
-            Debug.Log($"[SceneLoader] Загружена сцена: {sceneName}");
+            Debug.Log($"[SceneLoader] Scene loaded: {sceneName}");
         }
     }
 }

@@ -5,7 +5,7 @@ using UnityEngine.InputSystem;
 namespace Market.DebugTools
 {
     /// <summary>
-    /// Debug: клавиши 1-5 покупают товар по индексу у поставщика.
+    /// Debug: digit keys 1-5 buy an item by index from the supplier shop.
     /// </summary>
     public class DebugSupplierBuy : MonoBehaviour
     {
@@ -15,7 +15,7 @@ namespace Market.DebugTools
         [SerializeField] private SupplierShop shop;
 
         [Header("Settings")]
-        [Tooltip("Сколько цифровых клавиш слушать. Ограничено клавишами 1-9.")]
+        [Tooltip("How many digit keys to listen on. Clamped to keys 1-9.")]
         [SerializeField] private int maxIndex = 5;
 
         private void Update()
@@ -30,7 +30,7 @@ namespace Market.DebugTools
 
                 if (kb[(Key)((int)Key.Digit1 + i)].wasPressedThisFrame)
                 {
-                    Debug.Log($"[DebugSupplierBuy] Покупаю товар [{i}]");
+                    Debug.Log($"[DebugSupplierBuy] Buying item [{i}]");
                     shop.Buy(i);
                 }
             }

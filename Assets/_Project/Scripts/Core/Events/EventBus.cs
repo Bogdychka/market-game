@@ -5,8 +5,8 @@ using UnityEngine;
 namespace Market.Core.Events
 {
     /// <summary>
-    /// Типобезопасная шина событий.
-    /// Использование:
+    /// Type-safe event bus.
+    /// Usage:
     ///   EventBus.Subscribe&lt;MoneyChangedEvent&gt;(OnMoneyChanged);
     ///   EventBus.Publish(new MoneyChangedEvent(100));
     ///   EventBus.Unsubscribe&lt;MoneyChangedEvent&gt;(OnMoneyChanged);

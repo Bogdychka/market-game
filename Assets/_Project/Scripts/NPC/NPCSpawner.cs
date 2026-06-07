@@ -8,21 +8,21 @@ using UnityEngine;
 namespace Market.NPC
 {
     /// <summary>
-    /// Спавнит NPC из случайной точки.
-    /// Плотность трафика зависит от времени суток через <see cref="trafficDensityCurve"/>:
-    /// пик в полдень, почти ноль ночью.
+    /// Spawns NPCs from a random spawn point.
+    /// Traffic density depends on the time of day via <see cref="trafficDensityCurve"/>:
+    /// peak at noon, nearly zero at night.
     /// </summary>
     public class NPCSpawner : MonoBehaviour
     {
         [Header("NPC Types")]
-        [Tooltip("Из этого пула случайно выбирается тип каждого нового NPC.")]
+        [Tooltip("Each new NPC is randomly chosen from this pool.")]
         [SerializeField] private NPCTypeSO[] npcTypes;
 
         [Header("Spawn Points")]
         [SerializeField] private Transform[] spawnPoints;
 
         [Header("Traffic Density")]
-        [Tooltip("Плотность трафика по часу суток.\nOsь X: 0..1 = 0..24 ч  |  Ось Y: 0..1 = плотность.")]
+        [Tooltip("Traffic density by hour of day.\nX axis: 0..1 = 0..24 h  |  Y axis: 0..1 = density.")]
         [SerializeField] private AnimationCurve trafficDensityCurve = new AnimationCurve(
             new Keyframe( 0f / 24f, 0.00f, 0f, 0f),
             new Keyframe( 6f / 24f, 0.04f, 0f, 0f),
@@ -34,14 +34,14 @@ namespace Market.NPC
             new Keyframe(24f / 24f, 0.00f, 0f, 0f)
         );
 
-        [Tooltip("Интервал спавна при плотности = 1 (час пик).")]
+        [Tooltip("Spawn interval at density = 1 (peak hour).")]
         [SerializeField] private float peakSpawnInterval    = 4f;
-        [Tooltip("Интервал спавна при плотности → 0 (глубокая ночь).")]
+        [Tooltip("Spawn interval at density → 0 (deep night).")]
         [SerializeField] private float offPeakSpawnInterval = 30f;
-        [Tooltip("Порог: если плотность ниже — спавн остановлен.")]
+        [Tooltip("Threshold: spawn stops when density falls below this value.")]
         [Range(0f, 0.2f)]
         [SerializeField] private float minDensityToSpawn    = 0.05f;
-        [Tooltip("Максимум активных NPC при плотности = 1. Масштабируется линейно вниз.")]
+        [Tooltip("Maximum active NPCs at density = 1. Scales linearly down.")]
         [SerializeField] private int   maxActiveNPCsAtPeak  = 5;
 
         [Header("Scene References")]
@@ -58,10 +58,10 @@ namespace Market.NPC
         private bool       _restoredFromSave;
         private readonly List<NPCVisitor> _spawnedVisitors = new();
 
-        /// <summary>Количество NPC, которые сейчас живут в сцене через этот спавнер.</summary>
+        /// <summary>Number of NPCs currently alive in the scene through this spawner.</summary>
         public int ActiveCount => _activeCount;
 
-        /// <summary>Текущая плотность трафика [0..1] по игровому времени.</summary>
+        /// <summary>Current traffic density [0..1] based on game time.</summary>
         public float CurrentDensity => GetCurrentDensity();
 
         // ── Lifecycle ──────────────────────────────────────────────────
@@ -70,14 +70,14 @@ namespace Market.NPC
             ValidateReferences();
 
             if (!ServiceLocator.TryGet<TimeSystem>(out _timeSystem))
-                Debug.LogWarning("[NPCSpawner] TimeSystem не найден — плотность будет постоянной.", this);
+                Debug.LogWarning("[NPCSpawner] TimeSystem not found — density will be constant.", this);
         }
 
         private void Start()
         {
             if (_restoredFromSave) return;
 
-            _spawnTimer = 0f; // первый NPC появится сразу
+            _spawnTimer = 0f; // first NPC spawns immediately
         }
 
         private void Update()
@@ -89,7 +89,7 @@ namespace Market.NPC
             float effectiveInterval = ComputeInterval(density);
             _spawnTimer = effectiveInterval;
 
-            if (density < minDensityToSpawn) return;   // ночь — не спавним
+            if (density < minDensityToSpawn) return;   // night — no spawning
 
             int effectiveMax = EffectiveMaxNPCs(density);
             if (_activeCount >= effectiveMax) return;
@@ -98,7 +98,7 @@ namespace Market.NPC
         }
 
         /// <summary>
-        /// Принудительный спавн для debug-сценариев. Игнорирует таймер и дневную плотность.
+        /// Force-spawn for debug scenarios. Ignores timer and daytime density.
         /// </summary>
         public bool ForceSpawnForDebug()
         {
@@ -140,7 +140,7 @@ namespace Market.NPC
             foreach (NPCVisitorData visitorData in visitors)
                 RestoreVisitor(visitorData);
 
-            Debug.Log($"[NPCSpawner] Восстановлено NPC из сейва: {_activeCount}");
+            Debug.Log($"[NPCSpawner] Restored NPCs from save: {_activeCount}");
         }
 
         // ── Spawn ──────────────────────────────────────────────────────
@@ -150,7 +150,7 @@ namespace Market.NPC
             if (spawnPoints == null || spawnPoints.Length == 0) return false;
             if (targetStall == null || exitPoint == null || playerMoney == null)
             {
-                Debug.LogError("[NPCSpawner] targetStall/exitPoint/playerMoney не назначены — NPC не создан.", this);
+                Debug.LogError("[NPCSpawner] targetStall/exitPoint/playerMoney not assigned — NPC not created.", this);
                 return false;
             }
 
@@ -159,19 +159,19 @@ namespace Market.NPC
 
             if (type == null)
             {
-                Debug.LogError("[NPCSpawner] В npcTypes есть пустой элемент!", this);
+                Debug.LogError("[NPCSpawner] npcTypes contains a null entry!", this);
                 return false;
             }
 
             if (point == null)
             {
-                Debug.LogError("[NPCSpawner] В spawnPoints есть пустой элемент!", this);
+                Debug.LogError("[NPCSpawner] spawnPoints contains a null entry!", this);
                 return false;
             }
 
             if (type.NpcPrefab == null)
             {
-                Debug.LogError($"[NPCSpawner] NpcPrefab не назначен в {type.name}!", this);
+                Debug.LogError($"[NPCSpawner] NpcPrefab not assigned in {type.name}!", this);
                 return false;
             }
 
@@ -180,7 +180,7 @@ namespace Market.NPC
 
             if (visitor == null)
             {
-                Debug.LogError("[NPCSpawner] Префаб не содержит NPCVisitor!", go);
+                Debug.LogError("[NPCSpawner] Prefab does not contain NPCVisitor!", go);
                 Destroy(go);
                 return false;
             }
@@ -188,8 +188,8 @@ namespace Market.NPC
             visitor.Initialize(type, targetStall, exitPoint, playerMoney);
             RegisterVisitor(visitor);
 
-            Debug.Log($"[NPCSpawner] Заспавнен {type.TypeName} (density={GetCurrentDensity():F2}). " +
-                      $"Активных: {_activeCount}/{EffectiveMaxNPCs(GetCurrentDensity())}");
+            Debug.Log($"[NPCSpawner] Spawned {type.TypeName} (density={GetCurrentDensity():F2}). " +
+                      $"Active: {_activeCount}/{EffectiveMaxNPCs(GetCurrentDensity())}");
             return true;
         }
 
@@ -201,13 +201,13 @@ namespace Market.NPC
             NPCTypeSO type = FindType(visitorData.npcTypeKey);
             if (type == null)
             {
-                Debug.LogWarning($"[NPCSpawner] Тип NPC '{visitorData.npcTypeKey}' из сейва не найден.", this);
+                Debug.LogWarning($"[NPCSpawner] NPC type '{visitorData.npcTypeKey}' from save not found.", this);
                 return;
             }
 
             if (type.NpcPrefab == null)
             {
-                Debug.LogWarning($"[NPCSpawner] У типа NPC '{type.name}' не назначен prefab.", this);
+                Debug.LogWarning($"[NPCSpawner] NPC type '{type.name}' has no prefab assigned.", this);
                 return;
             }
 
@@ -218,7 +218,7 @@ namespace Market.NPC
 
             if (visitor == null)
             {
-                Debug.LogError("[NPCSpawner] Префаб из сейва не содержит NPCVisitor!", go);
+                Debug.LogError("[NPCSpawner] Prefab from save does not contain NPCVisitor!", go);
                 Destroy(go);
                 return;
             }
@@ -290,7 +290,7 @@ namespace Market.NPC
 
         // ── Density helpers ────────────────────────────────────────────
 
-        /// <summary>Текущая плотность трафика [0..1] по игровому часу.</summary>
+        /// <summary>Current traffic density [0..1] based on the game hour.</summary>
         private float GetCurrentDensity()
         {
             if (_timeSystem == null) return 1f;
@@ -299,13 +299,13 @@ namespace Market.NPC
             return Mathf.Clamp01(trafficDensityCurve.Evaluate(normalizedHour));
         }
 
-        /// <summary>Интервал спавна: на пике — peakSpawnInterval, на нуле — offPeakSpawnInterval.</summary>
+        /// <summary>Spawn interval: peakSpawnInterval at peak density, offPeakSpawnInterval at zero.</summary>
         private float ComputeInterval(float density)
         {
             return Mathf.Lerp(offPeakSpawnInterval, peakSpawnInterval, density);
         }
 
-        /// <summary>Максимум активных NPC масштабируется с плотностью (минимум 1).</summary>
+        /// <summary>Max active NPCs scales with density (minimum 1).</summary>
         private int EffectiveMaxNPCs(float density)
         {
             return Mathf.Max(1, Mathf.RoundToInt(maxActiveNPCsAtPeak * density));
@@ -329,15 +329,15 @@ namespace Market.NPC
         private void ValidateReferences()
         {
             if (npcTypes == null || npcTypes.Length == 0)
-                Debug.LogError("[NPCSpawner] npcTypes не назначены!", this);
+                Debug.LogError("[NPCSpawner] npcTypes not assigned!", this);
             if (spawnPoints == null || spawnPoints.Length == 0)
-                Debug.LogError("[NPCSpawner] spawnPoints не назначены!", this);
+                Debug.LogError("[NPCSpawner] spawnPoints not assigned!", this);
             if (targetStall == null)
-                Debug.LogError("[NPCSpawner] targetStall не назначен!", this);
+                Debug.LogError("[NPCSpawner] targetStall not assigned!", this);
             if (exitPoint == null)
-                Debug.LogError("[NPCSpawner] exitPoint не назначен!", this);
+                Debug.LogError("[NPCSpawner] exitPoint not assigned!", this);
             if (playerMoney == null)
-                Debug.LogError("[NPCSpawner] playerMoney не назначен!", this);
+                Debug.LogError("[NPCSpawner] playerMoney not assigned!", this);
         }
 
         // ── Gizmos ─────────────────────────────────────────────────────

@@ -40,7 +40,7 @@ namespace Market.UI
         [SerializeField] private UIModeService uiModeService;
 
         [Header("Controls")]
-        [Tooltip("Открыть/закрыть инвентарь.")]
+        [Tooltip("Open/close the inventory.")]
         [SerializeField] private Key inventoryKey = Key.Tab;
 
         private RectTransform _root;
@@ -519,7 +519,7 @@ namespace Market.UI
             bool parsed = float.TryParse(normalized, NumberStyles.Float, CultureInfo.InvariantCulture, out price);
             if (!parsed || price <= 0f)
             {
-                Debug.LogWarning("[MarketUIController] Некорректная цена товара.", this);
+                Debug.LogWarning("[MarketUIController] Invalid item price.", this);
                 price = 0f;
                 return false;
             }
@@ -740,11 +740,11 @@ namespace Market.UI
 
         private void ValidateReferences()
         {
-            if (inventory == null) Debug.LogError("[MarketUIController] inventory не назначен", this);
-            if (moneySystem == null) Debug.LogError("[MarketUIController] moneySystem не назначен", this);
-            if (supplierShop == null) Debug.LogError("[MarketUIController] supplierShop не назначен", this);
-            if (marketStall == null) Debug.LogError("[MarketUIController] marketStall не назначен", this);
-            if (uiModeService == null) Debug.LogError("[MarketUIController] uiModeService не назначен", this);
+            if (inventory    == null) Debug.LogError("[MarketUIController] inventory not assigned",    this);
+            if (moneySystem  == null) Debug.LogError("[MarketUIController] moneySystem not assigned",  this);
+            if (supplierShop == null) Debug.LogError("[MarketUIController] supplierShop not assigned", this);
+            if (marketStall  == null) Debug.LogError("[MarketUIController] marketStall not assigned",  this);
+            if (uiModeService == null) Debug.LogError("[MarketUIController] uiModeService not assigned", this);
         }
 
         private static void StretchToParent(RectTransform rect)

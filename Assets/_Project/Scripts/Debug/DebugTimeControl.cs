@@ -6,11 +6,11 @@ using UnityEngine.InputSystem;
 namespace Market.DebugTools
 {
     /// <summary>
-    /// Debug-управление временем.
-    /// Page Up   — ускорить время (×2)
-    /// Page Down — замедлить время (÷2)
-    /// H         — пропустить 1 час
-    /// N         — пропустить до следующего сезона
+    /// Debug time control.
+    /// Page Up   — speed up time (×2)
+    /// Page Down — slow down time (÷2)
+    /// H         — skip 1 hour
+    /// N         — skip to next season
     /// </summary>
     public class DebugTimeControl : MonoBehaviour
     {
@@ -37,13 +37,13 @@ namespace Market.DebugTools
             if (kb.pageUpKey.wasPressedThisFrame)
             {
                 _timeSystem.TimeScale *= 2f;
-                Debug.Log($"[Time] Скорость ×{_timeSystem.TimeScale}");
+                Debug.Log($"[Time] Speed x{_timeSystem.TimeScale}");
             }
 
             if (kb.pageDownKey.wasPressedThisFrame)
             {
                 _timeSystem.TimeScale = Mathf.Max(0.25f, _timeSystem.TimeScale / 2f);
-                Debug.Log($"[Time] Скорость ×{_timeSystem.TimeScale}");
+                Debug.Log($"[Time] Speed x{_timeSystem.TimeScale}");
             }
 
             if (kb.hKey.wasPressedThisFrame)
@@ -65,13 +65,13 @@ namespace Market.DebugTools
 
             if (_seasonManager == null)
             {
-                Debug.LogWarning("[Time] SeasonManager не найден — пропуск сезона невозможен.", this);
+                Debug.LogWarning("[Time] SeasonManager not found — cannot skip season.", this);
                 return;
             }
 
             int hours = Mathf.Max(1, _seasonManager.DaysUntilNextSeason) * 24;
             _timeSystem.SkipHours(hours);
-            Debug.Log($"[Time] Пропущено до сезона: {SeasonManager.GetName(_seasonManager.CurrentSeason)}");
+            Debug.Log($"[Time] Skipped to season: {SeasonManager.GetName(_seasonManager.CurrentSeason)}");
         }
     }
 }
