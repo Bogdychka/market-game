@@ -145,6 +145,10 @@ Use these rules for every script.
 - No hidden gameplay math that the player cannot inspect or reason about.
 - No heavy logic in `Update()` without cached references and clear justification.
 - No unrelated refactors while implementing a requested step.
+- **No Russian (or any non-ASCII) text in `///` XML doc comments, `[Tooltip]` attributes, `//`
+  inline comments, or `Debug.Log/Warning/Error` strings.** All developer-facing code text must be
+  ASCII English. Player-visible UI strings (panel titles, button labels, season names, currency
+  suffix, NPC `displayName` / `typeName` defaults) are the only exception and remain Russian.
 
 ---
 
@@ -394,8 +398,14 @@ These are the things that have repeatedly burned time. Internalize them.
 7. **New `.cs` in an embedded package (`Packages/…`) needs its `.meta` + an `AssetDatabase.Refresh`.**
    Until imported, the server sees the registration but not the class. Create the `.meta` and refresh;
    don't work around it by dumping the class into an unrelated already-imported file.
-8. **Write new code comments/log strings in English.** Russian comments cause mojibake that breaks
-   targeted patching (patches land in the wrong place / can't match). Keep new `.cs` text ASCII.
+8. **ALL code text must be ASCII English — no Russian anywhere in comments, tooltips, or log strings.**
+   Russian in source files causes mojibake that makes targeted patches land in the wrong place or fail
+   to match context entirely. This rule was violated across the codebase and required a dedicated
+   42-file cleanup pass (v1.3.2) to fix — do not repeat it.
+   - ✅ English only: `/// <summary>`, `[Tooltip("...")]`, `// inline`, `Debug.Log/Warning/Error`
+   - ✅ Russian kept: player-visible strings in uGUI/TMP (`text.text = "…"`), `ItemSO.displayName`
+     defaults, `NPCTypeSO.typeName` defaults, season display names returned from `GetName()`
+   - ❌ If you catch yourself typing a Russian word in a comment or tooltip — stop and write English.
 
 ---
 

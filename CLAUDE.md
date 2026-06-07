@@ -70,6 +70,10 @@ services; `try/catch` around all I/O.
    `docs.unity3d.com/6000.0`.
 2. **Writing scripts** — follow `AGENTS.md`, place files in the right `_Project/Scripts/<Subsystem>/`,
    include Editor setup steps (there is no direct Editor access).
+   **Code language:** all `///` docs, `[Tooltip]`, inline `//` comments, and `Debug.Log/Warning/Error`
+   strings must be **ASCII English**. Russian text in code broke targeted patching and required a
+   42-file cleanup (v1.3.2). Player-visible UI strings remain Russian (see `AGENTS.md` "Never" +
+   gotcha #8 for the full rule).
 3. **Editor tasks** — give step-by-step instructions (Create → Add Component → fields).
 4. **Debug scripts** — `_Project/Scripts/Debug/`, namespace `Market.DebugTools`, temporary.
 5. **One plan step per request.** Don't skip ahead. After completing a step, tick `✅` in
