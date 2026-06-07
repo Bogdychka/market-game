@@ -10,6 +10,10 @@ reviews it, verifies via Unity MCP, bumps the version, tags it, and pushes. See 
 
 ## [Unreleased]
 
+_Nothing pending._
+
+## [1.3.0] - 2026-06-07
+
 ### Added
 - C1: Added `UIModeService` as the single runtime coordinator for game/menu mode. It owns cursor
   lock/visibility, suppresses first-person and interaction input while panels are open, and exposes a
