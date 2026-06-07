@@ -12,6 +12,14 @@ reviews it, verifies via Unity MCP, bumps the version, tags it, and pushes. See 
 
 _Nothing pending._
 
+## [1.2.2] - 2026-06-07
+
+### Fixed
+- `no-commit-to-main.sh` hook: tighten the branch-ref detection inside the tag-push allowance.
+  It now matches an actual ref in the push command (`origin main`, `:master`, `push --all`, …)
+  instead of the bare word `main` anywhere in the tool-call JSON, so a Bash `description`
+  mentioning "main" no longer trips the guard and blocks a legitimate tag push. (Claude)
+
 ## [1.2.1] - 2026-06-07
 
 ### Fixed

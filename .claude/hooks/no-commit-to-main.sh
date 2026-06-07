@@ -13,8 +13,11 @@ case "$input" in
   *"git push"*)
     case "$input" in
       *"refs/tags/"*|*"--tags"*)
+        # Match a branch ref in the push command specifically (e.g. "origin main",
+        # ":master", "push --all") rather than the bare word "main" anywhere in the
+        # JSON — the tool's `description` field can legitimately contain "main".
         case "$input" in
-          *main*|*master*) ;;   # branch ref also present — fall through to the guard
+          *"origin main"*|*"origin master"*|*"origin HEAD"*|*":main"*|*":master"*|*"push --all"*) ;; # branch ref also pushed — fall through to the guard
           *) exit 0 ;;          # pure tag push — allowed on any branch
         esac
         ;;
