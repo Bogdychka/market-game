@@ -5,7 +5,7 @@ using UnityEngine;
 namespace Market.Economy
 {
     /// <summary>
-    /// Инвентарь игрока. Хранит словарь ItemSO → количество. Эмитит OnChanged при любом изменении.
+    /// Player inventory. Stores a Dictionary of ItemSO → count. Fires OnChanged on every change.
     /// </summary>
     public class Inventory : MonoBehaviour
     {
@@ -15,7 +15,7 @@ namespace Market.Economy
 
         public IReadOnlyDictionary<ItemSO, int> Items => _items;
 
-        /// <summary>Добавляет N штук товара (по умолчанию 1).</summary>
+        /// <summary>Add N units of an item (default 1).</summary>
         public void Add(ItemSO item, int amount = 1)
         {
             if (item == null || amount <= 0) return;
@@ -25,7 +25,7 @@ namespace Market.Economy
             OnChanged?.Invoke();
         }
 
-        /// <summary>Пытается снять N штук. Возвращает false если не хватает.</summary>
+        /// <summary>Attempt to remove N units. Returns false if insufficient stock.</summary>
         public bool TryRemove(ItemSO item, int amount = 1)
         {
             if (item == null || amount <= 0) return false;
@@ -42,7 +42,7 @@ namespace Market.Economy
         public int  GetCount(ItemSO item) => item != null && _items.TryGetValue(item, out int n) ? n : 0;
         public bool Has(ItemSO item, int amount = 1) => GetCount(item) >= amount;
 
-        /// <summary>Очищает инвентарь полностью (только для SaveSystem).</summary>
+        /// <summary>Clear inventory completely (SaveSystem only).</summary>
         public void Clear()
         {
             _items.Clear();

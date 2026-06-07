@@ -3,8 +3,8 @@ using UnityEngine;
 namespace Market.Player
 {
     /// <summary>
-    /// Покачивание камеры при ходьбе. При спринте — амплитуда выше.
-    /// Когда игрок стоит — плавный возврат в исходную позицию.
+    /// Camera head-bob while walking. Sprint increases amplitude.
+    /// When the player is stationary the camera smoothly returns to rest position.
     /// </summary>
     public class HeadBob : MonoBehaviour
     {
@@ -20,9 +20,9 @@ namespace Market.Player
         [SerializeField] private float resetSpeed      = 6f;
 
         [Header("Tuning")]
-        [Tooltip("Скорость, при которой амплитуда максимальна (walkSpeed FirstPersonController).")]
+        [Tooltip("Speed at which amplitude is at maximum (matches walkSpeed of FirstPersonController).")]
         [SerializeField] private float baseSpeed = 4f;
-        [Tooltip("Скорость выше этого порога считается спринтом.")]
+        [Tooltip("Speed above this threshold is treated as sprinting.")]
         [SerializeField] private float sprintThreshold = 5f;
 
         private Vector3 _restPosition;

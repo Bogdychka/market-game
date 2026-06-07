@@ -5,8 +5,8 @@ using UnityEngine;
 namespace Market.Persistence
 {
     /// <summary>
-    /// Хранит сохранение в JSON в Application.persistentDataPath.
-    /// Регистрируется в ServiceLocator из GameBootstrap. Чистый C# класс — без MonoBehaviour.
+    /// Stores the save file as JSON under Application.persistentDataPath.
+    /// Registered in ServiceLocator from GameBootstrap. Plain C# class — no MonoBehaviour.
     /// </summary>
     public class SaveSystem
     {
@@ -14,8 +14,8 @@ namespace Market.Persistence
         private string SavePath => Path.Combine(Application.persistentDataPath, SaveFileName);
 
         /// <summary>
-        /// Флаг, выставляемый MainMenuController при «Продолжить».
-        /// GameSaver проверяет его в Start() и при необходимости загружает.
+        /// Flag set by MainMenuController when the player clicks Continue.
+        /// GameSaver checks it in Start() and loads if true.
         /// </summary>
         public bool ShouldLoadOnStart { get; set; }
 
@@ -27,12 +27,12 @@ namespace Market.Persistence
             {
                 string json = JsonUtility.ToJson(data, prettyPrint: true);
                 File.WriteAllText(SavePath, json);
-                Debug.Log($"[SaveSystem] Сохранено: {SavePath}");
+                Debug.Log($"[SaveSystem] Saved: {SavePath}");
                 return true;
             }
             catch (Exception e)
             {
-                Debug.LogError($"[SaveSystem] Ошибка сохранения: {e.Message}");
+                Debug.LogError($"[SaveSystem] Save error: {e.Message}");
                 return false;
             }
         }
@@ -41,7 +41,7 @@ namespace Market.Persistence
         {
             if (!HasSave())
             {
-                Debug.LogWarning("[SaveSystem] Файл сохранения не найден.");
+                Debug.LogWarning("[SaveSystem] Save file not found.");
                 return null;
             }
 
@@ -49,12 +49,12 @@ namespace Market.Persistence
             {
                 string json = File.ReadAllText(SavePath);
                 var data = JsonUtility.FromJson<SaveData>(json);
-                Debug.Log("[SaveSystem] Загружено.");
+                Debug.Log("[SaveSystem] Loaded.");
                 return data;
             }
             catch (Exception e)
             {
-                Debug.LogError($"[SaveSystem] Ошибка загрузки: {e.Message}");
+                Debug.LogError($"[SaveSystem] Load error: {e.Message}");
                 return null;
             }
         }
@@ -65,11 +65,11 @@ namespace Market.Persistence
             try
             {
                 File.Delete(SavePath);
-                Debug.Log("[SaveSystem] Сохранение удалено.");
+                Debug.Log("[SaveSystem] Save deleted.");
             }
             catch (Exception e)
             {
-                Debug.LogError($"[SaveSystem] Ошибка удаления: {e.Message}");
+                Debug.LogError($"[SaveSystem] Delete error: {e.Message}");
             }
         }
     }

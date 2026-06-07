@@ -7,8 +7,8 @@ using UnityEngine.AI;
 namespace Market.NPC
 {
     /// <summary>
-    /// NPC-посетитель рынка. Состояния: WalkToStall → Browsing → WalkToExit → Done.
-    /// Покупает первый товар по приемлемой цене, отдавая предпочтение PreferredCategories.
+    /// Market visitor NPC. States: WalkToStall → Browsing → WalkToExit → Done.
+    /// Buys the first item at an acceptable price, preferring PreferredCategories.
     /// </summary>
     [RequireComponent(typeof(NavMeshAgent))]
     public class NPCVisitor : MonoBehaviour
@@ -26,7 +26,7 @@ namespace Market.NPC
         [SerializeField] private float arrivalDistance    = 1.5f;
 
         [Header("Tuning")]
-        [Tooltip("Радиус поиска ближайшей точки NavMesh для целевых позиций (на случай если targetStall/exitPoint оказались чуть в стороне от запечённой сетки).")]
+        [Tooltip("NavMesh sample radius for snapping target positions (in case targetStall/exitPoint are slightly off the baked mesh).")]
         [SerializeField] private float navMeshSampleRadius = 5f;
 
         public event Action<NPCVisitor> OnDespawned;
@@ -48,7 +48,7 @@ namespace Market.NPC
         }
 
         /// <summary>
-        /// Конфигурация из NPCSpawner. Вызывать после Instantiate, до Start.
+        /// Configure from NPCSpawner. Call after Instantiate, before Start.
         /// </summary>
         public void Initialize(NPCTypeSO type, MarketStall stall, Transform exit, MoneySystem money)
         {
@@ -152,15 +152,15 @@ namespace Market.NPC
         {
             if (TryBuyPreferredItem(out string failureReason)) return;
 
-            Debug.Log($"[NPC] Не купил: {failureReason}, уходит");
+            Debug.Log($"[NPC] Did not buy: {failureReason}, leaving.");
         }
 
         /// <summary>
-        /// Перебирает слоты и покупает первый товар подходящей категории в бюджете.
+        /// Iterates slots and buys the first item of a preferred category within budget.
         /// </summary>
         private bool TryBuyPreferredItem(out string failureReason)
         {
-            failureReason = "нет товара";
+            failureReason = "no items";
             var slots = targetStall.Slots;
             bool hasStock = false;
             bool hasInterestingCategory = false;
@@ -201,15 +201,15 @@ namespace Market.NPC
         private void CompletePurchase(ItemSO item, float price)
         {
             playerMoney.Add(price);
-            Debug.Log($"[NPC] Купил {item.DisplayName} за {price}. Деньги игрока: {playerMoney.Amount}");
+            Debug.Log($"[NPC] Bought {item.DisplayName} for {price}. Player funds: {playerMoney.Amount}");
         }
 
         private string BuildFailureReason(bool hasStock, bool hasInterestingCategory, bool hasOverBudgetItem)
         {
-            if (!hasStock) return "нет товара";
-            if (!hasInterestingCategory) return "неинтересная категория";
-            if (hasOverBudgetItem) return $"дорого (бюджет {maxAcceptablePrice:0.##})";
-            return "нет доступной сделки";
+            if (!hasStock) return "no items";
+            if (!hasInterestingCategory) return "uninteresting category";
+            if (hasOverBudgetItem) return $"over budget (budget {maxAcceptablePrice:0.##})";
+            return "no deal available";
         }
 
         // ── State: WalkToExit ──────────────────────────────────────────
@@ -226,7 +226,7 @@ namespace Market.NPC
         // ── State: Done ────────────────────────────────────────────────
         private void EnterDone()
         {
-            Debug.Log("[NPC] Ушёл");
+            Debug.Log("[NPC] Left the market.");
             OnDespawned?.Invoke(this);
             Destroy(gameObject);
         }
@@ -240,22 +240,22 @@ namespace Market.NPC
         }
 
         /// <summary>
-        /// Если точка не лежит на NavMesh — снапим к ближайшей.
+        /// If the point is not on the NavMesh, snap to the nearest position.
         /// </summary>
         private Vector3 SnapToNavMesh(Vector3 worldPos)
         {
             if (NavMesh.SamplePosition(worldPos, out NavMeshHit hit, navMeshSampleRadius, NavMesh.AllAreas))
                 return hit.position;
 
-            Debug.LogWarning($"[NPCVisitor] Точка {worldPos} не на NavMesh — NPC может не добраться!");
+            Debug.LogWarning($"[NPCVisitor] Point {worldPos} is not on the NavMesh — NPC may not reach it!");
             return worldPos;
         }
 
         private void ValidateReferences()
         {
-            if (targetStall == null) Debug.LogError("[NPCVisitor] targetStall не назначен", this);
-            if (exitPoint   == null) Debug.LogError("[NPCVisitor] exitPoint не назначен",   this);
-            if (playerMoney == null) Debug.LogError("[NPCVisitor] playerMoney не назначен", this);
+            if (targetStall == null) Debug.LogError("[NPCVisitor] targetStall not assigned", this);
+            if (exitPoint   == null) Debug.LogError("[NPCVisitor] exitPoint not assigned",   this);
+            if (playerMoney == null) Debug.LogError("[NPCVisitor] playerMoney not assigned", this);
         }
 
         private void OnDrawGizmosSelected()

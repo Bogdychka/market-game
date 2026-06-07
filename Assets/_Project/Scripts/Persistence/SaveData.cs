@@ -14,7 +14,7 @@ namespace Market.Persistence
         public float playerX, playerY, playerZ;
         public float playerRotationY;
 
-        // Время (введено в version 2)
+        // Time fields (introduced in version 2)
         public int day    = 1;
         public int hour   = 8;
         public int minute = 0;
@@ -23,8 +23,8 @@ namespace Market.Persistence
     [Serializable]
     public class InventoryItemData
     {
-        public string itemId;   // основной ключ (version 2+)
-        public string itemName; // фолбэк для старых сейвов
+        public string itemId;   // primary key (version 2+)
+        public string itemName; // fallback for old saves
         public int    count;
     }
 

@@ -4,8 +4,8 @@ using UnityEngine;
 namespace Market.Core
 {
     /// <summary>
-    /// Игровые часы. Регистрируется в ServiceLocator, тикается из GameBootstrap.Update().
-    /// 1 реальная секунда = minutesPerRealSecond игровых минут (по умолчанию 2 = ~12 мин/день).
+    /// Game clock. Registered in ServiceLocator, ticked from GameBootstrap.Update().
+    /// 1 real second = minutesPerRealSecond game minutes (default 2 ≈ 12 min/day).
     /// </summary>
     public class TimeSystem
     {
@@ -46,7 +46,7 @@ namespace Market.Core
         public void Resume() => _paused = false;
         public bool IsPaused => _paused;
 
-        /// <summary>Сброс к начальному состоянию (вызывается при "Новая игра").</summary>
+        /// <summary>Reset to initial state (called on New Game).</summary>
         public void Reset()
         {
             Hour = 8;
@@ -57,8 +57,8 @@ namespace Market.Core
         }
 
         /// <summary>
-        /// Устанавливает время напрямую (используется при загрузке сейва).
-        /// Эмитит OnDayChanged и OnHourChanged, чтобы зависимые системы (сезон, освещение) синхронизировались.
+        /// Set time directly (used when loading a save).
+        /// Fires OnDayChanged and OnHourChanged so dependent systems (season, lighting) re-sync.
         /// </summary>
         public void SetTime(int day, int hour, int minute)
         {
@@ -70,7 +70,7 @@ namespace Market.Core
             OnHourChanged?.Invoke(Hour);
         }
 
-        /// <summary>Мгновенно перемотать на N игровых часов (для дебага).</summary>
+        /// <summary>Instantly skip N game hours (debug use).</summary>
         public void SkipHours(int hours)
         {
             for (int i = 0; i < hours; i++)
@@ -86,7 +86,7 @@ namespace Market.Core
             {
                 Day++;
                 OnDayChanged?.Invoke(Day);
-                Debug.Log($"[TimeSystem] Новый день: {Day}");
+                Debug.Log($"[TimeSystem] New day: {Day}");
             }
             OnHourChanged?.Invoke(Hour);
         }

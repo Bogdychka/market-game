@@ -6,8 +6,8 @@ using UnityEngine;
 namespace Market.UI
 {
     /// <summary>
-    /// Подсказка взаимодействия. Подписывается на InteractionSystem.CurrentChanged
-    /// и показывает/скрывает текст вида "[E] действие".
+    /// Interaction prompt HUD. Subscribes to InteractionSystem.CurrentChanged
+    /// and shows/hides text of the form "[E] action".
     /// </summary>
     [RequireComponent(typeof(CanvasGroup))]
     public class InteractionPromptUI : MonoBehaviour
@@ -27,8 +27,8 @@ namespace Market.UI
             _group = GetComponent<CanvasGroup>();
             SetVisible(false);
 
-            if (source == null) Debug.LogError("[InteractionPromptUI] source не назначен", this);
-            if (label  == null) Debug.LogError("[InteractionPromptUI] label не назначен",  this);
+            if (source == null) Debug.LogError("[InteractionPromptUI] source not assigned", this);
+            if (label  == null) Debug.LogError("[InteractionPromptUI] label not assigned",  this);
         }
 
         private void OnEnable()
@@ -57,7 +57,7 @@ namespace Market.UI
         private void SetVisible(bool visible)
         {
             _group.alpha = visible ? 1f : 0f;
-            // Подсказка — чисто визуальная, рейкасты не блокирует никогда
+            // Prompt is purely visual — never blocks raycasts
             _group.blocksRaycasts = false;
             _group.interactable   = false;
         }

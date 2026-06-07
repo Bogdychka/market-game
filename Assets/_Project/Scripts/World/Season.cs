@@ -1,8 +1,8 @@
 namespace Market.World
 {
     /// <summary>
-    /// Время года. Порядок отвечает смене сезонов: Весна → Лето → Осень → Зима.
-    /// Используется SeasonManager, ItemSO (AvailableInSeasons), SupplierShop.
+    /// Season enum. Order matches the seasonal cycle: Spring → Summer → Autumn → Winter.
+    /// Used by SeasonManager, ItemSO (AvailableInSeasons), and SupplierShop.
     /// </summary>
     public enum Season
     {

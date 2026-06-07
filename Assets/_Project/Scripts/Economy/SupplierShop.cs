@@ -6,8 +6,8 @@ using UnityEngine;
 namespace Market.Economy
 {
     /// <summary>
-    /// Магазин-поставщик. Цена покупки берётся из прозрачной точки цен.
-    /// Ассортимент фильтруется по текущему сезону (SeasonManager).
+    /// Supplier shop. Buy prices come from the transparent price point.
+    /// Assortment is filtered by the current season (SeasonManager).
     /// </summary>
     public class SupplierShop : MonoBehaviour, IInteractable
     {
@@ -33,25 +33,25 @@ namespace Market.Economy
         // ── Lifecycle ──────────────────────────────────────────────────
         private void Awake()
         {
-            if (moneySystem == null) Debug.LogError("[SupplierShop] moneySystem не назначен", this);
-            if (inventory   == null) Debug.LogError("[SupplierShop] inventory не назначен",   this);
+            if (moneySystem == null) Debug.LogError("[SupplierShop] moneySystem not assigned", this);
+            if (inventory   == null) Debug.LogError("[SupplierShop] inventory not assigned",   this);
         }
 
         private void Start()
         {
-            // Сервисы регистрируются в своих Awake — берём в Start, чтобы успели
+            // Services register in their own Awake — resolve here in Start to be safe
             ServiceLocator.TryGet<SeasonManager>(out _seasonManager);
             ServiceLocator.TryGet<PriceCalculator>(out _priceCalculator);
         }
 
-        /// <summary>Товар из ассортимента по индексу (null если индекс невалиден).</summary>
+        /// <summary>Stock item by index (null if index is invalid).</summary>
         public ItemSO GetStockItem(int index)
         {
             if (stock == null || index < 0 || index >= stock.Length) return null;
             return stock[index];
         }
 
-        /// <summary>Цена покупки товара (фолбэк на BaseBuyPrice).</summary>
+        /// <summary>Purchase price for an item (falls back to BaseBuyPrice).</summary>
         public float GetBuyPrice(ItemSO item)
         {
             if (item == null) return 0f;
@@ -60,7 +60,7 @@ namespace Market.Economy
                 : item.BaseBuyPrice;
         }
 
-        /// <summary>Возвращает true если товар сейчас доступен у поставщика.</summary>
+        /// <summary>Returns true if the item is currently available from this supplier.</summary>
         public bool IsAvailable(ItemSO item)
         {
             return IsInSeason(item);
@@ -80,13 +80,13 @@ namespace Market.Economy
         // ── Public API ─────────────────────────────────────────────────
 
         /// <summary>
-        /// Покупка по индексу в массиве stock. Возвращает false если товар вне сезона или денег не хватает.
+        /// Buy by stock array index. Returns false if the item is out of season or funds are insufficient.
         /// </summary>
         public bool Buy(int index)
         {
             if (moneySystem == null || inventory == null)
             {
-                Debug.LogError("[SupplierShop] moneySystem/inventory не назначены — покупка невозможна.", this);
+                Debug.LogError("[SupplierShop] moneySystem/inventory not assigned — purchase impossible.", this);
                 return false;
             }
             if (!IsValidIndex(index)) return false;
@@ -95,8 +95,8 @@ namespace Market.Economy
 
             if (!IsInSeason(item))
             {
-                Debug.Log($"[SupplierShop] {item.DisplayName} недоступен: " +
-                          $"не сезон ({CurrentSeasonName()})");
+                Debug.Log($"[SupplierShop] {item.DisplayName} unavailable: " +
+                          $"out of season ({CurrentSeasonName()})");
                 return false;
             }
 
@@ -104,14 +104,14 @@ namespace Market.Economy
 
             if (!moneySystem.TrySpend(price))
             {
-                Debug.Log($"[SupplierShop] Не хватает денег: нужно {price:0.##}, " +
-                          $"есть {moneySystem.Amount}");
+                Debug.Log($"[SupplierShop] Insufficient funds: need {price:0.##}, " +
+                          $"have {moneySystem.Amount}");
                 return false;
             }
 
             inventory.Add(item);
-            Debug.Log($"[SupplierShop] Куплено: {item.DisplayName} за {price:0.##}. " +
-                      $"Деньги: {moneySystem.Amount}. В инвентаре: {inventory.GetCount(item)}");
+            Debug.Log($"[SupplierShop] Bought: {item.DisplayName} for {price:0.##}. " +
+                      $"Funds: {moneySystem.Amount}. In inventory: {inventory.GetCount(item)}");
             return true;
         }
 
@@ -120,7 +120,7 @@ namespace Market.Economy
         {
             if (stock == null || index < 0 || index >= stock.Length || stock[index] == null)
             {
-                Debug.LogWarning($"[SupplierShop] Неверный индекс товара: {index}");
+                Debug.LogWarning($"[SupplierShop] Invalid item index: {index}");
                 return false;
             }
             return true;
@@ -128,7 +128,7 @@ namespace Market.Economy
 
         private bool IsInSeason(ItemSO item)
         {
-            if (_seasonManager == null) return true; // нет SeasonManager — всё доступно
+            if (_seasonManager == null) return true; // no SeasonManager — all available
             return item.IsAvailableIn(_seasonManager.CurrentSeason);
         }
 
@@ -139,22 +139,22 @@ namespace Market.Economy
         {
             if (stock == null || stock.Length == 0)
             {
-                Debug.Log("=== Поставщик пуст (stock не назначен) ===");
+                Debug.Log("=== Supplier is empty (stock not assigned) ===");
                 return;
             }
 
             string season = CurrentSeasonName();
-            Debug.Log($"=== Поставщик ({season}) ===");
+            Debug.Log($"=== Supplier ({season}) ===");
 
             for (int i = 0; i < stock.Length; i++)
             {
                 if (stock[i] == null) continue;
 
-                string available = IsInSeason(stock[i]) ? "" : " [не сезон]";
-                Debug.Log($"[{i}] {stock[i].DisplayName} — {GetBuyPrice(stock[i]):0.##} монет{available}");
+                string available = IsInSeason(stock[i]) ? "" : " [out of season]";
+                Debug.Log($"[{i}] {stock[i].DisplayName} — {GetBuyPrice(stock[i]):0.##} coins{available}");
             }
 
-            Debug.Log("Купить: DebugSupplierBuy → клавиши 1–5");
+            Debug.Log("Buy: DebugSupplierBuy -> keys 1-5");
         }
     }
 }

@@ -5,8 +5,8 @@ using UnityEngine.InputSystem;
 namespace Market.DebugTools
 {
     /// <summary>
-    /// Debug-управление деньгами.
-    /// По умолчанию: F1 — добавить, F2 — потратить.
+    /// Debug money control.
+    /// Default: F1 — add money, F2 — spend money.
     /// </summary>
     public class DebugMoneyInput : MonoBehaviour
     {

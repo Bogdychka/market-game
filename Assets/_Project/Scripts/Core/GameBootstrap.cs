@@ -10,9 +10,9 @@ using UnityEngine.SceneManagement;
 namespace Market.Core
 {
     /// <summary>
-    /// Точка входа игры. Висит в сцене Bootstrap.
-    /// Поднимает базовые сервисы (EventBus, SceneLoader, SaveSystem, TimeSystem) и грузит первую сцену.
-    /// Помечен DontDestroyOnLoad — живёт всю сессию.
+    /// Game entry point. Lives in the Bootstrap scene.
+    /// Brings up core services (EventBus, SceneLoader, SaveSystem, TimeSystem) and loads the first scene.
+    /// Marked DontDestroyOnLoad — persists for the entire session.
     /// </summary>
     [DefaultExecutionOrder(-1000)]
     public class GameBootstrap : MonoBehaviour
@@ -22,17 +22,17 @@ namespace Market.Core
         [SerializeField] private bool   skipMenuInEditor = false;
 
         [Header("Time")]
-        [Tooltip("Сколько игровых минут проходит за одну реальную секунду (2 = 12 минут реал = 1 игровой день).")]
+        [Tooltip("How many game minutes pass per real second (2 = 12 real minutes per game day).")]
         [SerializeField] private float minutesPerRealSecond = 2f;
 
         [Header("Controls")]
-        [Tooltip("Сколько секунд после загрузки сцены игнорировать Escape, чтобы старый ввод не выбрасывал игрока обратно в меню.")]
+        [Tooltip("How many seconds after a scene load to ignore Escape, so stale input doesn't immediately exit back to the menu.")]
         [SerializeField] private float escapeSceneLoadCooldown = 1.5f;
 
         private static bool _initialized;
         private bool _isPrimaryInstance;
         private SceneLoader _sceneLoader;
-        private TimeSystem _timeSystem;  // кешируем чтобы не делать ServiceLocator.TryGet каждый кадр
+        private TimeSystem _timeSystem;  // cached to avoid ServiceLocator.TryGet every frame
         private float _ignoreEscapeUntil;
 
         // ── Lifecycle ──────────────────────────────────────────────────
@@ -89,7 +89,7 @@ namespace Market.Core
             _timeSystem = new TimeSystem(minutesPerRealSecond);
             ServiceLocator.Register(_timeSystem);
 
-            Debug.Log("[GameBootstrap] Сервисы подняты");
+            Debug.Log("[GameBootstrap] Services initialized.");
         }
 
         private void LoadFirstScene()
@@ -114,7 +114,7 @@ namespace Market.Core
 
             if (Time.unscaledTime < _ignoreEscapeUntil)
             {
-                Debug.Log("[GameBootstrap] Escape проигнорирован сразу после загрузки сцены.");
+                Debug.Log("[GameBootstrap] Escape ignored immediately after scene load.");
                 return;
             }
 
@@ -144,7 +144,7 @@ namespace Market.Core
 
         private void ReturnToMainMenu()
         {
-            Debug.Log("[GameBootstrap] Escape: возврат в MainMenu");
+            Debug.Log("[GameBootstrap] Escape: returning to MainMenu.");
             ServiceLocator.Get<SceneLoader>().Load(SceneNames.MainMenu);
         }
 

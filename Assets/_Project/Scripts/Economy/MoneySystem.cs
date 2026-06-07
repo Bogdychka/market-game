@@ -4,7 +4,7 @@ using UnityEngine;
 namespace Market.Economy
 {
     /// <summary>
-    /// Деньги игрока. Эмитит OnChanged(newAmount) при любом изменении.
+    /// Player money. Fires OnChanged(newAmount) on every change.
     /// </summary>
     public class MoneySystem : MonoBehaviour
     {
@@ -17,7 +17,7 @@ namespace Market.Economy
 
         private void Awake() => _amount = startAmount;
 
-        /// <summary>Добавить деньги. Игнорирует отрицательные значения.</summary>
+        /// <summary>Add money. Ignores non-positive values.</summary>
         public void Add(float value)
         {
             if (value <= 0f) return;
@@ -25,7 +25,7 @@ namespace Market.Economy
             OnChanged?.Invoke(_amount);
         }
 
-        /// <summary>Пытается снять деньги. Возвращает false если не хватает.</summary>
+        /// <summary>Attempt to spend money. Returns false if insufficient funds.</summary>
         public bool TrySpend(float value)
         {
             if (value <= 0f || _amount < value) return false;
@@ -36,7 +36,7 @@ namespace Market.Economy
 
         public bool CanAfford(float value) => _amount >= value;
 
-        /// <summary>Напрямую устанавливает сумму (только для SaveSystem). Кламп >= 0.</summary>
+        /// <summary>Set amount directly (SaveSystem only). Clamped to >= 0.</summary>
         public void SetAmount(float value)
         {
             _amount = Mathf.Max(0f, value);

@@ -5,17 +5,17 @@ using UnityEngine.Rendering;
 namespace Market.World
 {
     /// <summary>
-    /// Реалистичное движение солнца и луны по игровому времени.
+    /// Realistic sun and moon movement based on game time.
     ///
-    /// Использует астрономическую формулу высоты светила:
+    /// Uses the astronomical altitude formula:
     ///   sin(alt) = sin(lat)·sin(decl) + cos(lat)·cos(decl)·cos(HA)
-    /// где HA = часовой угол от солнечного полудня.
+    /// where HA = hour angle from solar noon.
     ///
-    /// — <see cref="solarDeclination"/> задаёт сезон: +23.45° = лето, -23.45° = зима.
-    ///   SeasonManager вызывает <see cref="SetSolarDeclination"/> при смене сезона.
-    /// — Широта 55° (умеренный север): летний закат ~20:30, зимний ~16:00.
-    /// — Луна — только directional light, без визуальной сферы.
-    /// — Skybox exposure и ambient меняются по высоте солнца.
+    /// — <see cref="solarDeclination"/> sets the season: +23.45° = summer, -23.45° = winter.
+    ///   SeasonManager calls <see cref="SetSolarDeclination"/> on season change.
+    /// — Latitude 55° (temperate north): summer sunset ~20:30, winter sunset ~16:00.
+    /// — Moon is a directional light only, no visual sphere.
+    /// — Skybox exposure and ambient change with sun altitude.
     /// </summary>
     public class DaylightSystem : MonoBehaviour
     {
@@ -25,13 +25,13 @@ namespace Market.World
 
         [Header("Geography")]
         [Range(0f, 89f)]
-        [Tooltip("Широта. 55 = Россия/Сев. Европа. Влияет на угол дуги и длину дня.")]
+        [Tooltip("Latitude. 55 = Russia / Northern Europe. Affects arc angle and day length.")]
         [SerializeField] private float latitude = 55f;
 
         [Header("Season")]
         [Range(-23.45f, 23.45f)]
-        [Tooltip("Солнечное склонение (°). +23.45 = лето, 0 = равноденствие, -23.45 = зима.\n" +
-                 "SeasonManager задаёт это значение через SetSolarDeclination().")]
+        [Tooltip("Solar declination (°). +23.45 = summer, 0 = equinox, -23.45 = winter.\n" +
+                 "SeasonManager sets this via SetSolarDeclination().")]
         [SerializeField] private float solarDeclination = 20f;
 
         [Header("Sun")]
@@ -42,13 +42,13 @@ namespace Market.World
         [Header("Moon")]
         [SerializeField] private float maxMoonIntensity = 0.85f;
         [SerializeField] private Color moonColor        = new Color(0.75f, 0.85f, 1f);
-        [Tooltip("Длительность лунного цикла в игровых днях. 28 = реалистично.")]
+        [Tooltip("Lunar cycle duration in game days. 28 = realistic.")]
         [SerializeField] private float lunarCycleDays   = 28f;
         [Range(0f, 1f)]
-        [Tooltip("Минимальная яркость луны в новолуние.")]
+        [Tooltip("Minimum moon brightness at new moon.")]
         [SerializeField] private float minIllumination  = 0.18f;
         [Range(0f, 1f)]
-        [Tooltip("Стартовая фаза луны. 0.5 = день 1 будет полнолунием.")]
+        [Tooltip("Starting lunar phase. 0.5 = day 1 will be a full moon.")]
         [SerializeField] private float lunarPhaseOffset = 0.5f;
 
         [Header("Ambient")]
@@ -59,10 +59,10 @@ namespace Market.World
 
         [Header("Night Visibility")]
         [Range(0f, 1f)]
-        [Tooltip("Насколько сильно луна поднимает ночной ambient.")]
+        [Tooltip("How strongly the moon lifts the night ambient.")]
         [SerializeField] private float moonAmbientInfluence = 0.75f;
         [Range(0f, 1f)]
-        [Tooltip("Минимальная reflection intensity ночью, чтобы сцена не проваливалась в чёрный.")]
+        [Tooltip("Minimum reflection intensity at night so the scene doesn't go pitch-black.")]
         [SerializeField] private float nightReflectionIntensity = 0.18f;
 
         [Header("Skybox")]
@@ -75,9 +75,9 @@ namespace Market.World
         private bool       _skyboxHasExposure;
         private static readonly int ExposureID = Shader.PropertyToID("_Exposure");
 
-        // ── Public API для SeasonManager ──────────────────────────────
+        // ── Public API for SeasonManager ──────────────────────────────
         /// <summary>
-        /// Устанавливает солнечное склонение. Вызывается SeasonManager при смене сезона.
+        /// Sets solar declination. Called by SeasonManager on season change.
         /// </summary>
         public void SetSolarDeclination(float degrees)
         {
@@ -90,7 +90,7 @@ namespace Market.World
             ResolveTimeSystem();
 
             if (sunLight == null)
-                Debug.LogError("[DaylightSystem] sunLight не назначен", this);
+                Debug.LogError("[DaylightSystem] sunLight not assigned", this);
 
             RenderSettings.ambientMode = AmbientMode.Flat;
             if (sunLight != null) RenderSettings.sun = sunLight;
@@ -111,7 +111,7 @@ namespace Market.World
             float latRad  = latitude         * Mathf.Deg2Rad;
             float declRad = solarDeclination * Mathf.Deg2Rad;
 
-            // Часовой угол: 0 = солнечный полдень, ±π = полночь
+            // Hour angle: 0 = solar noon, ±π = midnight
             float ha = (t - 0.5f) * Mathf.PI * 2f;
 
             Vector3 sunPos    = SkyPosition(ha, latRad, declRad);
@@ -126,7 +126,7 @@ namespace Market.World
         {
             if (ServiceLocator.TryGet<TimeSystem>(out _timeSystem)) return;
 
-            Debug.LogWarning("[DaylightSystem] TimeSystem не найден — освещение будет ждать сервис.", this);
+            Debug.LogWarning("[DaylightSystem] TimeSystem not found — lighting will wait for the service.", this);
         }
 
         // ── Setup ──────────────────────────────────────────────────────
@@ -174,7 +174,7 @@ namespace Market.World
             return visibility;
         }
 
-        // ── Environment ─────────────────────────────────────────────────
+        // ── Environment ────────────────────────────────────────────────
         private void UpdateEnvironment(float sunHeight, float moonVisibility)
         {
             RenderSettings.ambientLight        = CalculateAmbient(sunHeight, moonVisibility);
@@ -216,11 +216,11 @@ namespace Market.World
             return Mathf.Clamp01(Mathf.Max(daylightReflection, nightReflection));
         }
 
-        // ── Астрономическая математика ─────────────────────────────────
+        // ── Astronomical math ──────────────────────────────────────────
 
         /// <summary>
-        /// Возвращает направление на светило в мировом пространстве (x=восток, y=вверх, z=север).
-        /// Использует формулу высоты: sin(alt) = sin(φ)·sin(δ) + cos(φ)·cos(δ)·cos(HA).
+        /// Returns the celestial body direction in world space (x=east, y=up, z=north).
+        /// Uses the altitude formula: sin(alt) = sin(φ)·sin(δ) + cos(φ)·cos(δ)·cos(HA).
         /// </summary>
         private static Vector3 SkyPosition(float hourAngle, float latRad, float declRad)
         {

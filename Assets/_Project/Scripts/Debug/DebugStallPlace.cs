@@ -6,8 +6,8 @@ using UnityEngine.InputSystem;
 namespace Market.DebugTools
 {
     /// <summary>
-    /// Debug: F3 кладёт первый товар из инвентаря в первый свободный слот прилавка
-    /// по дефолтной цене (быстрая проверка прилавка без UI).
+    /// Debug: F3 places the first inventory item into the first free stall slot
+    /// at the default debug price (quick stall test without opening the UI).
     /// </summary>
     public class DebugStallPlace : MonoBehaviour
     {
@@ -27,12 +27,12 @@ namespace Market.DebugTools
             var item = FindFirstItemInInventory();
             if (item == null)
             {
-                Debug.Log("[DebugStallPlace] Инвентарь пуст");
+                Debug.Log("[DebugStallPlace] Inventory is empty.");
                 return;
             }
 
             if (!TryPlaceInFirstFreeSlot(item))
-                Debug.Log("[DebugStallPlace] Нет свободных слотов на прилавке");
+                Debug.Log("[DebugStallPlace] No free stall slots.");
         }
 
         private ItemSO FindFirstItemInInventory()

@@ -4,8 +4,8 @@ using UnityEngine;
 namespace Market.Market
 {
     /// <summary>
-    /// Один слот на прилавке. Хранит ItemSO + цену + спавнит 3D-модель товара
-    /// (из ItemSO.WorldPrefab) как child этого объекта.
+    /// One slot on the market stall. Stores an ItemSO + price and spawns the item's 3D model
+    /// (from ItemSO.WorldPrefab) as a child of this object.
     /// </summary>
     public class StallSlot : MonoBehaviour
     {
@@ -15,7 +15,7 @@ namespace Market.Market
 
         private GameObject _visual;
 
-        /// <summary>Кладёт товар в слот и спавнит его 3D-модель.</summary>
+        /// <summary>Place an item in the slot and spawn its 3D model.</summary>
         public void Place(ItemSO item, float price)
         {
             Item      = item;
@@ -23,7 +23,7 @@ namespace Market.Market
             RefreshVisual();
         }
 
-        /// <summary>Очищает слот и удаляет 3D-модель.</summary>
+        /// <summary>Clear the slot and destroy the 3D model.</summary>
         public void Clear()
         {
             Item      = null;

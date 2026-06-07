@@ -5,8 +5,8 @@ using UnityEngine;
 namespace Market.DebugTools
 {
     /// <summary>
-    /// Пишет все Debug-логи в файл в корне проекта (game.log).
-    /// Инициализируется один раз из GameBootstrap.
+    /// Writes all Debug logs to a file at the project root (game.log).
+    /// Initialized once from GameBootstrap.
     /// </summary>
     public static class FileLogger
     {
@@ -22,7 +22,7 @@ namespace Market.DebugTools
 
             try
             {
-                // Корень проекта (где лежит папка Assets)
+                // Project root (directory that contains the Assets folder)
                 _logPath = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "game.log"));
 
                 _writer = new StreamWriter(_logPath, append: false);
@@ -34,11 +34,11 @@ namespace Market.DebugTools
                 _initialized = true;
 
                 _writer.WriteLine($"=== FileLogger started at {DateTime.Now:yyyy-MM-dd HH:mm:ss} ===");
-                Debug.Log($"[FileLogger] Пишу логи в: {_logPath}");
+                Debug.Log($"[FileLogger] Writing logs to: {_logPath}");
             }
             catch (Exception e)
             {
-                Debug.LogError($"[FileLogger] Не удалось открыть файл: {e.Message}");
+                Debug.LogError($"[FileLogger] Failed to open log file: {e.Message}");
             }
         }
 

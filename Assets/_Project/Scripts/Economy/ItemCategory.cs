@@ -1,9 +1,9 @@
 namespace Market.Economy
 {
     /// <summary>
-    /// Категория товара. Используется для:
-    /// — фильтрации в инвентаре/прилавке
-    /// — предпочтений NPC (NPCTypeSO.PreferredCategories)
+    /// Item category. Used for:
+    /// — inventory/stall filtering
+    /// — NPC preferences (NPCTypeSO.PreferredCategories)
     /// </summary>
     public enum ItemCategory
     {

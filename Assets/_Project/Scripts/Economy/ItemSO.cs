@@ -4,14 +4,14 @@ using UnityEngine;
 namespace Market.Economy
 {
     /// <summary>
-    /// Описание товара. Данные отделены от логики — только ScriptableObject.
+    /// Item descriptor. Data separated from logic — ScriptableObject only.
     /// </summary>
     [CreateAssetMenu(menuName = "Market/Item", fileName = "Item_New")]
     public class ItemSO : ScriptableObject
     {
         [Header("Identity")]
-        [Tooltip("Стабильный ID для сейвов. Не переименовывать после релиза! " +
-                 "Заполняется автоматически из имени ассета, если пуст.")]
+        [Tooltip("Stable save ID. Do NOT rename after release! " +
+                 "Auto-filled from asset name if empty.")]
         [SerializeField] private string id;
 
         [Header("Info")]
@@ -27,11 +27,11 @@ namespace Market.Economy
         [SerializeField] private float baseSellPrice = 15f;
 
         [Header("Season Availability")]
-        [Tooltip("Доступен у поставщика в эти сезоны. Пустой список = круглый год.")]
+        [Tooltip("Available from the supplier in these seasons. Empty list = year-round.")]
         [SerializeField] private Season[] availableInSeasons = new Season[0];
 
         // ── Properties ─────────────────────────────────────────────────
-        /// <summary>Стабильный ID для сейвов. Фолбэк на имя ассета, если поле пусто.</summary>
+        /// <summary>Stable save ID. Falls back to asset name if the field is empty.</summary>
         public string      Id           => string.IsNullOrEmpty(id) ? name : id;
         public string      DisplayName  => displayName;
         public string      Description  => description;
@@ -43,8 +43,8 @@ namespace Market.Economy
         public Season[]    AvailableInSeasons => availableInSeasons;
 
         /// <summary>
-        /// Возвращает true если товар доступен в данный сезон.
-        /// Пустой список <see cref="availableInSeasons"/> означает «круглый год».
+        /// Returns true if the item is available in the given season.
+        /// An empty <see cref="availableInSeasons"/> list means year-round availability.
         /// </summary>
         public bool IsAvailableIn(Season season)
         {
@@ -55,7 +55,7 @@ namespace Market.Economy
         }
 
 #if UNITY_EDITOR
-        // Авто-заполнение Id именем ассета при создании/изменении в редакторе
+        // Auto-fill Id from asset name on create/change in the Editor
         private void OnValidate()
         {
             if (string.IsNullOrEmpty(id) && !string.IsNullOrEmpty(name))

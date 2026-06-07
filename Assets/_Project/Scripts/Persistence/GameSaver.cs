@@ -11,9 +11,9 @@ using UnityEngine.SceneManagement;
 namespace Market.Persistence
 {
     /// <summary>
-    /// Координатор сохранения/загрузки в сцене Market.
-    /// — F5 сохраняет вручную
-    /// — Загрузка автоматическая, если флаг SaveSystem.ShouldLoadOnStart выставлен главным меню
+    /// Save/load coordinator in the Market scene.
+    /// — F5 saves manually.
+    /// — Load is automatic if SaveSystem.ShouldLoadOnStart was set by the main menu.
     /// </summary>
     [DefaultExecutionOrder(-900)]
     public class GameSaver : MonoBehaviour
@@ -35,7 +35,7 @@ namespace Market.Persistence
         [SerializeField] private Key saveKey = Key.F5;
 
         [Header("Autosave")]
-        [Tooltip("Автоматически сохранять игру при выгрузке сцены Market, например при возврате в меню.")]
+        [Tooltip("Automatically save when the Market scene is unloaded, e.g. on return to menu.")]
         [SerializeField] private bool autoSaveOnSceneExit = true;
 
         private SaveSystem    _saveSystem;
@@ -67,7 +67,7 @@ namespace Market.Persistence
 
         private void Start()
         {
-            // SeasonManager регистрируется в своём Awake
+            // SeasonManager registers in its own Awake
             ServiceLocator.TryGet<SeasonManager>(out _seasonManager);
 
             if (!_saveSystem.ShouldLoadOnStart) return;
@@ -132,7 +132,7 @@ namespace Market.Persistence
             if (data == null) return;
 
             if (data.version < 2)
-                Debug.LogWarning("[GameSaver] Сейв старого формата: время будет взято из дефолтов SaveData.");
+                Debug.LogWarning("[GameSaver] Old save format: time will use SaveData defaults.");
 
             ApplySaveData(data);
             Debug.Log(LoadSummary(data));
@@ -230,7 +230,7 @@ namespace Market.Persistence
 
         private void ApplyStallSlots(SaveData data)
         {
-            // Очищаем текущее состояние прилавка
+            // Clear current stall state
             foreach (var slot in marketStall.Slots)
                 if (slot.IsOccupied) slot.Clear();
 
@@ -250,13 +250,13 @@ namespace Market.Persistence
             if (_timeSystem == null) return;
             _timeSystem.SetTime(data.day, data.hour, data.minute);
 
-            // Сезон выводится из дня — пересчитываем после установки времени
+            // Season is derived from day — refresh after setting time
             _seasonManager?.RefreshSeason();
         }
 
         private void ApplyPlayerTransform(SaveData data)
         {
-            // CharacterController нужно отключить чтобы перенести позицию
+            // CharacterController must be disabled to teleport the position
             var cc = playerTransform.GetComponent<CharacterController>();
             if (cc != null) cc.enabled = false;
 
@@ -296,7 +296,7 @@ namespace Market.Persistence
                 && npcSpawner != null;
 
             if (!canSave)
-                Debug.LogWarning($"[GameSaver] Автосохранение пропущено ({reason}): не все ссылки сцены доступны.");
+                Debug.LogWarning($"[GameSaver] Autosave skipped ({reason}): not all scene references are available.");
 
             return canSave;
         }
@@ -306,11 +306,11 @@ namespace Market.Persistence
         {
             if (ServiceLocator.TryGet<SaveSystem>(out _saveSystem)) return;
 
-            // Запуск напрямую из Market сцены — создаём локальный экземпляр
+            // Direct Market scene startup — create a local instance
             _saveSystem = new SaveSystem();
             ServiceLocator.Register(_saveSystem);
-            Debug.LogWarning("[GameSaver] SaveSystem не найден в ServiceLocator. " +
-                             "Запускай сцену через Bootstrap, а не напрямую.");
+            Debug.LogWarning("[GameSaver] SaveSystem not found in ServiceLocator. " +
+                             "Start via Bootstrap, not directly from Market scene.");
         }
 
         private void ResolveTimeSystem()
@@ -320,34 +320,34 @@ namespace Market.Persistence
             _timeSystem = new TimeSystem(LocalMinutesPerRealSecond);
             _ownsLocalTimeSystem = true;
             ServiceLocator.Register(_timeSystem);
-            Debug.LogWarning("[GameSaver] TimeSystem не найден в ServiceLocator. " +
-                             "Создан локальный TimeSystem для прямого запуска Market.");
+            Debug.LogWarning("[GameSaver] TimeSystem not found in ServiceLocator. " +
+                             "Created a local TimeSystem for direct Market scene startup.");
         }
 
         private void ValidateReferences()
         {
-            if (moneySystem     == null) Debug.LogError("[GameSaver] moneySystem не назначен",     this);
-            if (inventory       == null) Debug.LogError("[GameSaver] inventory не назначен",       this);
-            if (marketStall     == null) Debug.LogError("[GameSaver] marketStall не назначен",     this);
-            if (playerTransform == null) Debug.LogError("[GameSaver] playerTransform не назначен", this);
-            if (itemDatabase    == null) Debug.LogError("[GameSaver] itemDatabase не назначен",    this);
-            if (npcSpawner      == null) Debug.LogError("[GameSaver] npcSpawner не назначен",      this);
+            if (moneySystem     == null) Debug.LogError("[GameSaver] moneySystem not assigned",     this);
+            if (inventory       == null) Debug.LogError("[GameSaver] inventory not assigned",       this);
+            if (marketStall     == null) Debug.LogError("[GameSaver] marketStall not assigned",     this);
+            if (playerTransform == null) Debug.LogError("[GameSaver] playerTransform not assigned", this);
+            if (itemDatabase    == null) Debug.LogError("[GameSaver] itemDatabase not assigned",    this);
+            if (npcSpawner      == null) Debug.LogError("[GameSaver] npcSpawner not assigned",      this);
         }
 
         private static string LoadSummary(SaveData data)
         {
             int inventoryCount = data.inventory?.Count ?? 0;
             int stallCount = data.stallSlots?.Count ?? 0;
-            return $"[GameSaver] Игра загружена: v{data.version}, money={data.money:0.##}, " +
-                   $"inventory={inventoryCount}, stall={stallCount}, time=День {data.day} {data.hour:00}:{data.minute:00}";
+            return $"[GameSaver] Game loaded: v{data.version}, money={data.money:0.##}, " +
+                   $"inventory={inventoryCount}, stall={stallCount}, time=Day {data.day} {data.hour:00}:{data.minute:00}";
         }
 
         private static string SaveSummary(SaveData data, string reason)
         {
             int inventoryCount = data.inventory?.Count ?? 0;
             int stallCount = data.stallSlots?.Count ?? 0;
-            return $"[GameSaver] Игра сохранена ({reason}): v{data.version}, money={data.money:0.##}, " +
-                   $"inventory={inventoryCount}, stall={stallCount}, time=День {data.day} {data.hour:00}:{data.minute:00}";
+            return $"[GameSaver] Game saved ({reason}): v{data.version}, money={data.money:0.##}, " +
+                   $"inventory={inventoryCount}, stall={stallCount}, time=Day {data.day} {data.hour:00}:{data.minute:00}";
         }
     }
 }
