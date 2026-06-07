@@ -12,6 +12,13 @@ reviews it, verifies via Unity MCP, bumps the version, tags it, and pushes. See 
 
 _Nothing pending._
 
+## [1.2.1] - 2026-06-07
+
+### Fixed
+- `no-commit-to-main.sh` hook: allow Claude's versioning gate to push tags from `main`. An explicit
+  tag-only push (`refs/tags/…` or `--tags`, with no branch ref) is now permitted; `git commit` and
+  branch pushes to `main`/`master` stay blocked per COLLAB.md. (Claude)
+
 ## [1.2.0] - 2026-06-07
 
 ### Added
