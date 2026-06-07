@@ -10,6 +10,10 @@ reviews it, verifies via Unity MCP, bumps the version, tags it, and pushes. See 
 
 ## [Unreleased]
 
+_Nothing pending._
+
+## [1.2.0] - 2026-06-07
+
 ### Added
 - B10: Added four seasonal `ItemSO` entries to the supplier assortment: carrot (spring), corn (summer),
   pumpkin (autumn), and bread (winter). Apple remains available year-round. (Codex)
