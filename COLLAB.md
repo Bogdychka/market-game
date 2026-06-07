@@ -45,8 +45,10 @@ Plus live state: the Unity Editor (MCP on port 8090), `game.log`, and serialized
 5. Review Codex's diff **and** its `[Unreleased]` note. Run the `unity-csharp-reviewer` subagent.
 6. Verify in Unity: `recompile_scripts` → `get_health_report` must be `ok` (0 errors).
 7. If good: bump `VERSION`, move the `[Unreleased]` entry under a new `## [X.Y.Z]` heading + tick `dev_plan_3.md`.
-8. Merge the PR to `main`, then tag the merge commit: `git tag -a vX.Y.Z -m "..."` and `git push origin vX.Y.Z`.
-   (Push tags from a feature branch or right after merge — the no-commit-to-main hook blocks `git push` while on `main`.)
+8. Merge the PR to `main`, then tag the merge commit: `git tag -a vX.Y.Z -m "..."` and
+   `git push origin refs/tags/vX.Y.Z`. (The no-commit-to-main hook allows explicit tag-only pushes —
+   `refs/tags/…` or `--tags` — from any branch, including `main`; it still blocks `git commit` and
+   branch pushes on `main`.)
 9. If not good: leave review comments / request changes; Codex iterates on its branch.
 
 ## Versioning (SemVer, tag every shipped change)
@@ -78,6 +80,6 @@ git push -u origin HEAD && gh pr create --fill
 gh pr merge <n> --squash --delete-branch
 git fetch origin
 git tag -a vX.Y.Z origin/main -m "vX.Y.Z - <summary>"   # tag the merged tip
-git push origin vX.Y.Z                                   # from a feature branch (hook blocks push on main)
+git push origin refs/tags/vX.Y.Z                         # tag-only push is allowed even on main
 git switch main && git pull
 ```

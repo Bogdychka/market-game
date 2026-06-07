@@ -1,618 +1,688 @@
-# План разработки — Рынок
-**Unity 6 · URP · First Person · Claude Code**
+# Dev Plan — Market Game
+**Unity 6 · URP · First Person · co-developed by Claude Code + Codex**
+
+This is the single source of truth for *what to build and in what order*, plus the live progress
+checkboxes. Contracts (how to write code, how the two agents collaborate) live elsewhere:
+`AGENTS.md` (coding/architecture rules, shared by both agents), `CLAUDE.md` (Claude's review/publish
+role), `COLLAB.md` (branch-per-task + PR process). Don't duplicate progress anywhere but this file.
 
 ---
 
-## Философия плана
+## Philosophy
 
-Главное правило: **в любой момент времени игра запускается и в неё можно поиграть.** Никаких «две недели пишу системы, потом проверю». Каждый шаг ниже:
+Top rule: **the game runs and is playable at every point in time.** No "two weeks of systems, then
+test". Every step below:
 
-- добавляет ровно одну вещь;
-- заканчивается конкретной проверкой «нажми Play и убедись, что X работает»;
-- опирается на предыдущий шаг.
+- adds exactly one thing;
+- ends with a concrete "press Play and confirm X works" check;
+- builds on the previous step.
 
-Если шаг нельзя проверить за пару минут — он слишком большой, дроби дальше.
+If a step can't be verified in a couple of minutes, it's too big — split it further. Blocks are in
+implementation order. Don't jump ahead: specializations are pointless until the core loop is fun.
 
-Блоки идут в порядке реализации. Не перепрыгивай вперёд: пока не работает базовый цикл, специализации делать бессмысленно.
+**No hidden market coefficients.** No drought ×1.8, no random demand multipliers, no invisible
+world-factor effects. The player understands the economy directly:
 
-Важное решение проекта: **никаких скрытых коэффициентов рынка вроде засухи ×1.8, случайных множителей спроса или невидимых world-factor эффектов.** Игрок должен понимать экономику напрямую:
+- base buy/sell prices live in `ItemSO`;
+- the player sets the sell price on the stall;
+- NPCs buy by budget, category preference, and concrete requests;
+- seasons change *availability* and visuals, never price via magic multipliers;
+- depth comes from assortment, production, orders, reputation and progression — not hidden formulas.
 
-- базовые цены у товара заданы в `ItemSO`;
-- игрок сам выбирает цену продажи на прилавке;
-- NPC покупают по бюджету, предпочтениям и конкретным запросам;
-- сезоны меняют доступность товаров/культур и визуал, но не накручивают цену магическими множителями;
-- глубина появляется через ассортимент, производство, заказы, репутацию и прогрессию, а не через скрытые формулы.
+### Do
+- Every day should tell a small story: who came, what they bought, which order appeared, what unlocked.
+- Every system must be explainable to the player in one sentence.
+- Progress must be visible in the world: new items, places, NPCs, decor, stations.
+- Automation unlocks *after* the player has learned the manual action. A worker removes chores; it
+  doesn't play the game for the player from day one.
+- Customer attraction must be physical and visible: a sign, a display window, flyers, a discount ad,
+  a nice-looking stall, a rare item on show.
+- NPCs are content, not just NavMesh agents.
+- Orders / NPC requests are the main source of "events".
+- Prices are fixed and readable; the player chooses the sell price.
 
----
-
-## Как работать с Claude Code
-
-- **Один шаг — один запрос.** Бери из плана конкретный пункт, давай Claude Code текущий контекст (что уже есть) и проси реализовать только его.
-- **Сразу проси тестовую обвязку.** «Добавь debug-кнопку / Gizmo / Debug.Log, чтобы я мог проверить это в Play».
-- **Данные отдельно от логики.** Товары, NPC, рецепты, заказы, культуры — ScriptableObjects. Контент можно поручать отдельными запросами, не трогая код систем.
-- **Коммить после каждого зелёного шага.** Шаг работает → git commit. Сломал следующий — откатился на рабочее.
-- **Sonnet — рутина, Opus — архитектура и сложные баги.** Большая часть пунктов плана — это Sonnet. Opus оставляй на проектирование Блока C (живой рынок) и отладку сложных взаимодействий.
-
----
-
-# БЛОК 0 — Фундамент проекта
-*Цель блока: к концу есть скелет проекта, в который можно класть фичи, не превращая его в свалку. Игра запускается через Bootstrap, собирается в билд, есть базовые соглашения.*
-
-### ✅ 0.1 Архитектура папок и namespaces
-**Делаем:** структура `Assets/_Project/` (Art / Audio / Data / Scenes / Scripts / Tests), namespaces вида `Market.<Subsystem>`, базовые asmdef-файлы по подсистемам.
-**Проверка:** проект собирается, никаких ошибок компиляции, скрипты лежат в правильных папках.
-
-### ✅ 0.2 Фильтрация ассетов
-**Делаем:** нужные паки в `Assets/ThirdParty/`, неиспользуемое и .blend/.obj-дубликаты — в `_ArchiveAssets/` вне `Assets/` (чтобы Unity их не импортировал).
-**Проверка:** Console чист, нет ошибок импорта .blend, импорт ассетов не блокирует запуск.
-
-### 0.3 Сцены и Bootstrap
-**Делаем:** три сцены — `Bootstrap.unity` (точка входа, поднимает менеджеры через DontDestroyOnLoad), `MainMenu.unity`, `Market.unity`. `SceneLoader` грузит сцены через `SceneManager.LoadSceneAsync`.
-**Проверка:** запуск всегда с Bootstrap → автоматически идёт в MainMenu → по кнопке «Играть» грузится Market.
-
-### 0.4 ServiceLocator + EventBus
-**Делаем:** `ServiceLocator` для регистрации синглтон-сервисов (Money, Inventory, Time…). `EventBus` для тип-сейф событий (`Publish<TEvent>` / `Subscribe<TEvent>`). Никаких статических менеджеров и `FindObjectOfType` в гейм-коде.
-**Проверка:** простой тест — два MonoBehaviour: один публикует событие, другой получает.
-
-### 0.5 Главное меню
-**Делаем:** `MainMenu.unity` с кнопками «Новая игра», «Продолжить», «Настройки», «Выход». Пока «Продолжить» неактивна (без сохранений).
-**Проверка:** меню открывается, «Новая игра» грузит Market, «Выход» закрывает приложение.
-
-### 0.6 Первый билд
-**Делаем:** настройка Player Settings (имя продукта, иконка-заглушка, разрешение), добавление сцен в Build Settings, прогон `Build & Run`.
-**Проверка:** .exe собирается без ошибок, запускается, доходит до MainMenu и в Market. **Делаем сейчас, чтобы build-пайплайн не накопил ошибок.**
-
-> **Контрольная точка 0:** проект имеет скелет, билд собирается, есть точка входа. Можно строить на этом.
+### Don't
+- Hidden market coefficients.
+- Drought/rain/festival as a numeric price modifier.
+- Rumors that invisibly change demand.
+- A rival that secretly siphons a % of traffic.
+- Complex loans/penalties before there's proper UI.
+- Automation before the manual loop is enjoyable.
+- Invisible "+20% customers" with no in-world cause. If traffic rose, the player must see why.
+- Co-op before a complete solo game.
 
 ---
 
-# БЛОК A — Играбельный скелет
-*Цель блока: к концу есть крошечная, но полная игра — ходишь по рынку, закупаешь товар, ставишь на прилавок, NPC покупает, ты зарабатываешь.*
+## Direction & recommended order (fun-first)
 
-### ✅ A1. Ходьба
-**Делаем:** пол, `FirstPersonController` (CharacterController, камера 1.7м, WASD, Shift-спринт, Space-прыжок, мышь, head bob). Сейчас на new Input System и готовом `InputSystem_Actions`.
-**Проверка:** Play → хожу по плоскости, смотрю мышью, не проваливаюсь.
+The foundation (Blocks 0/A/B) is done: you can walk the market, buy from a supplier, place goods on
+a stall, NPCs buy, time/season/daylight run, saving works — all via debug keys. The remaining work is
+ordered to make the **manual loop fun before adding deep systems**:
 
-### ✅ A2. Взгляд и подсказка
-**Делаем:** `IInteractable` интерфейс, `InteractionSystem` (raycast 2.5м из камеры), `InteractionPromptUI` (TMP-подсказка `[E] действие`). Тестовый куб с `TestInteractable`.
-**Проверка:** смотрю на куб — появляется подсказка, отвёл взгляд — пропала. Нажал E → Debug.Log.
+1. **Block C — UI**: replace Debug.Log with real screens. Highest priority; everything else is hard
+   to test while the loop lives in the console.
+2. **Block D — Day rhythm, orders, visible progression & attraction**: the day becomes a short
+   session (prep → open → sell → evening summary), NPCs gain personalities, a Wishboard replaces
+   "world events", and growth shows up as staff/signs/decor — never as hidden buffs.
+3. **Blocks E–I — Specializations**: farm, fishing, animals, crafting, social/town. Only once the
+   core loop is enjoyable. Gated heavily by available art (see legend).
+4. **Block J — Co-op**, **Block K — Polish & release**: last.
 
-### ✅ A3. Деньги и HUD
-**Делаем:** `MoneySystem` (одна переменная + событие OnChanged + методы `Add`/`TrySpend`/`CanAfford`), `MoneyHUD` (TMP-метка), debug-клавиши F1/F2 для +100/-100.
-**Проверка:** на экране видна сумма, по клавишам растёт/тратится.
-
-### ✅ A4. Товары и инвентарь
-**Делаем:** `ItemCategory` (Food/Fish/Animal/Craft/Flower/Ingredient/Tool/Misc), `ItemSO` (имя, иконка, world-prefab, категория, базовая закупочная и продажная цена), `Inventory` (Dictionary<ItemSO,int>).
-**Проверка:** через Debug добавляю/убираю предметы, Inventory.OnChanged срабатывает.
-
-### ✅ A5. Поставщик (Debug-режим)
-**Делаем:** `SupplierShop` как `IInteractable`, при взаимодействии выводит список товаров в Console. `DebugSupplierBuy` — клавиши 1-5 покупают товар по индексу.
-**Проверка:** подхожу, открываю, покупаю яблоко → деньги −10, в инвентаре яблоко. Денег не хватает → лог «не хватает».
-
-### ✅ A6. Прилавок (Debug-режим)
-**Делаем:** `StallSlot` (хранит ItemSO + цену + спавнит worldPrefab), `MarketStall` с массивом слотов и интерактом. `DebugStallPlace` по F3 кладёт первый предмет из инвентаря в первый свободный слот.
-**Проверка:** купил яблоко → F3 → яблоко появляется на столе в 3D, stock=1, цена задана.
-
-### ✅ A7. NavMesh и навигация
-**Делаем:** базовая сцена `Market.unity` с полом и стенами, запекаем `NavMesh`. `NavMeshObstacle` (carve=true) на игроке — чтобы NPC уступали дорогу (риск толпы из плана).
-**Проверка:** в Scene вижу запечённую навигационную сетку, проходы шириной 3-4м.
-
-### ✅ A8. Первый NPC и первая продажа
-**Делаем:** `NPCVisitor` с NavMeshAgent. Машина состояний: spawn → walk-to-stall → buy → walk-to-exit → despawn. Покупает если есть нужный товар по приемлемой цене.
-**Проверка:** ставлю NPC у входа → он идёт к прилавку → stock −1, деньги +цена → он уходит. **Первый полный игровой цикл.**
-
-### ✅ A9. Поток посетителей
-**Делаем:** `NPCSpawner` (точки спавна, интервал, лимит). `NPCTypeSO` (бюджет, предпочтения категорий, скорость, модель). NPC выбирает прилавок по своим предпочтениям.
-**Проверка:** идёт поток NPC, кто-то покупает, кто-то проходит мимо. Дорогой товар покупают реже.
-
-### ✅ A10. Сохранение
-**Делаем:** `SaveSystem` (JSON, в `Application.persistentDataPath`). Сохраняем: деньги, инвентарь, состояние прилавков, позицию игрока, версию формата. Загрузка из главного меню по «Продолжить».
-**Проверка:** заработал денег, вышел, зашёл → всё на месте. «Новая игра» начинает с нуля.
-
-> **Контрольная точка A:** есть полноценная мини-игра. Дальше наращиваем глубину.
+### Minimal fun-slice (the near-term target)
+Morning: buy apples → place them on the stall via UI → open the shop → 3 different NPCs arrive with
+lines → one haggles, one buys, one leaves a request → if you over-bought, run a discount ad to clear
+stock → evening summary → after 3 completed orders a new item/decor unlocks → the player sees a goal
+like "hire a cashier" or "put up a sign". If this is fun, add farm/fishing/animals/co-op. If it
+isn't, no big system will save it.
 
 ---
 
-# БЛОК B — Стабильный рынок без скрытых коэффициентов
-*Цель блока: базовый рынок должен быть понятным, проверяемым и предсказуемым. Никаких засух, случайных множителей цены и world-factor систем. Живость рынка здесь достигается временем суток, сезонами, потоком NPC, их бюджетами/предпочтениями и автодебагом.*
+## Asset availability legend
 
-### ✅ B1. Игровое время
-**Делаем:** `TimeSystem` — игровые часы и день, скорость = настраивается. События: `OnHourChanged`, `OnDayChanged`. Пауза при открытых меню.
-**Проверка:** в HUD виден час и день, время идёт, можно ускорить debug-клавишей.
+Per project decision, plan steps are tagged by whether the art already exists in the repo. The artist
+won't be making new models/animations for a while, so steps needing new art are stubbed or deferred,
+not blocked.
 
-### ✅ B2. Освещение по времени
-**Делаем:** `DaylightSystem` крутит directional light по часам (рассвет/день/закат/ночь). Базовый skybox + ambient меняются по времени суток.
-**Проверка:** день проходит — освещение меняется плавно, ночь отличается от дня.
+- **`[assets: ready]`** — models/animations exist in the project; build the real thing now.
+- **`[assets: stub]`** — no dedicated model; ship with a primitive or an existing model as a
+  placeholder (e.g. a cylinder for a crop, a Barn for a workshop). Logic is real; art is swapped later.
+- **`[assets: backlog]`** — needs new art that won't exist soon; keep the step here for design
+  completeness but implement late / behind a flag, or prototype with the nearest stub.
 
-### ✅ B3. Трафик NPC по времени
-**Делаем:** `NPCSpawner` читает кривую плотности от часа (утро низко, день пик, вечер спад, ночь почти ноль).
-**Проверка:** в «час пик» NPC заметно больше, ночью почти никого.
+What we actually have (Assets/):
+- **Items/food** — Kenney Food Kit (~200 FBX): vegetables, fruit, meat, dairy, eggs, baked goods,
+  cooked dishes (bread/loaf/baguette/pie/pizza/cake/donut/sandwich/burger…), barrels/bottles/cartons.
+- **Farm buildings** — Quaternius: Barn/BigBarn/SmallBarn/OpenBarn, ChickenCoop, Silo, Windmill,
+  WaterTower, Well, Fence.
+- **Animals** — Quaternius: Cow, Pig, Sheep, Horse, Llama, Pug, Zebra. (No chicken model; coop exists.)
+- **Fish (as items)** — Quaternius: Fish1-3, Shark, Dolphin, Whale, Manta ray.
+- **NPC rig + animations** — UAL Standard rig + Mixamo (idle/walk/talk).
+- **Decoration** — Textured Stylized Trees.
 
-### ✅ B4. Сезоны
-**Делаем:** `SeasonManager` — 4 сезона по N дней, текущий сезон влияет на skybox-tint, освещение, доступность товаров у поставщика (`ItemSO.AvailableInSeasons`).
-**Проверка:** проматываю дни → сезон сменился, картинка и ассортимент поставщика изменились.
-
-### ✅ B5. Единая точка цены без игровых модификаторов
-**Делаем:** `PriceCalculator`/`PriceService` остаётся только как единая точка чтения базовых цен: закупка = `ItemSO.BaseBuyPrice`, рекомендованная продажа = `ItemSO.BaseSellPrice`. Никаких `IPriceModifier`, засух, фестивальных множителей и скрытой математики.
-**Проверка:** поставщик и прилавок берут цены из одного места; `MarketAutoDebugger` показывает понятную маржу яблока: купил за 10, продал за 20/рекомендованную цену.
-
-### ✅ B6. Упростить уже написанную систему цен
-**Делаем:** если в коде остались `IPriceModifier`, `PriceContext`, `ModifierCount`, `DescribeModifiers` и комментарии про засуху/спрос — убрать или заморозить так, чтобы будущие шаги не тянули проект обратно к коэффициентам. Оставить простой API: `GetBuyPrice(ItemSO)` и `GetSuggestedSellPrice(ItemSO)`.
-**Проверка:** поиск по проекту не находит `засуха`, `WorldFactor`, `IPriceModifier`, `modifier` в игровых сценариях. Покупка/продажа через автодебаг работает как раньше.
-
-### ✅ B7. Автодебаг полного цикла
-**Делаем:** `MarketAutoDebugger`: F9 автопрогон, F10 один цикл. Сценарий: купить товар → выложить на прилавок → заспавнить NPC → записать snapshot в `game.log`.
-**Проверка:** в `game.log` видны `[AutoDebug] Snapshot`, деньги растут, инвентарь/прилавок/NPC отражаются корректно.
-
-### ✅ B8. Правила покупки NPC без скрытого спроса
-**Делаем:** закрепить простую модель: NPC покупает товар, если категория подходит предпочтениям и цена не выше бюджета. Добавить понятные Debug.Log причины отказа: «нет товара», «дорого», «неинтересная категория».
-**Проверка:** ставлю цену выше бюджета → NPC не покупает и лог объясняет почему. Ставлю нормальную цену → покупает.
-
-### B9. Подготовка к нескольким прилавкам
-**Делаем:** пока не вводим несколько прилавков в gameplay, но убираем жёсткие места: `NPCSpawner.targetStall` и `GameSaver.marketStall` должны быть отмечены как temporary single-stall API. В плане следующего расширения — `MarketStallRegistry`.
-**Проверка:** текущий один прилавок работает без регрессий, в коде понятно где будет расширение.
-
-### B10. Сезонный ассортимент без изменения цен
-**Делаем:** сезоны влияют только на доступность товара у поставщика и будущие культуры. Внесезонный товар либо виден серым в UI, либо скрыт — выбрать UX при реализации ShopUI. Цена от сезона не меняется.
-**Проверка:** проматываю сезон → доступность товара меняется, цена самого товара не прыгает.
-
-> **Контрольная точка B:** рынок стабилен и объясним. Есть время, свет, сезоны, поток NPC, сохранение, автодебаг и понятная продажа без скрытой экономики. Дальше надо делать UI, иначе проект застрянет в Debug.Log.
+Not in the repo (→ stub/backlog): crop growth stages, greenhouse, beehive, flowers/bouquets, fishing
+spot / rod / boat / shipyard, dedicated crafting-station buildings, market decor / display window /
+signboard / cash register, chicken, cat.
 
 ---
 
-# БЛОК C — UX и пользовательская поверхность
-*Цель блока: Debug.Log в Console превращается в нормальные экраны. Игра становится играбельной для постороннего человека.*
+# BLOCK 0 — Project foundation ✅
+*Skeleton you can drop features into. Boots through Bootstrap, builds, has conventions.*
 
-### C1. InventoryUI
-**Делаем:** окно инвентаря (Tab): сетка слотов с иконкой, названием, количеством. Подсказка и описание по hover. Подписан на `Inventory.OnChanged`.
-**Проверка:** купил яблоко → в инвентаре виден слот с иконкой. Удалил → пропал.
+- ✅ 0.1 Folder architecture & namespaces (`Assets/_Project/…`, `Market.<Subsystem>`, asmdefs)
+- ✅ 0.2 Asset filtering (packs in place; unused/dupes in `_ArchiveAssets/` outside `Assets/`)
+- ✅ 0.3 Scenes & Bootstrap (Bootstrap → MainMenu → Market via `SceneLoader`)
+- ✅ 0.4 ServiceLocator + EventBus (type-safe events, no statics, no `FindObjectOfType`)
+- ✅ 0.5 Main menu (New Game / Continue / Settings / Quit)
+- ✅ 0.6 First build (Player Settings, Build Settings, Build & Run green)
 
-### C2. Иконки для товаров
-**Делаем:** генерация иконок через editor-скрипт (render preview ItemSO.WorldPrefab → Sprite). Назначаем во все имеющиеся `ItemSO`.
-**Проверка:** Inventory отображает иконки, а не серые квадраты.
-
-### ✅ C3. ShopUI — поставщик
-**Делаем:** проверный экран магазина с списком, кнопкой «Купить», количеством, балансом денег. Заменяет Debug.Log.
-**Проверка:** взаимодействие с поставщиком открывает экран, мышь разблокирована, кнопки работают, покупка обновляет интерфейс.
-
-### C4. StallUI — прилавок
-**Делаем:** экран управления прилавком: список слотов, drag-and-drop из инвентаря, поле ввода цены, кнопка «Снять».
-**Проверка:** через UI кладу яблоко в слот за цену 25 → яблоко появилось в 3D, цена сохранилась.
-
-### C5. PauseMenu
-**Делаем:** Esc открывает паузу: «Продолжить», «Сохранить», «Настройки», «В главное меню». `Time.timeScale = 0`.
-**Проверка:** Esc останавливает игру, по кнопке возвращает обратно. Сохранение работает из паузы.
-
-### C6. Меню настроек
-**Делаем:** `SettingsSO` или PlayerPrefs: чувствительность мыши, invert Y, громкость (Master/Music/SFX), привязка клавиш через Input System Rebinding.
-**Проверка:** меняю настройки → применилось сразу, сохранилось между сессиями.
-
-### C7. AudioMixer и базовый звук
-**Делаем:** `AudioMixer` с группами Master/Music/SFX/Ambient. Базовый ambient рынка (footsteps игрока, общий шум). `AudioService` для проигрывания one-shot.
-**Проверка:** при ходьбе слышу шаги, на рынке базовый ambient. Громкость в настройках работает.
-
-### C8. NPC визуальный пул
-**Делаем:** 3-5 моделей NPC (low-poly или mixamo-риг), несколько анимаций (idle, walk, talk). `NPCVisualPicker` назначает случайную модель при спавне.
-**Проверка:** в потоке NPC разные модели, не клоны.
-
-### C9. Подсказка взаимодействия и курсор
-**Делаем:** улучшенный prompt UI с иконкой клавиши (через Input System icons), скрытый курсор в игре, видимый — в меню.
-**Проверка:** подсказка показывает правильную клавишу для текущего устройства (KB/Gamepad). Курсор переключается.
-
-> **Контрольная точка C:** игра выглядит как игра, а не прототип. Можно дать поиграть постороннему.
+> **Checkpoint 0:** skeleton exists, build is green, there's an entry point.
 
 ---
 
-# БЛОК D — Прогрессия и давление
-*Цель блока: игрок чувствует рост и одновременно мотивацию не стоять на месте.*
+# BLOCK A — Playable skeleton ✅
+*A tiny but complete game: walk, buy, place, NPC buys, you earn.*
 
-### D1. Репутация
-**Делаем:** `ReputationSystem` — единая шкала (−100…+100). Меняется от поведения: выполненные заказы, отмены, слишком дорогие продажи, помощь NPC. Влияет на доступ к новым заказам, редким поставщикам и диалогам, но не меняет цены скрытым множителем.
-**Проверка:** выполнил заказ → репутация растёт; сорвал заказ → падает; новый заказ открывается только при нужной репутации.
+- ✅ A1 Walking (`FirstPersonController`, `HeadBob`, new Input System)
+- ✅ A2 Look & prompt (`IInteractable`, `InteractionSystem` raycast, `InteractionPromptUI`)
+- ✅ A3 Money & HUD (`MoneySystem`, `MoneyHUD`)
+- ✅ A4 Items & inventory (`ItemSO`, `ItemCategory`, `Inventory`)
+- ✅ A5 Supplier (debug) (`SupplierShop`, `DebugSupplierBuy`)
+- ✅ A6 Stall (debug) (`MarketStall`, `StallSlot`, `DebugStallPlace`)
+- ✅ A7 NavMesh + `NavMeshObstacle` (carve) on the player
+- ✅ A8 First NPC & first sale (`NPCVisitor` state machine) — **first full loop**
+- ✅ A9 Visitor flow (`NPCSpawner`, `NPCTypeSO`)
+- ✅ A10 Saving (`SaveSystem`, `SaveData`, JSON in `persistentDataPath`)
 
-### D2. Рейтинг рынка как явные уровни
-**Делаем:** `MarketRating` (1-5★) от разнообразия товаров, выполненных заказов и стабильного наличия ассортимента. Рейтинг открывает конкретные вещи: новые декорации, новые NPCTypeSO, новые поставщики, новые рецепты. Не использовать скрытый процентный бафф трафика.
-**Проверка:** достиг 2★ → появился новый тип посетителя или новый поставщик; игрок видит причину и награду.
-
-### D3. Достижения и разблокировки
-**Делаем:** `AchievementTracker` слушает события (продано N, выращено N, открыто N). `UnlockSystem` открывает контент по достижениям (теплица, новые семена, ремесленные станции).
-**Проверка:** выполняю условие → уведомление «открыто X», новый объект доступен в режиме строительства/debug.
-
-### D4. Wishboard
-**Делаем:** ежедневные запросы NPC: товар, количество, дедлайн, фиксированная награда. Доска в сцене + UI-экран. Это главный источник “живого рынка” вместо world events.
-**Проверка:** беру запрос, приношу в срок → получаю указанную награду; опоздал → запрос сгорел.
-
-### D5. Аренда прилавков
-**Делаем:** `RentSystem` — каждый сезон списывает фиксированную сумму за каждый прилавок. Уведомление за день до списания.
-**Проверка:** конец сезона → списалась аренда, при недостатке — уведомление с консеквенцией (потеря прилавка через 3 дня).
-
-### D6. Кредиты
-**Делаем:** `LoanSystem` — займ на крупные покупки/разблокировки. Процент капает за каждый день. Дефолт = потеря объекта.
-**Проверка:** беру кредит → деньги поступили, проценты тикают, погасил → закрылся.
-
-### D7. Конкурент
-**Делаем:** `RivalMarket` как сюжетная/прогрессионная система: конкурент появляется после определённого дня и предлагает игроку задачи-соревнования на ассортимент/выручку/репутацию. Не отнимать трафик скрытым процентом.
-**Проверка:** началось соревнование → на доске видна цель; выиграл → награда/рецепт; проиграл → фиксированный штраф или потерянная возможность.
-
-> **Контрольная точка D:** есть петля «развивайся, иначе проигрываешь по деньгам». Игра обрела долгосрочную цель.
+> **Checkpoint A:** a real mini-game exists. Now add depth.
 
 ---
 
-# БЛОК E — Ферма (вертикальный срез)
-*Цель блока: к концу один игрок может выращивать свой товар, продавать его на рынке и выполнять заказы. Это играбельный демо-срез всей игры без случайных погодных штрафов и ценовых коэффициентов.*
+# BLOCK B — Stable market, no hidden coefficients ✅
+*Predictable, inspectable market. Liveliness comes from time/season/traffic, not multipliers.*
 
-### E1. Грядка и базовый цикл
-**Делаем:** `CropPlot` (интерактивная, состояния Empty/Planted/Growing/Ready), `CropSO` (семя, время роста, урожай). Покупка семян у поставщика. Debug-клавиша мгновенного роста.
-**Проверка:** покупаю семя → сажаю → ускоряю → собираю морковь в инвентарь.
+- ✅ B1 Game time (`TimeSystem`, `OnHourChanged`/`OnDayChanged`, pause on menus)
+- ✅ B2 Daylight by time (`DaylightSystem` — sun/moon, ambient, skybox exposure)
+- ✅ B3 NPC traffic by hour (density curve: morning low, midday peak, night ~0)
+- ✅ B4 Seasons (`SeasonManager` — 4 seasons, sky tint, supplier availability)
+- ✅ B5 Single fixed-price read point (`PriceCalculator` = buy `BaseBuyPrice`, sell `BaseSellPrice`)
+- ✅ B6 Simplify the legacy pricing code (remove/freeze `IPriceModifier`/`PriceContext`; keep
+  `GetBuyPrice` / `GetSuggestedSellPrice`)
+- ✅ B7 Full-loop auto-debug (`MarketAutoDebugger`: F9 loop, F10 one cycle, snapshots in `game.log`)
+- ✅ B8 NPC purchase rules without hidden demand (concrete refusal reasons in logs)
+- ✅ B9 Multi-stall prep (mark `NPCSpawner.targetStall` / `GameSaver.marketStall` as temporary
+  single-stall API; planned `MarketStallRegistry`)
+- ✅ B10 Seasonal supplier assortment without price change (out-of-season goods shown muted/unbuyable)
 
-### E2. Стадии роста — визуал
-**Делаем:** 3-4 меша на культуру (росток/молодое/зрелое), переключение по прогрессу таймера. Визуал должен быть читаемым без дополнительных погодных состояний.
-**Проверка:** наблюдаю как грядка визуально растёт от ростка до урожая.
-
-### E3. Сезонность культур
-**Делаем:** `CropSO.AvailableSeasons`. Вне сезона культуру нельзя посадить на обычной грядке; теплица позже снимет это ограничение. Без замедления ×0.3 и случайной гибели.
-**Проверка:** летнюю культуру зимой посадить нельзя, UI/лог объясняет причину; в сезоне сажается нормально.
-
-### E4. Качество урожая
-**Делаем:** если нужно качество, делать его отдельными `ItemSO` вариантами с фиксированной ценой: `Carrot`, `Carrot_Good`, `Carrot_Prize`. На первом проходе можно оставить только обычный урожай.
-**Проверка:** сбор выдаёт понятный предмет с фиксированной ценой, без скрытого умножения цены.
-
-### E5. Себестоимость
-**Делаем:** связываем `CropSO` с экономикой: цена семени + время выращивания → себестоимость единицы. Базовая продажная цена выращенного выше себестоимости в 2-3 раза.
-**Проверка:** маржа на выращенном выше, чем на перепродаже покупного. Есть смысл фермерствовать.
-
-### E6. Ульи
-**Делаем:** `Beehive` — структура, выдаёт мёд и воск по таймеру (раз в N часов). Требует пчёл (стартовое семя ульев) и цветов рядом.
-**Проверка:** ставлю улей, проходит время → мёд и воск в инвентаре.
-
-### E7. Цветочный прилавок и букеты
-**Делаем:** `RecipeSO` (несколько `ItemSO` → один результат). `FlowerStall` — крафт букетов (3 цветка → букет, цена > суммы).
-**Проверка:** собираю букет из 3 цветов → продаётся дороже отдельных цветов.
-
-### E8. Теплица (Debug-разблокировка)
-**Делаем:** `Greenhouse` как структура. Грядки внутри разрешают выращивать культуры вне их обычного сезона. Пока ставится debug-командой.
-**Проверка:** в теплице зимняя культура растёт нормально.
-
-### E9. Туториал по ферме
-**Делаем:** первый сценарный туториал — последовательность подсказок: «купи семя» → «найди грядку» → «посади» → «подожди и собери» → «выложи на прилавок». Все шаги хранятся в `TutorialStepSO`.
-**Проверка:** новый игрок проходит цепочку без объяснений снаружи.
-
-> **Контрольная точка E:** полный вертикальный срез. Это то, что показывают как «играбельный прототип».
+> **Checkpoint B:** the market is stable and explainable. Next must be UI, or the project stalls in
+> Debug.Log.
 
 ---
 
-# БЛОК F — Рыбалка
-*Применяем тот же шаблон, что и в Блоке E.*
+# BLOCK C — UX & player-facing surface
+*Turn console output into real screens so a stranger can play. Highest priority of the remaining work.*
 
-### F1. FishingSpot и ловля
-**Делаем:** интерактивный объект `FishingSpot`. Удерживание E → таймер с шансом → рыба в инвентаре. Базовая удочка как `ItemSO` инструмент.
-**Проверка:** подхожу к воде, ловлю — иногда выпадает рыба.
+### C1. Cursor / UI-mode service `[assets: ready]`
+**Do:** one place that switches "game ↔ menu": lock/unlock cursor, show/hide cursor, suppress
+player input while a panel is open. Every panel uses it.
+**Sub-steps:** `UIModeService` (or extend an existing coordinator) · enter/exit calls from each panel
+· guard against double-Esc breaking Play Mode.
+**Check:** open any panel → mouse frees; close → FPS control returns; input doesn't leak through.
 
-### F2. Типы рыбы и редкость
-**Делаем:** `FishSO` с шансом, ценой, минимальной удочкой. Несколько видов рыбы.
-**Проверка:** ловится разная рыба, редкая стоит дороже.
+### C2. InventoryUI `[assets: ready]`
+**Do:** Tab opens a slot grid (icon, name, count); hover shows description. Subscribed to
+`Inventory.OnChanged`; reflects model, owns no gameplay state.
+**Sub-steps:** grid + slot prefab · hover tooltip · open/close via UIModeService · update only on change.
+**Check:** buy apple → slot appears; remove → slot disappears.
 
-### F3. Истощение и восстановление водоёма
-**Делаем:** у `FishingSpot` ёмкость, после N ловль шанс падает. Восстановление за день/неделю.
-**Проверка:** активная ловля истощает спот, через сутки рыба возвращается.
+### C3. ShopUI — supplier ✅
+Supplier interaction opens a list (price, seasonal availability, Buy), mouse unlocked, purchase
+updates UI. Replaces `DebugSupplierBuy`. **Done.**
 
-### F4. Копчение и сушка
-**Делаем:** `SmokingStation` — превращает сырую рыбу в отдельный товар `SmokedFishSO` с собственной фиксированной ценой. Таймер обработки.
-**Проверка:** загрузил рыбу → подождал → получил копчёную с большей ценой.
+### C4. StallUI — stall `[assets: ready]`
+**Do:** stall screen — slots, take item from inventory, price input, "Place" and "Remove".
+**Sub-steps:** slot list bound to `MarketStall` · drag-or-click item from inventory · price field with
+validation (≥ 0; warn below buy price) · place spawns `worldPrefab`, remove returns to inventory.
+**Check:** place apple at 25 via UI → it appears in 3D and an NPC can buy it for 25.
 
-### F5. Аквариумы как товар
-**Делаем:** `AquariumStallItem` — живая рыба для декора (premium-сегмент). Требует «садок» из ремесла.
-**Проверка:** ставлю аквариум на прилавок — покупают редко, но дорого.
+### C5. PauseMenu `[assets: ready]`
+**Do:** Esc → Resume / Save / Settings / Main Menu; `Time.timeScale = 0`.
+**Sub-steps:** pause stack via UIModeService · Save calls `GameSaver` · safe return to MainMenu.
+**Check:** Esc halts the game, Save works from pause, double-Esc doesn't break Play Mode.
 
-### F6. Верфь и лодки
-**Делаем:** `Shipyard` — структура. Принимает доски (из ремесла) и металл → выдаёт лодку как продаваемый товар.
-**Проверка:** собираю лодку → продаю за крупную сумму.
+### C6. Settings menu `[assets: ready]`
+**Do:** `SettingsSO`/PlayerPrefs — mouse sensitivity, invert-Y, volumes (Master/Music/SFX), key
+rebinding via Input System.
+**Check:** change a setting → applies immediately and persists across sessions.
 
-### F7. Паромная переправа
-**Делаем:** запущенный паром даёт пассивный доход и приводит NPC из «другого района» (доступ к редким товарам у поставщика).
-**Проверка:** паром работает → раз в день капает доход, в магазине появляются новые позиции.
+### C7. AudioMixer & base audio `[assets: stub]`
+**Do:** `AudioMixer` (Master/Music/SFX/Ambient), `AudioService` for one-shots, player footsteps and
+market ambience. (Sound files are stubs/free placeholders until audio pass in K.)
+**Check:** footsteps on walk, ambient on the market, settings volumes work.
 
-> **Контрольная точка F:** одна дополнительная специализация полностью играбельна.
+### C8. NPC visual pool `[assets: ready]`
+**Do:** `NPCVisualPicker` assigns a random model/outfit + animator (idle/walk/talk) at spawn, from
+the UAL rig + Mixamo clips.
+**Check:** the NPC stream shows variety, not clones.
 
----
+### C9. Interaction prompt & cursor polish `[assets: ready]`
+**Do:** prompt shows the correct device key (KB/Gamepad) via Input System; cursor hidden in game,
+visible in menus.
+**Check:** prompt key matches the active device; cursor toggles correctly.
 
-# БЛОК G — Животноводство
-
-### G1. Куры и яйца
-**Делаем:** `Chicken` (NPC-животное в загоне), `ChickenCoop` собирает яйца по таймеру. Корм покупается у поставщика.
-**Проверка:** кормлю кур, собираю яйца, продаю.
-
-### G2. Коровы, свиньи, овцы
-**Делаем:** аналогично, каждое животное даёт свой ресурс (молоко, мясо, шерсть). Разные циклы.
-**Проверка:** все три ветки скота работают и дают разный сырой материал.
-
-### G3. Питомцы и счастье рынка
-**Делаем:** `PetSO` (кошки, собаки, мини-пиги). Питомец — видимый объект рынка: открывает реплики NPC, косметические реакции и отдельные заказы/достижения. Не даёт невидимый бафф к трафику.
-**Проверка:** добавляю кошку → NPC иногда реагируют, открывается тематический заказ/achievement.
-
-### G4. Лошади — аренда и доставка
-**Делаем:** `Horse` — можно арендовать (пассивный доход), отправить за товаром поставщика (быстрее, но риск).
-**Проверка:** отправил лошадь за товаром → через таймер пришла с грузом или вернулась пустой.
-
-### G5. Скачки (мини-игра)
-**Делаем:** простой ивент с предсказанием победителя или своим участием. Раз в сезон.
-**Проверка:** скачки запускаются, ставка возвращает выигрыш или сгорает.
-
-> **Контрольная точка G:** ветка животноводства полностью играбельна.
+> **Checkpoint C:** looks like a game, not a prototype. Playable by a stranger.
 
 ---
 
-# БЛОК H — Ремесло и кухня
+# BLOCK D — Day rhythm, orders, visible progression & attraction
+*The "fun layer". A day becomes a short session; NPCs become characters; orders replace world events;
+growth shows up physically (staff/signs/decor) — never as hidden buffs.*
 
-### H1. CraftingStation базовая
-**Делаем:** общий интерфейс `ICraftingStation`. Принимает рецепт + ингредиенты из инвентаря → таймер → результат.
-**Проверка:** на станции собираю простой предмет по рецепту.
+### D1. DayPhaseSystem `[assets: ready]`
+**Do:** phases Morning Prep → Market Open → Evening Summary → Night/Next Day; HUD shows the phase.
+**Check:** the day advances through phases; HUD reflects it.
 
-### H2. Пекарня
-**Делаем:** `Bakery` принимает зерно + яйца → хлеб. Несколько рецептов (хлеб, пирог, булки).
-**Проверка:** пеку хлеб, продаю с маржой.
+### D2. Open / Close stall `[assets: stub]`
+**Do:** player manually opens the shop in the morning and closes it in the evening; NPCs only come
+while open. (Open/Closed sign uses a stub prop until art exists — see D11.)
+**Check:** closed → no NPC purchases; open → traffic flows.
 
-### H3. Пивоварня
-**Делаем:** `Brewery` — зерно + мёд → пиво/медовуха. Долгий таймер, премиум-цена.
-**Проверка:** запустил варку, через цикл получил продукт.
+### D3. Evening Summary `[assets: ready]`
+**Do:** end-of-day screen: revenue, expenses, profit, items sold, orders done, best-selling item.
+**Check:** close the day → a clear report.
 
-### H4. Кузня — инструменты для других веток
-**Делаем:** `Smithy` — производит улучшенные удочки (Блок F), доски (для верфи), садовые инструменты (Блок E).
-**Проверка:** делаю удочку → у рыбака открываются новые рыбы.
+### D4. Daily Goals v1 `[assets: ready]`
+**Do:** 1–3 simple goals (sell N, earn X, complete an order); small reward/sound/checkmark on
+completion.
+**Check:** goal met → visible feedback.
 
-### H5. Аптека
-**Делаем:** `Apothecary` — травы + продукты животных → зелья и косметика. Премиум-сегмент.
-**Проверка:** варю зелье, продаю дорого.
+### D5. Sleep / Next Day `[assets: stub]`
+**Do:** advance to next day via a "End Day" button/bed; time resets to morning, day +1, season
+persists. (Bed prop is a stub.)
+**Check:** end day → morning of day+1, season state intact.
 
-### H6. Ателье
-**Делаем:** `Tailor` — шерсть + кожа → одежда. Сезонная одежда нужна для сезонных заказов и новых типов покупателей, а не для скрытого бонуса к цене.
-**Проверка:** шью зимнюю одежду → её можно сдать в зимний заказ или продать как отдельный товар с фиксированной ценой.
+### D6. NPC personalities `[assets: ready]`
+**Do:** `NPCPersonalitySO` — name/role, lines, budget, favorite categories, patience, haggle chance.
+At least 5 archetypes: regular, thrifty haggler, rich collector, cook/innkeeper, child/odd buyer.
+**Check:** different NPCs show different lines and budgets.
 
-### H7. Рецепты как находки
-**Делаем:** `RecipeBookSO`. Рецепты не даются с начала — покупаются у странствующих торговцев, выпадают как награды.
-**Проверка:** открыл новый рецепт → он появился в крафт-меню станции.
+### D7. Dialogue bubble & haggling `[assets: ready]`
+**Do:** TMP bubble over the NPC (greeting / price reaction / buy / refuse). Simple haggling: if price
+is slightly above budget, NPC may propose its own price; player accepts/declines. No demand formulas.
+**Sub-steps:** world-space bubble · patience timer (empty stall/slow player → leaves with a line) ·
+accept/decline haggle flow.
+**Check:** NPC says "I'll take it for 18", player chooses; empty stall → NPC grumbles and leaves.
 
-### H8. Уникальный рецепт и монополия
-**Делаем:** редкие рецепты дают уникальный товар с высокой фиксированной ценой и отдельными заказами. Никакой временной монополии ×2.
-**Проверка:** открываю уникальный рецепт → могу сделать новый товар, он появляется в заказах/достижениях.
+### D8. Wishboard / Orders `[assets: stub]`
+**Do:** replace world-events with visible NPC requests. `OrderSO` (who, `ItemSO`, count, deadline,
+fixed reward, text) → `OrderInstance` + `OrderSystem` (active/done/expired) → board in scene + UI list
+→ turn-in from inventory → daily generation (2–4 by available content). (Board model is a stub.)
+**Sub-steps:** D8a `OrderSO` data · D8b runtime order lifecycle · D8c Wishboard UI · D8d turn-in flow ·
+D8e daily generation · D8f orders as unlock trigger (N done → new item/supplier/NPC).
+**Check:** "Cook needs 3 apples by evening" appears in the morning, is turned in for the reward, and
+expires after the deadline.
 
-> **Контрольная точка H:** все четыре специализации играбельны и взаимосвязаны через материалы.
+### D9. ReputationSystem `[assets: ready]`
+**Do:** single scale; up from completed orders/fair deals, down from failures. Gates access to
+orders/suppliers/dialogue — never changes prices directly.
+**Check:** complete order → rep up; fail → rep down; a gated order opens at the required rep.
 
----
+### D10. MarketRating + UnlockSystem `[assets: stub]`
+**Do:** `MarketRating` (1–5★) from assortment, completed orders, stable stock; one `UnlockSystem`
+list (items, NPCs, recipes, stalls, decor, stations). Rating opens concrete content, no hidden
+traffic buff.
+**Check:** reach 2★ → a new supplier/decor unlocks and is actually usable; the player sees the cause.
 
-# БЛОК I — Социальные системы и город
-*Превращаем рынок в место с отношениями, заказами и последствиями, но без скрытого изменения цен и спроса.*
+### D11. Physical market props `[assets: stub]`
+**Do:** make the stall feel hands-on: crate item (`ItemSO`+count, pick up/place), storage shelf,
+restock from crate/shelf (not just abstract Inventory), price-tag prop on a slot, Open/Closed sign or
+bell. (All use primitives/Food-Kit barrels/cartons as stubs until dedicated props exist.)
+**Sub-steps:** D11a crate · D11b storage shelf · D11c restock-from-crate · D11d price-tag prop ·
+D11e open sign/bell.
+**Check:** carry a crate of apples to the stall; restock a slot from storage; price visible in world.
 
-### I1. Диалоги и отношения NPC
-**Делаем:** `NPCRelationSystem` — у важных NPC есть отношение к игроку, открывающее реплики, заказы и награды. Без влияния на скрытые цены.
-**Проверка:** несколько раз выполняю заказ пекаря → открывается новая реплика/заказ/рецепт.
+### D12. Staff / automation `[assets: ready]`
+**Do:** automation as a reward, using existing NPC models. `StaffSO` (role, daily wage, work speed,
+hire requirements, lines); HiringBoard UI; Cashier (completes sales while player does other work);
+Stocker (refills slots from storage); Cleaner (light, visible mess after busy days). Staff work only
+in Market Open, paid in Evening Summary; no money → warning and risk of leaving. Workers cost wages
+and have speed/quirks — they never play the whole game for the player.
+**Sub-steps:** D12a `StaffSO` · D12b HiringBoard UI · D12c Cashier · D12d Stocker · D12e Cleaner ·
+D12f scheduling/wages · D12g balance (player still chooses assortment/prices/orders/growth).
+**Check:** hire a cashier → NPCs buy without manual confirmation; wage shows in Evening Summary.
 
-### I2. Контракты с поставщиками
-**Делаем:** долгосрочные контракты: поставщик резервирует фиксированное количество товара за фиксированную цену/предоплату. Это понятнее, чем динамический рынок.
-**Проверка:** заключил контракт на яблоки → каждый день доступно N яблок; не забрал/не оплатил → контракт теряет доверие.
+### D13. Visible customer attraction `[assets: backlog]`
+**Do:** physical, explainable attraction — never a hidden multiplier. `AttractionObjectSO` (sign,
+display window, banner, lantern, decor, demo stand); a signboard/display "item of the day" the player
+picks (draws NPCs interested in that category); a manual Promo Day (fixed cost → more visitors for one
+Market Open, item price unchanged); a Discount Ad (player picks an item + sale price + pays for
+flyers; that day more category-interested NPCs arrive to clear overstock; one item at a time, ends at
+day's end, warn when below buy price). (Signs/display/decor need new art → backlog; prototype with
+stubs.)
+**Sub-steps:** D13a `AttractionObjectSO` · D13b signboard/display "item of the day" · D13c Promo Day ·
+D13d Discount Ad · D13e discount rules/guardrails.
+**Check:** set apples as item-of-the-day → more food-oriented NPCs (visible in summary/logs); run a
+discount on surplus apples → they sell faster at lower per-unit profit, summary shows the ad cost.
 
-### I3. Городские лицензии
-**Делаем:** `LicenseSystem` — разрешения на продажу категорий/строительство объектов/ремесленные станции. Лицензии покупаются или открываются через рейтинг/заказы.
-**Проверка:** без лицензии нельзя открыть рыбный прилавок; купил лицензию → можно.
+### D14. Decorations v1 `[assets: backlog]`
+**Do:** 5–10 simple market decorations — purely visual / for rating, no hidden buffs. (Needs art →
+backlog; trees and existing props can stub a few.)
+**Check:** place decor → market looks richer; rating counts presence.
 
-### I4. Репутация в действии
-**Делаем:** влияние `ReputationSystem` на доступность редких рецептов, доверие поставщиков, контракты, диалоги и лимиты заказов. Не менять цены напрямую.
-**Проверка:** высокая репутация → больше доверия и контента; низкая → отказы и закрытые ветки.
+### D15. Rent / Loans (optional pressure) `[assets: ready]`
+**Do:** only after UI is solid. `RentSystem` (fixed per-stall charge each season, 1-day warning);
+`LoanSystem` (loan for big unlocks, daily interest, default = lose the object). Keep it simple and
+visible.
+**Check:** season end → rent charged with prior warning; take/repay a loan cleanly.
 
-> **Контрольная точка I:** игрок не просто продаёт товары, а строит отношения с городом и открывает новые возможности.
-
----
-
-# БЛОК J — Кооп
-*Делаем в последнюю очередь. Соло должно быть полностью рабочим до этого.*
-
-### J1. Netcode установка
-**Делаем:** добавление `Netcode for GameObjects`, базовый Host/Client стартер из меню.
-**Проверка:** второй клиент подключается к хосту.
-
-### J2. Двое в одной сцене
-**Делаем:** `NetworkPlayer` — синхронизация позиции/поворота тела, видимость второго игрока в третьем лице.
-**Проверка:** два клиента → вижу как второй игрок ходит рядом.
-
-### J3. Синхронизация рынка
-**Делаем:** `MarketRating`, `TimeSystem`, `Wishboard/OrderSystem`, состояние прилавков и инвентарей — серверные. Кошельки — личные или командные, выбрать при проектировании коопа.
-**Проверка:** один продаёт/выполняет заказ → у обоих обновился рынок и прогресс.
-
-### J4. WorkerNPC для соло/неполного состава
-**Делаем:** `WorkerNPC` + `WorkerSystem` — AI закрывает специализацию на базовом тире за зарплату. Эндгейм (теплица/верфь/уникальные рецепты) — только живому игроку.
-**Проверка:** в соло нанимаю работника-рыбака → он поставляет базовую рыбу; теплицу не открывает.
-
-### J5. Масштабирование целей
-**Делаем:** финальная сумма и пороги рейтинга зависят от числа живых игроков.
-**Проверка:** соло-цель заметно ниже, чем на четверых.
-
-> **Контрольная точка J:** играбельный кооп до 4 человек.
-
----
-
-# БЛОК K — Полировка и релиз
-*Когда всё работает — доводим до ума и выпускаем.*
-
-### K1. Замена временных ассетов
-**Делаем:** ревизия префабов: финальные модели (или из выбранного пака с единым стилем), материалы под URP, LOD-группы для дальних.
-**Проверка:** сцена выглядит цельно, нет «розовых» материалов, FPS не упал.
-
-### K2. Звуковой дизайн
-**Делаем:** ambient рынка по времени суток, реакции NPC на покупки, звуки UI/заказов/строительства, jingle для крупных достижений.
-**Проверка:** на каждое значимое действие есть звук. Mixer групп работает.
-
-### K3. Туториал первой сессии
-**Делаем:** последовательность из 8-10 подсказок: купить → выложить → продать → взять заказ с доски → выполнить заказ. Каждая хранится в `TutorialStepSO`.
-**Проверка:** новый игрок проходит первые 30 минут без чтения документации.
-
-### K4. Баланс
-**Делаем:** таблица цен/таймеров/зарплат в Google Sheets, прогон 5-10 сессий, правки. Финальная цель — конкретная сумма за конкретное число сезонов.
-**Проверка:** в playtest сессии достигают финала без эксплойтов, без скуки.
-
-### K5. Оптимизация
-**Делаем:** LOD для дальних, пулинг NPC, профайлинг толпы, GPU instancing для повторяющихся мешей. Цель — стабильные 60 FPS на средней машине.
-**Проверка:** профайлер показывает <16ms на кадр в час пик.
-
-### K6. UX-пасс
-**Делаем:** ревизия всех экранов, единый стиль, шрифты, контрастность, локализация (минимум RU/EN через `LocalizationSO`).
-**Проверка:** проход всех UI-экранов глазами «нового игрока» без вопросов.
-
-### K7. Build pipeline и релиз
-**Делаем:** `Build & Run` для Win/Mac/Linux, иконки, splash, страница на Steam/itch.io. Версионирование (semver).
-**Проверка:** билд скачивается, ставится, запускается.
-
-### K8. Playtest и патч-цикл
-**Делаем:** 3-5 внешних плейтестеров → багрепорты → фиксы. Один минорный патч после релиза.
-**Проверка:** критические баги пофиксены, патч выпущен.
-
-> **Контрольная точка K:** игра релизнута.
+> **Checkpoint D:** the day has rhythm and stakes, NPCs are characters, orders drive goals, and growth
+> is visible in the world. This is the full fun-slice.
 
 ---
 
-## Что поручать Claude Code (примеры формулировок)
+# BLOCK E — Farm (first big vertical slice)
+*Give the player their own goods instead of endless resale. Harvest items exist; growth-stage art does not.*
 
-| Шаг | Запрос |
-|---|---|
-| A2 | «Напиши InteractionSystem: raycast из камеры на 2.5м, если объект реализует IInteractable — показать UI-подсказку, по E вызвать Interact(). Добавь тестовый куб с Debug.Log» |
-| B6 | «Упрости PriceCalculator: убери IPriceModifier/PriceContext из игрового API, оставь GetBuyPrice(ItemSO) и GetSuggestedSellPrice(ItemSO). Поставщик и прилавок должны работать без скрытых модификаторов» |
-| D4 | «Напиши Wishboard: ежедневные заказы с ItemSO, количеством, дедлайном и фиксированной наградой. Добавь debug-заполнение 3 заказами и UI-заглушку списка» |
-| E1 | «Напиши CropPlot: состояния Empty/Planted/Growing/Ready, Plant(CropSO) запускает таймер growthTime, Harvest() выдаёт урожай в Inventory. Добавь debug-клавишу мгновенного роста» |
-| C8 | «Напиши NPCVisualPicker: при спавне выбирает случайную модель из массива GameObject, инстанцирует как ребёнка корня NPC и связывает Animator» |
+### E1. CropPlot + CropSO `[assets: stub]`
+**Do:** `CropPlot` (Empty/Planted/Growing/Ready), `CropSO` (seed, growth time, yield, plant seasons);
+buy seeds from supplier (seed `ItemSO`); debug instant-grow. Harvest items use Food-Kit models
+(carrot/corn/pumpkin/tomato/…); the growing plot itself is a stub (primitive scaled by progress).
+**Check:** buy seed → plant → speed up → harvest a carrot into inventory.
+
+### E2. Crop visual stages `[assets: backlog]`
+**Do:** sprout / young / ready meshes per crop, switched by timer progress. Needs new art → backlog;
+until then scale/material-swap a stub.
+**Check:** the plot visibly grows from sprout to harvest.
+
+### E3. Crop seasonality `[assets: ready]`
+**Do:** `CropSO.AvailableSeasons`; out-of-season can't be planted on a normal plot (greenhouse lifts
+this later). No ×0.3 slowdown, no random death — just allow/deny with a clear reason.
+**Check:** can't plant a summer crop in winter (UI/log explains); plants fine in season.
+
+### E4. Harvest quality (optional) `[assets: ready]`
+**Do:** if needed, quality is separate fixed-price `ItemSO` variants (`Carrot`, `Carrot_Good`,
+`Carrot_Prize`) — no hidden price multiply. First pass may ship only the normal harvest.
+**Check:** harvest yields a clear item with a fixed price.
+
+### E5. Cost of production `[assets: ready]`
+**Do:** tie `CropSO` to economy: seed price + grow time → unit cost; base sell ~2–3× cost so growing
+beats resale.
+**Check:** margin on grown goods > resale; farming is worthwhile.
+
+### E6. Greenhouse `[assets: stub]`
+**Do:** `Greenhouse` structure; plots inside ignore season limits; debug-unlocked for now. Use a Barn
+(BigBarn/OpenBarn) as a stub building until greenhouse art exists.
+**Check:** a winter crop grows inside.
+
+### E7. Beehive `[assets: stub]`
+**Do:** `Beehive` yields honey + wax on a timer; needs flowers nearby (see E8). Honey item is ready;
+the hive is a stub (barrel/Well) until art exists.
+**Check:** place hive → time passes → honey + wax in inventory.
+
+### E8. Flowers & bouquets `[assets: backlog]`
+**Do:** flower crops + `RecipeSO` bouquets (3 flowers → bouquet priced above the parts). No flower
+models in the repo → backlog; prototype with colored stubs.
+**Check:** assemble a bouquet that sells above its parts.
+
+### E9. Farm tutorial `[assets: ready]`
+**Do:** scripted hint chain (buy seed → find plot → plant → wait/harvest → place on stall), steps in
+`TutorialStepSO`.
+**Check:** a new player completes the chain with no outside explanation.
+
+> **Checkpoint E:** full vertical slice — the "playable prototype" you show off.
 
 ---
 
-## Ключевые риски (помнить по ходу)
+# BLOCK F — Fishing
+*Same template as Block E. Fish items exist; fishing-spot/rod/boat/shipyard art does not.*
 
-**Не уходи вперёд по блокам.** Соблазн начать рыбалку до готовности рынка велик — это путь к куче несвязанных систем. Держись порядка.
+### F1. FishingSpot & catching `[assets: stub]`
+**Do:** `FishingSpot` interactable; hold E → timer with chance → fish in inventory; basic rod as a
+tool `ItemSO`. Water + spot are stubs (a plane + primitive); fish items are ready.
+**Check:** fish at the water; sometimes a fish drops.
 
-**Не возвращай скрытые коэффициенты.** Если хочется “живой рынок”, сначала думай про видимый контент: новые заказы, новые поставщики, новые NPC, сезонную доступность, реплики и цели. Не добавляй засухи, спрос ×1.5, слухи ×2 и похожую невидимую математику.
+### F2. Fish types & rarity `[assets: ready]`
+**Do:** `FishSO` (chance, price, min rod). Map to the Fish Pack models (Fish1-3/Shark/Dolphin/…).
+**Check:** different fish appear; rare ones cost more.
 
-**Блок C теперь важнее сложной экономики.** Пока магазин, инвентарь и прилавок живут через Debug.Log, любые глубокие системы будут плохо проверяться. После стабилизации блока B — делать UI.
+### F3. Spot depletion & recovery `[assets: ready]`
+**Do:** spot capacity; chance drops after N catches; recovers over a day/week.
+**Check:** active fishing depletes the spot; fish return after recovery.
 
-**Толпа от первого лица.** Широкие проходы (3-4м), NavMeshObstacle на игроке (A7), NPC уступают дорогу — иначе игрок застрянет в людях.
+### F4. Smoking & drying `[assets: stub]`
+**Do:** `SmokingStation` turns raw fish into a separate fixed-price `SmokedFishSO` on a timer. Station
+is a stub.
+**Check:** load fish → wait → smoked fish at a higher price.
 
-**Масштаб.** Эталонная капсула 1.8м, всё мерить по ней с A1. Первое лицо безжалостно к кривому масштабу.
+### F5. Aquariums as goods `[assets: backlog]`
+**Do:** `AquariumStallItem` — live fish as premium decor; needs a "tank" from crafting. Tank art →
+backlog.
+**Check:** an aquarium on the stall sells rarely but expensively.
 
-**Сохранение усложняется быстро.** Делаем в A10, потом обновляем формат с каждым большим блоком (`SaveData.Version`). Не накапливай 5 блоков без миграции.
+### F6. Shipyard & boats `[assets: backlog]`
+**Do:** `Shipyard` consumes boards + metal → a sellable boat. Boat/shipyard art → backlog.
+**Check:** build a boat → sell for a large sum.
 
-**Билд после каждого блока.** Проверяй `Build & Run` после контрольной точки каждого блока. Build-only баги (отсутствующие шейдеры, AOT) накапливаются молча.
+### F7. Ferry crossing `[assets: backlog]`
+**Do:** a running ferry gives passive income and brings "other-district" NPCs (rare supplier stock).
+Ferry art → backlog.
+**Check:** ferry running → daily income; new supplier items appear.
 
-**Кооп — в конце.** Сетевая синхронизация поверх готовой соло-игры — нормально. Проектировать всё под сеть с нуля — дорого и медленно.
-
-**Repo и бэкап.** Git с самого начала. После каждого зелёного шага — коммит. Раз в день — push.
+> **Checkpoint F:** one extra specialization fully playable.
 
 ---
 
-## Прогресс
+# BLOCK G — Animal husbandry
+*Animal + coop models exist (no chicken model). Pets partly exist (Pug; no cat).*
 
-### Блок 0 — Фундамент
-- [x] 0.1 Архитектура папок и namespaces
-- [x] 0.2 Фильтрация ассетов
-- [x] 0.3 Сцены и Bootstrap
+### G1. Chickens & eggs `[assets: stub]`
+**Do:** `ChickenCoop` (model ready) collects eggs on a timer; feed bought from supplier; egg item
+ready. Chicken creature is a stub (no chicken model) — coop can abstract the birds for now.
+**Check:** feed → collect eggs → sell.
+
+### G2. Cows, pigs, sheep `[assets: ready]`
+**Do:** each animal (Cow/Pig/Sheep models ready) yields its resource (milk/meat/wool) on its own cycle.
+**Check:** all three branches produce distinct raw materials.
+
+### G3. Pets & "market happiness" (visible) `[assets: stub]`
+**Do:** `PetSO` (Pug ready as dog; cat → backlog; Pig as mini-pig). A pet is a *visible* object that
+unlocks NPC lines, cosmetic reactions, themed orders/achievements — **no invisible traffic buff**.
+**Check:** add a dog → NPCs occasionally react; a themed order/achievement opens.
+
+### G4. Horses — rental & delivery `[assets: ready]`
+**Do:** `Horse` (model ready) can be rented (passive income) or sent to fetch supplier goods (faster,
+risky).
+**Check:** send the horse → after a timer it returns with goods or empty.
+
+### G5. Horse racing (mini-game) `[assets: ready]`
+**Do:** a simple once-a-season event (pick a winner or ride), using the Horse model.
+**Check:** race runs; the bet pays out or burns.
+
+> **Checkpoint G:** animal branch fully playable.
+
+---
+
+# BLOCK H — Crafting & kitchen
+*Crafted results exist as Food-Kit models; dedicated station buildings do not (use Barn stubs).*
+
+### H1. CraftingStation base `[assets: stub]`
+**Do:** `ICraftingStation` — takes a recipe + ingredients from inventory → timer → result. Station
+is a stub building (Barn/SmallBarn) until art exists.
+**Check:** craft a simple item from a recipe.
+
+### H2. Bakery `[assets: ready]`
+**Do:** `Bakery` consumes grain + eggs → bread/pie/buns. Results map to Food-Kit
+bread/loaf/baguette/pie models. (Building stubbed; products ready.)
+**Check:** bake bread → sell at a margin (it's a separate `ItemSO`).
+
+### H3. Brewery `[assets: stub]`
+**Do:** `Brewery` — grain + honey → beer/mead; long timer, premium price. Drink props stubbed
+(bottle/barrel from Food Kit).
+**Check:** start a brew → product after a cycle.
+
+### H4. Smithy — tools for other branches `[assets: backlog]`
+**Do:** `Smithy` makes improved rods (F), boards (shipyard), garden tools (E). Tool models → backlog;
+stub with primitives.
+**Check:** craft a rod → fisher unlocks new fish.
+
+### H5. Apothecary `[assets: backlog]`
+**Do:** `Apothecary` — herbs + animal products → potions/cosmetics (premium). Potion/herb art →
+backlog.
+**Check:** brew a potion → sell expensively.
+
+### H6. Tailor `[assets: backlog]`
+**Do:** `Tailor` — wool + leather → clothing for seasonal orders/new buyer types (fixed price, no
+hidden bonus). Clothing art → backlog.
+**Check:** make winter clothing → turn it into a winter order or sell as a fixed-price item.
+
+### H7. Recipes as finds `[assets: ready]`
+**Do:** `RecipeBookSO`; recipes aren't given upfront — bought from traveling traders or dropped as
+rewards. (Data/UI only.)
+**Check:** unlock a recipe → it appears in the station's craft menu.
+
+### H8. Unique recipe & rare item `[assets: ready]`
+**Do:** rare recipes yield a unique high fixed-price item with its own orders — no temporary ×2
+monopoly. (Reuses existing Food-Kit models.)
+**Check:** unlock a unique recipe → make a new item that shows up in orders/achievements.
+
+> **Checkpoint H:** all four specializations playable and linked by materials.
+
+---
+
+# BLOCK I — Social systems & town
+*Relationships, contracts, consequences — still no hidden price/demand changes. Mostly data/UI/logic.*
+
+### I1. NPC dialogue & relationships `[assets: ready]`
+**Do:** `NPCRelationSystem` — key NPCs have a relationship that opens lines, orders, rewards. No
+hidden price effect.
+**Check:** complete the baker's orders a few times → a new line/order/recipe opens.
+
+### I2. Supplier contracts `[assets: ready]`
+**Do:** long-term contracts reserve a fixed quantity at a fixed price/prepay — clearer than a dynamic
+market.
+**Check:** contract for apples → N apples available daily; skipping breaks trust.
+
+### I3. Town licenses `[assets: ready]`
+**Do:** `LicenseSystem` — permits to sell categories / build objects / run stations; bought or
+unlocked via rating/orders.
+**Check:** no fish license → no fish stall; buy it → allowed.
+
+### I4. Reputation in action `[assets: ready]`
+**Do:** `ReputationSystem` gates rare recipes, supplier trust, contracts, dialogue, order limits.
+Never changes prices directly.
+**Check:** high rep → more trust/content; low rep → refusals and closed branches.
+
+> **Checkpoint I:** the player builds relationships with the town, not just sells goods.
+
+---
+
+# BLOCK J — Co-op
+*Last. Solo must be fully working first.*
+
+### J1. Netcode bootstrap `[assets: ready]`
+**Do:** add Netcode for GameObjects; Host/Client starter from the menu.
+**Check:** a second client connects to the host.
+
+### J2. Second player in scene `[assets: ready]`
+**Do:** `NetworkPlayer` — sync position/rotation/animations; see the other player in third person.
+**Check:** two clients → you see the other player walking nearby.
+
+### J3. Shared market state `[assets: ready]`
+**Do:** server-authoritative time, orders, stalls, storage, rating; wallets personal or shared
+(decide at design time).
+**Check:** one sells/completes an order → both see the market/progress update.
+
+### J4. Role split / WorkerNPC for solo `[assets: ready]`
+**Do:** `WorkerNPC` + `WorkerSystem` cover a specialization at a basic tier for a wage; endgame
+(greenhouse/shipyard/unique recipes) stays human-only. In co-op, split roles (stall / farm / fishing).
+**Check:** solo hire a fisher worker → basic fish supply; greenhouse stays locked to them.
+
+### J5. Goal scaling `[assets: ready]`
+**Do:** final target and rating thresholds scale with the number of human players.
+**Check:** solo target is clearly lower than four-player.
+
+> **Checkpoint J:** playable co-op for up to 4.
+
+---
+
+# BLOCK K — Polish & release
+*When it all works — finish and ship. Most art-replacement here waits on the artist.*
+
+### K1. Replace placeholder assets `[assets: backlog]`
+**Do:** final models/materials (single style), URP fix-ups, LOD groups. Waits on the artist; swap
+stubs as art lands.
+**Check:** the scene looks coherent; no pink materials; FPS holds.
+
+### K2. Sound design `[assets: backlog]`
+**Do:** time-of-day ambience, NPC purchase reactions, UI/order/build sounds, achievement jingles.
+**Check:** every significant action has a sound; mixer groups work.
+
+### K3. First-session tutorial `[assets: ready]`
+**Do:** 8–10 hint chain: buy → place → sell → take a board order → complete it → unlock something.
+Steps in `TutorialStepSO`.
+**Check:** a new player gets through the first ~20–30 min without docs.
+
+### K4. Balance pass `[assets: ready]`
+**Do:** prices/timers/wages table, 5–10 playthroughs, tune. Target: a concrete sum in a concrete
+number of seasons.
+**Check:** playtests reach the goal without exploits or boredom.
+
+### K5. Performance pass `[assets: ready]`
+**Do:** NPC pooling, LOD, crowd profiling, GPU instancing for repeated meshes. Target stable 60 FPS.
+**Check:** profiler shows < 16 ms/frame at peak.
+
+### K6. UX pass `[assets: ready]`
+**Do:** review all screens — consistent style/fonts/contrast, minimal localization (RU/EN via
+`LocalizationSO`).
+**Check:** a "new player" walks every screen without questions.
+
+### K7. Build pipeline & release `[assets: ready]`
+**Do:** Build & Run for target platforms, icons, splash, store page, SemVer. (Versioning already in
+place: `VERSION` + `CHANGELOG.md` + `vX.Y.Z` tags.)
+**Check:** the build downloads, installs, runs.
+
+### K8. Playtest & patch cycle `[assets: ready]`
+**Do:** 3–5 external testers → bug reports → fixes → one minor post-release patch.
+**Check:** critical bugs fixed; patch shipped.
+
+> **Checkpoint K:** the game is released.
+
+---
+
+## Key risks (keep in mind)
+
+- **Don't run ahead through blocks.** Resist starting fishing before the market loop is fun — it
+  leads to piles of disconnected systems. Hold the order.
+- **Don't bring back hidden coefficients.** Want a "lively market"? Add visible content first: new
+  orders, suppliers, NPCs, seasonal availability, lines and goals. No droughts, demand ×1.5, rumor ×2.
+- **UI (Block C) outranks deep economy.** While shop/inventory/stall live in Debug.Log, deep systems
+  are untestable. Stabilize C first.
+- **First-person crowds.** Wide aisles (3–4 m), `NavMeshObstacle` on the player (A7), NPCs yield —
+  or the player gets stuck in the crowd.
+- **Scale.** Reference capsule 1.8 m; measure everything against it from A1. First person is merciless
+  about bad scale.
+- **Saving gets complex fast.** Built in A10; bump `SaveData.Version` with each big block and migrate.
+  Don't stack five blocks without migration.
+- **Build after every block.** Run Build & Run at each block checkpoint; build-only bugs (missing
+  shaders, AOT) accumulate silently.
+- **Co-op is last.** Netcode on top of a finished solo game is fine; designing everything for network
+  from scratch is slow and costly.
+- **Art is gated.** New models/animations won't arrive soon. Build logic against stubs (`[assets:
+  stub]`) and keep `[assets: backlog]` steps behind flags rather than blocking on art.
+
+---
+
+## Progress
+
+### Block 0 — Foundation
+- [x] 0.1 Folder architecture & namespaces
+- [x] 0.2 Asset filtering
+- [x] 0.3 Scenes & Bootstrap
 - [x] 0.4 ServiceLocator + EventBus
-- [x] 0.5 Главное меню
-- [x] 0.6 Первый билд
+- [x] 0.5 Main menu
+- [x] 0.6 First build
 
-### Блок A — Играбельный скелет
-- [x] A1 Ходьба (FirstPersonController, HeadBob)
-- [x] A2 Взгляд и подсказка (IInteractable, InteractionSystem, InteractionPromptUI)
-- [x] A3 Деньги и HUD (MoneySystem, MoneyHUD)
-- [x] A4 Товары и инвентарь (ItemSO, ItemCategory, Inventory)
-- [x] A5 Поставщик Debug (SupplierShop, DebugSupplierBuy)
-- [x] A6 Прилавок Debug (MarketStall, StallSlot, DebugStallPlace)
-- [x] A7 NavMesh + NavMeshObstacle на игроке
-- [x] A8 Первый NPC и первая продажа (NPCVisitor)
-- [x] A9 Поток посетителей (NPCSpawner, NPCTypeSO)
-- [x] A10 Сохранение (SaveSystem, SaveData)
+### Block A — Playable skeleton
+- [x] A1 Walking · [x] A2 Look & prompt · [x] A3 Money & HUD · [x] A4 Items & inventory
+- [x] A5 Supplier (debug) · [x] A6 Stall (debug) · [x] A7 NavMesh + obstacle
+- [x] A8 First NPC & sale · [x] A9 Visitor flow · [x] A10 Saving
 
-### Блок B — Стабильный рынок без скрытых коэффициентов
-- [x] B1 Игровое время (TimeSystem)
-- [x] B2 Освещение по времени (DaylightSystem)
-- [x] B3 Трафик NPC по времени
-- [x] B4 Сезоны (SeasonManager)
-- [x] B5 Единая точка цены без игровых модификаторов
-- [x] B6 Упростить уже написанную систему цен (убрать IPriceModifier/PriceContext из gameplay API)
-- [x] B7 Автодебаг полного цикла (MarketAutoDebugger)
-- [x] B8 Правила покупки NPC без скрытого спроса
-- [x] B9 Подготовка к нескольким прилавкам
-- [x] B10 Сезонный ассортимент без изменения цен
+### Block B — Stable market, no hidden coefficients
+- [x] B1 Game time · [x] B2 Daylight · [x] B3 Traffic by hour · [x] B4 Seasons
+- [x] B5 Single price point · [x] B6 Simplify pricing · [x] B7 Auto-debug
+- [x] B8 NPC purchase rules · [x] B9 Multi-stall prep · [x] B10 Seasonal assortment
 
-### Блок C — UX и пользовательская поверхность
-- [ ] C1 InventoryUI (сетка слотов, иконки)
-- [ ] C2 Иконки для товаров (editor-скрипт или ручные)
-- [x] C3 ShopUI поставщика
-- [ ] C4 StallUI прилавка
-- [ ] C5 PauseMenu (Esc, Time.timeScale)
-- [ ] C6 Меню настроек (чувствительность, звук, привязки)
-- [ ] C7 AudioMixer + базовый ambient
-- [ ] C8 NPC визуальный пул (3-5 моделей)
-- [ ] C9 Подсказка взаимодействия с иконкой устройства
+### Block C — UX & player-facing surface
+- [ ] C1 Cursor/UI-mode service
+- [ ] C2 InventoryUI
+- [x] C3 ShopUI (supplier)
+- [ ] C4 StallUI
+- [ ] C5 PauseMenu
+- [ ] C6 Settings menu
+- [ ] C7 AudioMixer & base audio
+- [ ] C8 NPC visual pool
+- [ ] C9 Interaction prompt & cursor polish
 
-### Блок D — Прогрессия и давление
-- [ ] D1 ReputationSystem
-- [ ] D2 MarketRating (1-5★)
-- [ ] D3 AchievementTracker + UnlockSystem
-- [ ] D4 Wishboard (запросы NPC с дедлайном)
-- [ ] D5 RentSystem (аренда прилавков)
-- [ ] D6 LoanSystem (кредиты)
-- [ ] D7 RivalMarket (конкурент)
+### Block D — Day rhythm, orders, progression & attraction
+- [ ] D1 DayPhaseSystem
+- [ ] D2 Open/Close stall
+- [ ] D3 Evening Summary
+- [ ] D4 Daily Goals v1
+- [ ] D5 Sleep / Next Day
+- [ ] D6 NPC personalities
+- [ ] D7 Dialogue bubble & haggling
+- [ ] D8 Wishboard / Orders (D8a–D8f)
+- [ ] D9 ReputationSystem
+- [ ] D10 MarketRating + UnlockSystem
+- [ ] D11 Physical market props (D11a–D11e)
+- [ ] D12 Staff / automation (D12a–D12g)
+- [ ] D13 Visible customer attraction (D13a–D13e)
+- [ ] D14 Decorations v1
+- [ ] D15 Rent / Loans (optional)
 
-### Блок E — Ферма
-- [ ] E1 CropPlot + CropSO (базовый цикл)
-- [ ] E2 Стадии роста (визуал)
-- [ ] E3 Сезонность культур
-- [ ] E4 Качество урожая (обычное/хорошее/редкое)
-- [ ] E5 Себестоимость vs закупка
-- [ ] E6 Ульи (мёд, воск)
-- [ ] E7 Цветочный прилавок и букеты (RecipeSO)
-- [ ] E8 Теплица (debug-разблокировка)
-- [ ] E9 Туториал по ферме (TutorialStepSO)
+### Block E — Farm
+- [ ] E1 CropPlot + CropSO · [ ] E2 Visual stages · [ ] E3 Seasonality · [ ] E4 Quality
+- [ ] E5 Cost of production · [ ] E6 Greenhouse · [ ] E7 Beehive · [ ] E8 Flowers & bouquets
+- [ ] E9 Farm tutorial
 
-### Блок F — Рыбалка
-- [ ] F1 FishingSpot + базовая ловля
-- [ ] F2 Типы рыбы и редкость (FishSO)
-- [ ] F3 Истощение и восстановление водоёма
-- [ ] F4 Копчение и сушка (SmokingStation)
-- [ ] F5 Аквариумы как товар
-- [ ] F6 Верфь + лодки
-- [ ] F7 Паромная переправа (пассивный доход)
+### Block F — Fishing
+- [ ] F1 FishingSpot · [ ] F2 Fish types · [ ] F3 Depletion/recovery · [ ] F4 Smoking/drying
+- [ ] F5 Aquariums · [ ] F6 Shipyard & boats · [ ] F7 Ferry
 
-### Блок G — Животноводство
-- [ ] G1 Куры и яйца (ChickenCoop)
-- [ ] G2 Коровы, свиньи, овцы
-- [ ] G3 Питомцы + счастье рынка
-- [ ] G4 Лошади — аренда и доставка
-- [ ] G5 Скачки (мини-игра)
+### Block G — Animal husbandry
+- [ ] G1 Chickens & eggs · [ ] G2 Cows/pigs/sheep · [ ] G3 Pets · [ ] G4 Horses · [ ] G5 Racing
 
-### Блок H — Ремесло и кухня
-- [ ] H1 CraftingStation базовая (ICraftingStation)
-- [ ] H2 Пекарня (Bakery)
-- [ ] H3 Пивоварня (Brewery)
-- [ ] H4 Кузня (Smithy)
-- [ ] H5 Аптека (Apothecary)
-- [ ] H6 Ателье (Tailor)
-- [ ] H7 Рецепты как находки (RecipeBookSO)
-- [ ] H8 Уникальный рецепт и редкий товар
+### Block H — Crafting & kitchen
+- [ ] H1 CraftingStation base · [ ] H2 Bakery · [ ] H3 Brewery · [ ] H4 Smithy
+- [ ] H5 Apothecary · [ ] H6 Tailor · [ ] H7 Recipes as finds · [ ] H8 Unique recipe
 
-### Блок I — Социальные системы и город
-- [ ] I1 Диалоги и отношения NPC
-- [ ] I2 Контракты с поставщиками
-- [ ] I3 Городские лицензии
-- [ ] I4 Репутация в действии (доступ/доверие/контент)
+### Block I — Social systems & town
+- [ ] I1 NPC dialogue & relationships · [ ] I2 Supplier contracts · [ ] I3 Town licenses
+- [ ] I4 Reputation in action
 
-### Блок J — Кооп
-- [ ] J1 Netcode for GameObjects — установка
-- [ ] J2 Двое в одной сцене (NetworkPlayer)
-- [ ] J3 Синхронизация рынка
-- [ ] J4 WorkerNPC для соло
-- [ ] J5 Масштабирование целей
+### Block J — Co-op
+- [ ] J1 Netcode bootstrap · [ ] J2 Second player · [ ] J3 Shared market state
+- [ ] J4 Role split / WorkerNPC · [ ] J5 Goal scaling
 
-### Блок K — Полировка и релиз
-- [ ] K1 Замена временных ассетов
-- [ ] K2 Звуковой дизайн
-- [ ] K3 Туториал первой сессии
-- [ ] K4 Баланс
-- [ ] K5 Оптимизация (LOD, пулинг, профайлинг)
-- [ ] K6 UX-пасс
-- [ ] K7 Build pipeline и релиз
-- [ ] K8 Playtest и патч-цикл
+### Block K — Polish & release
+- [ ] K1 Replace placeholders · [ ] K2 Sound design · [ ] K3 Tutorial · [ ] K4 Balance
+- [ ] K5 Performance · [ ] K6 UX pass · [ ] K7 Build pipeline · [ ] K8 Playtest & patch

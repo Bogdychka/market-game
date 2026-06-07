@@ -12,6 +12,22 @@ reviews it, verifies via Unity MCP, bumps the version, tags it, and pushes. See 
 
 _Nothing pending._
 
+## [1.2.3] - 2026-06-07
+
+### Changed
+- Docs unified to a single-source-of-truth model and translated to English. `dev_plan_3.md` is now
+  the only plan + progress file: rewritten in English, merged with the `dev_plan_4` "fun-first"
+  direction, pending steps expanded into sub-steps, and every world object tagged by asset
+  availability (`[assets: ready/stub/backlog]`) so art-gated work is stubbed or deferred, not blocked.
+- `CLAUDE.md` slimmed to Claude's reviewer/verifier/publisher role; coding & architecture rules now
+  live once in `AGENTS.md` (shared by both agents) instead of being duplicated. Stale progress and
+  `dev_plan_4` references removed. (Claude)
+
+### Removed
+- `dev_plan_4.md` (merged into `dev_plan_3.md`).
+- `market_game_overview.md` moved to `_ArchiveAssets/docs/` with an "archived, not a spec" banner — it
+  described hidden-coefficient mechanics the project rejected. (Claude)
+
 ## [1.2.2] - 2026-06-07
 
 ### Fixed
