@@ -21,6 +21,7 @@ namespace Market.UI
         [Header("Panels")]
         [SerializeField] private GameObject mainPanel;
         [SerializeField] private GameObject settingsPanel;
+        [SerializeField] private UIModeService uiModeService;
 
         private SceneLoader _sceneLoader;
         private SaveSystem  _saveSystem;
@@ -30,6 +31,7 @@ namespace Market.UI
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             FileLogger.Initialize();
 #endif
+            ResolveUIModeService();
             ValidateReferences();
             ResolveServices();
         }
@@ -46,7 +48,7 @@ namespace Market.UI
 
         private void Start()
         {
-            UnlockCursor();
+            uiModeService?.SetPersistentMenuMode(true);
             RefreshContinueAvailability();
             ShowMainPanel();
         }
@@ -83,12 +85,6 @@ namespace Market.UI
         }
 
         // ── Setup ──────────────────────────────────────────────────────
-        private void UnlockCursor()
-        {
-            Cursor.lockState = CursorLockMode.None;
-            Cursor.visible   = true;
-        }
-
         private void WireButtons()
         {
             UnwireButtons();
@@ -157,6 +153,12 @@ namespace Market.UI
             }
         }
 
+        private void ResolveUIModeService()
+        {
+            if (uiModeService != null) return;
+            uiModeService = GetComponent<UIModeService>();
+        }
+
         private void ValidateReferences()
         {
             if (newGameButton  == null) Debug.LogError("[MainMenu] newGameButton не назначен", this);
@@ -165,6 +167,7 @@ namespace Market.UI
             if (quitButton     == null) Debug.LogError("[MainMenu] quitButton не назначен", this);
             if (mainPanel      == null) Debug.LogError("[MainMenu] mainPanel не назначен", this);
             if (settingsPanel  == null) Debug.LogError("[MainMenu] settingsPanel не назначен", this);
+            if (uiModeService  == null) Debug.LogError("[MainMenu] uiModeService не назначен", this);
         }
     }
 }

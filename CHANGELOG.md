@@ -10,7 +10,20 @@ reviews it, verifies via Unity MCP, bumps the version, tags it, and pushes. See 
 
 ## [Unreleased]
 
-_Nothing pending._
+### Added
+- C1: Added `UIModeService` as the single runtime coordinator for game/menu mode. It owns cursor
+  lock/visibility, suppresses first-person and interaction input while panels are open, and exposes a
+  shared close request for UI panels. (Codex)
+
+### Changed
+- Market UI panels now enter/exit UI mode through `UIModeService`; `GameBootstrap` consumes Escape while
+  a Market panel is open instead of returning to MainMenu, and `InteractionSystem` clears the active
+  prompt when disabled. MainMenu also uses `UIModeService` for menu cursor state. (Codex)
+
+### Verification
+- MCP `recompile_scripts`: success, 0 warnings.
+- MCP `get_health_report`: ok, compileFailed=false, consoleErrors=0, dirtyScenes=0.
+- MCP EditMode tests: 55/55 passed. (Codex)
 
 ## [1.2.3] - 2026-06-07
 
