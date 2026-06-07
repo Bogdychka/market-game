@@ -7,6 +7,11 @@ Keep it short, current, and actionable. Do not use it as a progress log:
 `dev_plan_3.md`, the current worktree, Unity serialized files, console logs,
 MCP health reports, and `game.log` are the sources of truth for current state.
 
+> **Shared contract.** The coding, architecture, performance and Unity-6 rules in this file apply to
+> **both** agents — `CLAUDE.md` points here instead of duplicating them. Codex-specific division of
+> labour: Codex implements a plan step and records it in `CHANGELOG.md` `[Unreleased]`; Claude
+> reviews, verifies via Unity MCP, versions, tags and merges to `main`. Full process: `COLLAB.md`.
+
 ---
 
 ## Version Control & Collaboration with Claude

@@ -1,3 +1,11 @@
+> ⚠️ **ARCHIVED — historical vision, NOT a spec.** This early concept describes hidden-coefficient
+> mechanics (a "market happiness" stat, weather/politics/rumors pressuring prices) that the project
+> has **explicitly rejected**. It is kept only as a record of original intent. The active design is in
+> `dev_plan_3.md` (single source of truth) and the rules in `CLAUDE.md` / `AGENTS.md`: no hidden
+> market coefficients. Do not implement anything from this file as-is.
+
+---
+
 # Рынок — игровой концепт
 
 > Экономическая симуляция для 1–4 игроков, в которой каждый строит свой угол рынка, а мир вокруг постоянно меняется — и к этому надо быть готовым.
