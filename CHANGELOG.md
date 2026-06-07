@@ -12,6 +12,14 @@ reviews it, verifies via Unity MCP, bumps the version, tags it, and pushes. See 
 
 _Nothing pending._
 
+## [1.3.1] - 2026-06-07
+
+### Changed
+- `AGENTS.md`: added an "MCP gotchas (hard-won)" subsection capturing recurring time-sinks — test-noise
+  vs project failure, don't over-verify, check the Editor is up first, MCP-Play doesn't tick time,
+  prefer `update_component` over hand-written scene YAML, new serialized fields need explicit scene
+  values, new package `.cs` needs `.meta` + refresh, and keep new code comments in English. (Claude)
+
 ## [1.3.0] - 2026-06-07
 
 ### Added

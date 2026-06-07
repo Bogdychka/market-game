@@ -366,6 +366,37 @@ If MCP says `Transport closed`, use the direct WebSocket fallback from project r
 
 If WebSocket fails with `ECONNREFUSED 127.0.0.1:8090`, confirm Unity is open and the MCP Unity server window says Server Online.
 
+### Gotchas (hard-won — read before a long MCP session)
+
+These are the things that have repeatedly burned time. Internalize them.
+
+1. **Test noise is not a project failure.** `run_tests` populates the Unity Console with *expected*
+   negative-case logs from `McpUnity.Tests` (e.g. `Server path is null`, fake temp paths). A post-test
+   `get_health_report` showing `attention` *caused only by those* is **not** a project error — note it
+   and move on. **Never add a temporary Editor script to "clean" the Console** — that's a self-dug hole.
+2. **Don't over-verify.** For a normal change, `recompile_scripts` + `get_health_report` is enough.
+   Run `run_tests` only for shared/risky logic, and don't re-run the full gate Claude will run anyway.
+3. **Check the Editor is up *first*.** At the start of an MCP task do one health/`check-mcp-unity` ping.
+   If the Editor is closed (`ECONNREFUSED`), decide the strategy immediately (ask to open it, or go
+   batchmode) instead of hitting it mid-task and paying for heavy batchmode compensation.
+4. **MCP-driven Play Mode does NOT tick frames/time like a real focused game.** `TimeSystem` won't
+   advance, animations won't play. For time-dependent logic don't trust "time isn't moving in the
+   MCP test" as a gameplay bug — advance time explicitly (`TimeSystem.SkipHours`) or Play manually in
+   a focused Editor. (This false trail once cost ~10 minutes chasing a non-bug.)
+5. **Prefer MCP over hand-writing scene YAML.** `update_component` adds a component and sets primitive
+   fields with Unity-valid serialization (no trailing-whitespace / wrong-block patch fights). Reserve
+   manual YAML for object-reference wiring (`{fileID: …}` to another scene component) and inactive
+   scenes — and always run `git diff --check` *before* committing scene edits, not after the fight.
+6. **A new `[SerializeField]` field / reference does NOT appear in an already-serialized scene.**
+   Code defaults don't backfill existing components. After adding a field or a ref, set it explicitly
+   in the scene (via `update_component` / `save_scene`) — or the Inspector value silently stays
+   `false`/`null` and the feature looks broken while the code is correct.
+7. **New `.cs` in an embedded package (`Packages/…`) needs its `.meta` + an `AssetDatabase.Refresh`.**
+   Until imported, the server sees the registration but not the class. Create the `.meta` and refresh;
+   don't work around it by dumping the class into an unrelated already-imported file.
+8. **Write new code comments/log strings in English.** Russian comments cause mojibake that breaks
+   targeted patching (patches land in the wrong place / can't match). Keep new `.cs` text ASCII.
+
 ---
 
 ## Codex Skills
