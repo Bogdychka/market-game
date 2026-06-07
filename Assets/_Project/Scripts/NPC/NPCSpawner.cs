@@ -45,6 +45,9 @@ namespace Market.NPC
         [SerializeField] private int   maxActiveNPCsAtPeak  = 5;
 
         [Header("Scene References")]
+        // TEMP single-stall API (B9). Multi-stall will resolve the target via a future
+        // MarketStallRegistry and let NPCs pick a stall by preference/route.
+        [Tooltip("TEMP: single stall. Future multi-stall resolves the target via MarketStallRegistry.")]
         [SerializeField] private MarketStall targetStall;
         [SerializeField] private Transform   exitPoint;
         [SerializeField] private MoneySystem playerMoney;

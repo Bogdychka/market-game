@@ -8,6 +8,7 @@ namespace Market.Market
     /// <summary>
     /// Прилавок игрока с массивом слотов. На каждый слот можно положить ItemSO с ценой,
     /// NPC покупает через TakeSale(). Эмитит OnStockChanged при любом изменении стока.
+    /// B9: пока один прилавок — несколько прилавков будут координироваться через будущий MarketStallRegistry.
     /// </summary>
     public class MarketStall : MonoBehaviour, IInteractable
     {
