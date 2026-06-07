@@ -12,6 +12,8 @@ This repo is under **git** (remote: `Bogdychka/market-game`, private). Binary as
 - Start a task: `git switch main && git pull && git switch -c claude/<step>-<slug>`.
 - Verify via MCP (`recompile_scripts` → `get_health_report`) **before** committing; tick the `dev_plan_3.md` box in the same branch; Conventional Commit (+ `Co-Authored-By: Claude` trailer); `gh pr create`.
 - Don't edit the same files Codex is editing. Scenes/prefabs: one agent at a time.
+- **Roles:** Codex implements + records its changes in `CHANGELOG.md` `[Unreleased]`; **Claude reviews, verifies via MCP, versions, and pushes** — the merge to `main` and the version tag are Claude's gate.
+- **Versioning:** every shipped change → a `CHANGELOG.md` entry + a SemVer git tag `vX.Y.Z` on `main` (current line **v1.x**); the root `VERSION` file holds the number.
 
 ---
 
