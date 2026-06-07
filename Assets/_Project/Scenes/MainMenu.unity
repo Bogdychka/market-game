@@ -166,7 +166,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -285,7 +285,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a79441f348de89743a2939f4d699eac1, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalCameraData
   m_RenderShadows: 1
   m_RequiresDepthTextureOption: 2
@@ -2060,6 +2060,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2099548132}
+  - component: {fileID: 2099548134}
   - component: {fileID: 2099548133}
   m_Layer: 5
   m_Name: MenuController
@@ -2105,6 +2106,24 @@ MonoBehaviour:
   quitButton: {fileID: 860027032}
   mainPanel: {fileID: 1918633851}
   settingsPanel: {fileID: 1846673953}
+  uiModeService: {fileID: 2099548134}
+--- !u!114 &2099548134
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2099548131}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2e22510cb2d0455aaeb30d65b78e9a72, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Market.UI.UIModeService
+  playerController: {fileID: 0}
+  interactionSystem: {fileID: 0}
+  startInMenuMode: 1
+  controlCursor: 1
+  lockCursorInGameMode: 0
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

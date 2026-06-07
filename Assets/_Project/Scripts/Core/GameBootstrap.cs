@@ -2,6 +2,7 @@ using Market.Core.Events;
 using Market.DebugTools;
 using Market.Economy;
 using Market.Persistence;
+using Market.UI;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
@@ -121,17 +122,29 @@ namespace Market.Core
 
             string current = SceneManager.GetActiveScene().name;
 
+            if (current != SceneNames.MainMenu && TryConsumeUiEscape())
+                return;
+
             if (current == SceneNames.MainMenu)
                 QuitApplication();
             else
                 ReturnToMainMenu();
         }
 
+        private static bool TryConsumeUiEscape()
+        {
+            if (!ServiceLocator.TryGet<UIModeService>(out UIModeService uiModeService))
+                return false;
+
+            if (uiModeService.WasCloseRequestConsumedThisFrame)
+                return true;
+
+            return uiModeService.IsMenuMode && uiModeService.TryConsumeCloseRequest();
+        }
+
         private void ReturnToMainMenu()
         {
             Debug.Log("[GameBootstrap] Escape: возврат в MainMenu");
-            Cursor.lockState = CursorLockMode.None;
-            Cursor.visible   = true;
             ServiceLocator.Get<SceneLoader>().Load(SceneNames.MainMenu);
         }
 

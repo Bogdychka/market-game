@@ -1,9 +1,7 @@
 using System.Globalization;
 using Market.Core;
 using Market.Economy;
-using Market.Interaction;
 using Market.Market;
-using Market.Player;
 using Market.World;
 using TMPro;
 using UnityEngine;
@@ -39,10 +37,7 @@ namespace Market.UI
         [SerializeField] private MoneySystem moneySystem;
         [SerializeField] private SupplierShop supplierShop;
         [SerializeField] private MarketStall marketStall;
-
-        [Header("Player Input")]
-        [SerializeField] private FirstPersonController playerController;
-        [SerializeField] private InteractionSystem interactionSystem;
+        [SerializeField] private UIModeService uiModeService;
 
         [Header("Controls")]
         [Tooltip("Открыть/закрыть инвентарь.")]
@@ -54,12 +49,12 @@ namespace Market.UI
         private TMP_Text _subtitleLabel;
         private Button _closeButton;
         private PanelMode _mode;
-        private bool _playerInputDisabled;
         private SeasonManager _seasonManager;
         private bool _seasonEventsWired;
 
         private void Awake()
         {
+            ResolveUIModeService();
             ValidateReferences();
             BuildUi();
             SetVisible(false);
@@ -73,7 +68,7 @@ namespace Market.UI
         private void OnDisable()
         {
             UnwireEvents();
-            RestorePlayerInput();
+            uiModeService?.ExitMenuMode(this);
         }
 
         private void Start()
@@ -85,7 +80,18 @@ namespace Market.UI
         private void Update()
         {
             Keyboard keyboard = Keyboard.current;
-            if (keyboard != null && keyboard[inventoryKey].wasPressedThisFrame)
+            if (keyboard == null) return;
+
+            if (_mode != PanelMode.None && keyboard.escapeKey.wasPressedThisFrame)
+            {
+                if (uiModeService != null && uiModeService.TryConsumeCloseRequest())
+                    return;
+
+                ClosePanel();
+                return;
+            }
+
+            if (keyboard[inventoryKey].wasPressedThisFrame)
                 ToggleInventory();
         }
 
@@ -122,7 +128,7 @@ namespace Market.UI
         {
             _mode = mode;
             SetVisible(true);
-            DisablePlayerInput();
+            uiModeService?.EnterMenuMode(this);
             Refresh();
         }
 
@@ -130,7 +136,7 @@ namespace Market.UI
         {
             _mode = PanelMode.None;
             SetVisible(false);
-            RestorePlayerInput();
+            uiModeService?.ExitMenuMode(this);
         }
 
         private void Refresh()
@@ -668,28 +674,6 @@ namespace Market.UI
                 Destroy(_content.GetChild(i).gameObject);
         }
 
-        private void DisablePlayerInput()
-        {
-            if (_playerInputDisabled) return;
-
-            if (playerController != null) playerController.enabled = false;
-            if (interactionSystem != null) interactionSystem.enabled = false;
-            Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;
-            _playerInputDisabled = true;
-        }
-
-        private void RestorePlayerInput()
-        {
-            if (!_playerInputDisabled) return;
-
-            if (playerController != null) playerController.enabled = true;
-            if (interactionSystem != null) interactionSystem.enabled = true;
-            Cursor.lockState = CursorLockMode.Locked;
-            Cursor.visible = false;
-            _playerInputDisabled = false;
-        }
-
         private void WireEvents()
         {
             if (supplierShop != null) supplierShop.OpenRequested += ShowSupplier;
@@ -697,6 +681,7 @@ namespace Market.UI
             if (inventory != null) inventory.OnChanged += Refresh;
             if (marketStall != null) marketStall.OnStockChanged += Refresh;
             if (moneySystem != null) moneySystem.OnChanged += RefreshMoney;
+            if (uiModeService != null) uiModeService.CloseRequested += ClosePanel;
             WireSeasonEvents();
         }
 
@@ -707,6 +692,7 @@ namespace Market.UI
             if (inventory != null) inventory.OnChanged -= Refresh;
             if (marketStall != null) marketStall.OnStockChanged -= Refresh;
             if (moneySystem != null) moneySystem.OnChanged -= RefreshMoney;
+            if (uiModeService != null) uiModeService.CloseRequested -= ClosePanel;
             UnwireSeasonEvents();
         }
 
@@ -746,12 +732,19 @@ namespace Market.UI
             ServiceLocator.TryGet<SeasonManager>(out _seasonManager);
         }
 
+        private void ResolveUIModeService()
+        {
+            if (uiModeService != null) return;
+            uiModeService = GetComponent<UIModeService>();
+        }
+
         private void ValidateReferences()
         {
             if (inventory == null) Debug.LogError("[MarketUIController] inventory не назначен", this);
             if (moneySystem == null) Debug.LogError("[MarketUIController] moneySystem не назначен", this);
             if (supplierShop == null) Debug.LogError("[MarketUIController] supplierShop не назначен", this);
             if (marketStall == null) Debug.LogError("[MarketUIController] marketStall не назначен", this);
+            if (uiModeService == null) Debug.LogError("[MarketUIController] uiModeService не назначен", this);
         }
 
         private static void StretchToParent(RectTransform rect)

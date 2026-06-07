@@ -53,9 +53,6 @@ namespace Market.Player
             _lookAction = _input.actions["Look"];
             _sprintAction = _input.actions["Sprint"];
             _jumpAction = _input.actions["Jump"];
-
-            Cursor.lockState = CursorLockMode.Locked;
-            Cursor.visible = false;
         }
 
         private void Update()
@@ -109,10 +106,5 @@ namespace Market.Player
             _controller.Move(motion * Time.deltaTime);
         }
 
-        private void OnDestroy()
-        {
-            Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;
-        }
     }
 }

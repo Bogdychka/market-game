@@ -632,7 +632,7 @@ place: `VERSION` + `CHANGELOG.md` + `vX.Y.Z` tags.)
 - [x] B8 NPC purchase rules · [x] B9 Multi-stall prep · [x] B10 Seasonal assortment
 
 ### Block C — UX & player-facing surface
-- [ ] C1 Cursor/UI-mode service
+- [x] C1 Cursor/UI-mode service
 - [ ] C2 InventoryUI
 - [x] C3 ShopUI (supplier)
 - [ ] C4 StallUI

@@ -146,7 +146,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 88e7153f62468e144810be996ee7b092, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::Market.Market.StallSlot
 --- !u!4 &39901836
 Transform:
@@ -192,7 +192,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 01614664b831546d2ae94a42149d80ac, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.InputSystem::UnityEngine.InputSystem.UI.InputSystemUIInputModule
   m_SendPointerHoverToParent: 1
   m_MoveRepeatDelay: 0.5
@@ -1782,6 +1782,7 @@ GameObject:
   - component: {fileID: 1426621188}
   - component: {fileID: 1426621187}
   - component: {fileID: 1426621191}
+  - component: {fileID: 1426621193}
   - component: {fileID: 1426621192}
   m_Layer: 5
   m_Name: HUD
@@ -1905,9 +1906,25 @@ MonoBehaviour:
   moneySystem: {fileID: 1853453546}
   supplierShop: {fileID: 1637158111}
   marketStall: {fileID: 1392319610}
+  uiModeService: {fileID: 1426621193}
+  inventoryKey: 3
+--- !u!114 &1426621193
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1426621186}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2e22510cb2d0455aaeb30d65b78e9a72, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Market.UI.UIModeService
   playerController: {fileID: 8326992209333257469}
   interactionSystem: {fileID: 1791167354}
-  inventoryKey: 3
+  startInMenuMode: 0
+  controlCursor: 1
+  lockCursorInGameMode: 1
 --- !u!1 &1637158109
 GameObject:
   m_ObjectHideFlags: 0

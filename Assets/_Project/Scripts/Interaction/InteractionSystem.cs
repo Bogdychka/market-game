@@ -57,6 +57,7 @@ namespace Market.Interaction
         private void OnDisable()
         {
             if (_interactAction != null) _interactAction.started -= OnInteractStarted;
+            ClearCurrent();
         }
 
         private void Update()
@@ -90,6 +91,17 @@ namespace Market.Interaction
             return _cachedInteractable != null && _cachedInteractable.CanInteract
                 ? _cachedInteractable
                 : null;
+        }
+
+        private void ClearCurrent()
+        {
+            _cachedCollider = null;
+            _cachedInteractable = null;
+
+            if (_current == null) return;
+
+            _current = null;
+            CurrentChanged?.Invoke(null);
         }
 
         private void OnInteractStarted(InputAction.CallbackContext _)
