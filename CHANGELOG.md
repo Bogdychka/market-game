@@ -10,7 +10,18 @@ reviews it, verifies via Unity MCP, bumps the version, tags it, and pushes. See 
 
 ## [Unreleased]
 
-_Nothing pending._
+### Added
+- B10: Added four seasonal `ItemSO` entries to the supplier assortment: carrot (spring), corn (summer),
+  pumpkin (autumn), and bread (winter). Apple remains available year-round. (Codex)
+
+### Changed
+- Supplier shop UI now refreshes when the season changes, keeps out-of-season goods visible but muted and
+  unbuyable, and continues to show the same base buy price for each item. `DebugTimeControl` can skip to
+  the next season with `N` for Play Mode verification. (Codex)
+
+### Verification
+- Open the supplier, note item prices, press `N` to advance seasons, and confirm only availability changes
+  while item prices stay fixed. (Codex)
 
 ## [1.1.0] - 2026-06-06
 ### Added

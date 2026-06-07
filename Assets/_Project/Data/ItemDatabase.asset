@@ -14,3 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Market.Economy.ItemDatabase
   items:
   - {fileID: 11400000, guid: c447e4739ecb9ca4ea46c7f79a04aca4, type: 2}
+  - {fileID: 11400000, guid: 0f04c8d0e0fb44f68f5d3fc2bb629d23, type: 2}
+  - {fileID: 11400000, guid: 62b2f0e0c1fa4a8d9bd338d462e7cb49, type: 2}
+  - {fileID: 11400000, guid: a6ef8a5f17c344718d8ec52dbdd9be83, type: 2}
+  - {fileID: 11400000, guid: cff5f70259cc4e5eb745d31b828c83ef, type: 2}
