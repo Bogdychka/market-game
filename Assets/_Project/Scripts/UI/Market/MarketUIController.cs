@@ -1,8 +1,10 @@
 using System.Globalization;
+using Market.Core;
 using Market.Economy;
 using Market.Interaction;
 using Market.Market;
 using Market.Player;
+using Market.World;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -53,6 +55,8 @@ namespace Market.UI
         private Button _closeButton;
         private PanelMode _mode;
         private bool _playerInputDisabled;
+        private SeasonManager _seasonManager;
+        private bool _seasonEventsWired;
 
         private void Awake()
         {
@@ -70,6 +74,12 @@ namespace Market.UI
         {
             UnwireEvents();
             RestorePlayerInput();
+        }
+
+        private void Start()
+        {
+            WireSeasonEvents();
+            Refresh();
         }
 
         private void Update()
@@ -165,7 +175,7 @@ namespace Market.UI
 
         private void RefreshSupplier()
         {
-            SetHeader("Поставщик", MoneyText());
+            SetHeader("Поставщик", SupplierSubtitle());
 
             if (supplierShop == null || supplierShop.StockCount == 0)
             {
@@ -190,10 +200,12 @@ namespace Market.UI
                     {
                         supplierShop.Buy(index);
                         Refresh();
-                    });
+                    },
+                    !available);
 
+                button.interactable = available;
                 if (moneySystem != null)
-                    button.interactable = available && moneySystem.Amount >= price;
+                    button.interactable = button.interactable && moneySystem.Amount >= price;
             }
         }
 
@@ -402,14 +414,29 @@ namespace Market.UI
                 titleLabel.text = $"{title}\n<size=70%><color=#9AA7AE>{detail}</color></size>";
         }
 
-        private Button CreateActionRow(ItemSO item, string title, string value, string action, UnityEngine.Events.UnityAction onClick)
+        private Button CreateActionRow(
+            ItemSO item,
+            string title,
+            string value,
+            string action,
+            UnityEngine.Events.UnityAction onClick,
+            bool muted = false)
         {
             RectTransform row = CreateRow("ActionRow");
+            if (muted)
+            {
+                Image rowImage = row.GetComponent<Image>();
+                if (rowImage != null)
+                    rowImage.color = new Color(0.10f, 0.11f, 0.12f, 0.90f);
+            }
+
             AddItemIcon(row, item);
 
             TMP_Text titleLabel = CreateRowText("Title", row, $"{title}\n<size=70%><color=#9AA7AE>{value}</color></size>", 17f, TextAlignmentOptions.Left);
             titleLabel.rectTransform.offsetMin = new Vector2(item != null ? 58f : 14f, 0f);
             titleLabel.rectTransform.offsetMax = new Vector2(-156f, 0f);
+            if (muted)
+                titleLabel.color = new Color(0.62f, 0.66f, 0.68f);
 
             Button button = CreateButton("Action", row, action, onClick);
             RectTransform buttonTransform = (RectTransform)button.transform;
@@ -616,6 +643,19 @@ namespace Market.UI
             return moneySystem != null ? $"{Mathf.FloorToInt(moneySystem.Amount)} монет" : string.Empty;
         }
 
+        private string SupplierSubtitle()
+        {
+            string money = MoneyText();
+            if (_seasonManager == null)
+                ResolveSeasonManager();
+
+            if (_seasonManager == null)
+                return money;
+
+            string season = SeasonManager.GetName(_seasonManager.CurrentSeason);
+            return string.IsNullOrEmpty(money) ? season : $"{money} | {season}";
+        }
+
         private void SetVisible(bool visible)
         {
             if (_root != null)
@@ -657,6 +697,7 @@ namespace Market.UI
             if (inventory != null) inventory.OnChanged += Refresh;
             if (marketStall != null) marketStall.OnStockChanged += Refresh;
             if (moneySystem != null) moneySystem.OnChanged += RefreshMoney;
+            WireSeasonEvents();
         }
 
         private void UnwireEvents()
@@ -666,11 +707,43 @@ namespace Market.UI
             if (inventory != null) inventory.OnChanged -= Refresh;
             if (marketStall != null) marketStall.OnStockChanged -= Refresh;
             if (moneySystem != null) moneySystem.OnChanged -= RefreshMoney;
+            UnwireSeasonEvents();
         }
 
         private void RefreshMoney(float amount)
         {
             Refresh();
+        }
+
+        private void RefreshSeasonalSupplier(Season season)
+        {
+            if (_mode == PanelMode.Supplier)
+                Refresh();
+        }
+
+        private void WireSeasonEvents()
+        {
+            if (_seasonEventsWired) return;
+
+            ResolveSeasonManager();
+            if (_seasonManager == null) return;
+
+            _seasonManager.OnSeasonChanged += RefreshSeasonalSupplier;
+            _seasonEventsWired = true;
+        }
+
+        private void UnwireSeasonEvents()
+        {
+            if (!_seasonEventsWired || _seasonManager == null) return;
+
+            _seasonManager.OnSeasonChanged -= RefreshSeasonalSupplier;
+            _seasonEventsWired = false;
+        }
+
+        private void ResolveSeasonManager()
+        {
+            if (_seasonManager != null) return;
+            ServiceLocator.TryGet<SeasonManager>(out _seasonManager);
         }
 
         private void ValidateReferences()

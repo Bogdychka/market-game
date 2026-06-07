@@ -1,4 +1,5 @@
 using Market.Core;
+using Market.World;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -9,14 +10,21 @@ namespace Market.DebugTools
     /// Page Up   — ускорить время (×2)
     /// Page Down — замедлить время (÷2)
     /// H         — пропустить 1 час
+    /// N         — пропустить до следующего сезона
     /// </summary>
     public class DebugTimeControl : MonoBehaviour
     {
         private TimeSystem _timeSystem;
+        private SeasonManager _seasonManager;
 
         private void Awake()
         {
             ServiceLocator.TryGet<TimeSystem>(out _timeSystem);
+        }
+
+        private void Start()
+        {
+            ServiceLocator.TryGet<SeasonManager>(out _seasonManager);
         }
 
         private void Update()
@@ -24,6 +32,7 @@ namespace Market.DebugTools
             if (_timeSystem == null) return;
 
             var kb = Keyboard.current;
+            if (kb == null) return;
 
             if (kb.pageUpKey.wasPressedThisFrame)
             {
@@ -42,6 +51,27 @@ namespace Market.DebugTools
                 _timeSystem.SkipHours(1);
                 Debug.Log($"[Time] {_timeSystem.FormatTime()}");
             }
+
+            if (kb.nKey.wasPressedThisFrame)
+            {
+                SkipToNextSeason();
+            }
+        }
+
+        private void SkipToNextSeason()
+        {
+            if (_seasonManager == null)
+                ServiceLocator.TryGet<SeasonManager>(out _seasonManager);
+
+            if (_seasonManager == null)
+            {
+                Debug.LogWarning("[Time] SeasonManager не найден — пропуск сезона невозможен.", this);
+                return;
+            }
+
+            int hours = Mathf.Max(1, _seasonManager.DaysUntilNextSeason) * 24;
+            _timeSystem.SkipHours(hours);
+            Debug.Log($"[Time] Пропущено до сезона: {SeasonManager.GetName(_seasonManager.CurrentSeason)}");
         }
     }
 }

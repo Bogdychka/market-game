@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 637d7028e9fb3464786e39712df348ec, type: 3}
+  m_Name: Item_Corn
+  m_EditorClassIdentifier: Assembly-CSharp::Market.Economy.ItemSO
+  id: Item_Corn
+  displayName: "\u041A\u0443\u043A\u0443\u0440\u0443\u0437\u0430"
+  icon: {fileID: 0}
+  worldPrefab: {fileID: 0}
+  category: 0
+  baseBuyPrice: 12
+  baseSellPrice: 18
+  description:
+  availableInSeasons:
+  - 1
