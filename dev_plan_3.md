@@ -178,11 +178,11 @@ player input while a panel is open. Every panel uses it.
 Supplier interaction opens a list (price, seasonal availability, Buy), mouse unlocked, purchase
 updates UI. Replaces `DebugSupplierBuy`. **Done.**
 
-### C4. StallUI — stall `[assets: ready]`
+### C4. StallUI — stall `[assets: ready]` ✅
 **Do:** stall screen — slots, take item from inventory, price input, "Place" and "Remove".
 **Sub-steps:** slot list bound to `MarketStall` · drag-or-click item from inventory · price field with
 validation (≥ 0; warn below buy price) · place spawns `worldPrefab`, remove returns to inventory.
-**Check:** place apple at 25 via UI → it appears in 3D and an NPC can buy it for 25.
+**Check:** place apple at 25 via UI → it appears in 3D and an NPC can buy it for 25. **Done.**
 
 ### C5. PauseMenu `[assets: ready]`
 **Do:** Esc → Resume / Save / Settings / Main Menu; `Time.timeScale = 0`.
@@ -635,7 +635,7 @@ place: `VERSION` + `CHANGELOG.md` + `vX.Y.Z` tags.)
 - [x] C1 Cursor/UI-mode service
 - [x] C2 InventoryUI
 - [x] C3 ShopUI (supplier)
-- [ ] C4 StallUI
+- [x] C4 StallUI
 - [ ] C5 PauseMenu
 - [ ] C6 Settings menu
 - [ ] C7 AudioMixer & base audio

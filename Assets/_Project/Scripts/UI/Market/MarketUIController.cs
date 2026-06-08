@@ -23,6 +23,8 @@ namespace Market.UI
         private const float IconSize = 34f;
         private const float ActionButtonWidth = 126f;
         private const float PriceInputWidth = 86f;
+        private static readonly Color PriceInputDefaultColor = Color.white;
+        private static readonly Color PriceInputWarningColor = new Color(1f, 0.41960785f, 0.41960785f, 1f);
 
         private enum PanelMode
         {
@@ -394,6 +396,9 @@ namespace Market.UI
             titleLabel.rectTransform.offsetMax = new Vector2(-246f, 0f);
 
             TMP_InputField priceInput = CreatePriceInput(row, suggestedPrice);
+            TMP_Text priceWarning = CreatePriceWarning(row);
+            RefreshPriceWarning(priceInput, priceWarning, item, priceInput.text);
+            priceInput.onValueChanged.AddListener(value => RefreshPriceWarning(priceInput, priceWarning, item, value));
 
             Button button = CreateButton(
                 "Action",
@@ -481,8 +486,8 @@ namespace Market.UI
             rect.anchorMin = new Vector2(1f, 0.5f);
             rect.anchorMax = new Vector2(1f, 0.5f);
             rect.pivot = new Vector2(1f, 0.5f);
-            rect.anchoredPosition = new Vector2(-ActionButtonWidth - 20f, 0f);
-            rect.sizeDelta = new Vector2(PriceInputWidth, 34f);
+            rect.anchoredPosition = new Vector2(-ActionButtonWidth - 20f, 8f);
+            rect.sizeDelta = new Vector2(PriceInputWidth, 26f);
 
             Image image = AddImage(rect.gameObject, new Color(0.07f, 0.08f, 0.09f, 1f));
             TMP_InputField input = rect.gameObject.AddComponent<TMP_InputField>();
@@ -505,6 +510,43 @@ namespace Market.UI
             input.placeholder = placeholder;
             input.text = Mathf.Max(0f, suggestedPrice).ToString("0.##", CultureInfo.InvariantCulture);
             return input;
+        }
+
+        private TMP_Text CreatePriceWarning(RectTransform parent)
+        {
+            TMP_Text warning = CreateText("PriceWarning", parent, 11f, FontStyles.Bold, TextAlignmentOptions.Center);
+            warning.text = "< закупочной";
+            warning.richText = false;
+            warning.color = PriceInputWarningColor;
+            warning.textWrappingMode = TextWrappingModes.NoWrap;
+
+            RectTransform rect = warning.rectTransform;
+            rect.anchorMin = new Vector2(1f, 0.5f);
+            rect.anchorMax = new Vector2(1f, 0.5f);
+            rect.pivot = new Vector2(1f, 0.5f);
+            rect.anchoredPosition = new Vector2(-ActionButtonWidth - 20f, -14f);
+            rect.sizeDelta = new Vector2(PriceInputWidth, 14f);
+            warning.gameObject.SetActive(false);
+            return warning;
+        }
+
+        private void RefreshPriceWarning(TMP_InputField priceInput, TMP_Text warningText, ItemSO item, string text)
+        {
+            bool showWarning = item != null
+                && TryParsePriceForWarning(text, out float price)
+                && price < item.BaseBuyPrice;
+
+            if (priceInput != null && priceInput.textComponent != null)
+                priceInput.textComponent.color = showWarning ? PriceInputWarningColor : PriceInputDefaultColor;
+
+            if (warningText != null)
+                warningText.gameObject.SetActive(showWarning);
+        }
+
+        private static bool TryParsePriceForWarning(string text, out float price)
+        {
+            string normalized = (text ?? string.Empty).Replace(',', '.');
+            return float.TryParse(normalized, NumberStyles.Float, CultureInfo.InvariantCulture, out price);
         }
 
         private void AddItemIcon(RectTransform row, ItemSO item)
