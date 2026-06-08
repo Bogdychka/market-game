@@ -12,6 +12,17 @@ reviews it, verifies via Unity MCP, bumps the version, tags it, and pushes. See 
 
 _Nothing pending._
 
+## [1.5.1] - 2026-06-08
+
+### Fixed
+- `MarketUIController.PositionTooltip`: replaced legacy `UnityEngine.Input.mousePosition` with
+  `Mouse.current.position.ReadValue()` (New Input System). Legacy `Input` is disabled in this project
+  (`activeInputHandler = 1`), causing ~5000 `InvalidOperationException` per session in Play Mode. (Claude)
+
+### Verification
+- MCP `recompile_scripts`: success, 0 warnings.
+- MCP `get_health_report`: ok, compileFailed=false, consoleErrors=0, dirtyScenes=0. (Claude)
+
 ## [1.5.0] - 2026-06-08
 
 ### Added
@@ -136,7 +147,8 @@ _Nothing pending._
   (`Bogdychka/market-game`); `COLLAB.md` branch-per-task protocol; Claude Code enforcement hooks;
   Unity-aware C# reviewer subagent. (Claude)
 
-[Unreleased]: https://github.com/Bogdychka/market-game/compare/v1.5.0...HEAD
+[Unreleased]: https://github.com/Bogdychka/market-game/compare/v1.5.1...HEAD
+[1.5.1]: https://github.com/Bogdychka/market-game/compare/v1.5.0...v1.5.1
 [1.5.0]: https://github.com/Bogdychka/market-game/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/Bogdychka/market-game/compare/v1.3.2...v1.4.0
 [1.3.2]: https://github.com/Bogdychka/market-game/compare/v1.3.1...v1.3.2
