@@ -516,12 +516,16 @@ namespace Market.UI
 
             TMP_Text text = CreateText("Text", viewport, 15f, FontStyles.Bold, TextAlignmentOptions.Center);
             text.textWrappingMode = TextWrappingModes.NoWrap;
+            // Stretch to fill the text area: without stretch anchors the offsets give a zero/negative
+            // rect and the price value never renders (the field looks like an empty grey box).
+            StretchToParent(text.rectTransform);
             text.rectTransform.offsetMin = new Vector2(6f, 0f);
             text.rectTransform.offsetMax = new Vector2(-6f, 0f);
 
             TMP_Text placeholder = CreateText("Placeholder", viewport, 14f, FontStyles.Normal, TextAlignmentOptions.Center);
             placeholder.text = "Цена";
             placeholder.color = new Color(0.45f, 0.50f, 0.54f);
+            StretchToParent(placeholder.rectTransform);
             placeholder.rectTransform.offsetMin = new Vector2(6f, 0f);
             placeholder.rectTransform.offsetMax = new Vector2(-6f, 0f);
 
