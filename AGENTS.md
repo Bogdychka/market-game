@@ -1,5 +1,9 @@
 # Market Game - Codex Project Rules
 
+> **Every session:** `git pull origin main` before starting. You are the **implementer/recorder** —
+> implement one plan step, record it in `CHANGELOG.md [Unreleased]`, open a PR. Do **not** merge or tag.
+> Claude is the reviewer/publisher gate. Full protocol: `COLLAB.md`.
+
 This file is the standing project contract for Codex when working in
 `C:\Users\bogre\My project`.
 

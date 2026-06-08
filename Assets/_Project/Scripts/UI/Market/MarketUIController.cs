@@ -52,6 +52,12 @@ namespace Market.UI
         private SeasonManager _seasonManager;
         private bool _seasonEventsWired;
 
+        // Tooltip
+        private RectTransform _tooltipPanel;
+        private TMP_Text      _tooltipNameText;
+        private TMP_Text      _tooltipDescText;
+        private TMP_Text      _tooltipMetaText;
+
         private void Awake()
         {
             ResolveUIModeService();
@@ -93,6 +99,9 @@ namespace Market.UI
 
             if (keyboard[inventoryKey].wasPressedThisFrame)
                 ToggleInventory();
+
+            if (_tooltipPanel != null && _tooltipPanel.gameObject.activeSelf)
+                PositionTooltip();
         }
 
         /// <summary>Opens the inventory panel.</summary>
@@ -126,6 +135,7 @@ namespace Market.UI
 
         private void OpenPanel(PanelMode mode)
         {
+            HideTooltip();
             _mode = mode;
             SetVisible(true);
             uiModeService?.EnterMenuMode(this);
@@ -137,6 +147,7 @@ namespace Market.UI
             _mode = PanelMode.None;
             SetVisible(false);
             uiModeService?.ExitMenuMode(this);
+            HideTooltip();
         }
 
         private void Refresh()
@@ -326,6 +337,8 @@ namespace Market.UI
 
             ScrollRect scroll = CreateScrollArea(panel);
             _content = (RectTransform)scroll.content;
+
+            BuildTooltip();
         }
 
         private ScrollRect CreateScrollArea(RectTransform parent)
@@ -401,6 +414,7 @@ namespace Market.UI
             buttonTransform.anchoredPosition = new Vector2(-10f, 0f);
             buttonTransform.sizeDelta = new Vector2(ActionButtonWidth, 34f);
             button.interactable = canPlace;
+            AddTooltipTrigger(row, item);
         }
 
         private void CreateInfoRow(ItemSO item, string title, string value, string detail)
@@ -418,6 +432,9 @@ namespace Market.UI
 
             if (!string.IsNullOrEmpty(detail))
                 titleLabel.text = $"{title}\n<size=70%><color=#9AA7AE>{detail}</color></size>";
+
+            if (item != null)
+                AddTooltipTrigger(row, item);
         }
 
         private Button CreateActionRow(
@@ -451,6 +468,10 @@ namespace Market.UI
             buttonTransform.pivot = new Vector2(1f, 0.5f);
             buttonTransform.anchoredPosition = new Vector2(-10f, 0f);
             buttonTransform.sizeDelta = new Vector2(ActionButtonWidth, 34f);
+
+            if (item != null)
+                AddTooltipTrigger(row, item);
+
             return button;
         }
 
@@ -582,6 +603,86 @@ namespace Market.UI
             LayoutElement layout = label.gameObject.AddComponent<LayoutElement>();
             layout.preferredHeight = 72f;
             layout.minHeight = 72f;
+        }
+
+        // ── Tooltip ────────────────────────────────────────────────────────
+
+        /// <summary>Build the floating tooltip panel (hidden by default).</summary>
+        private void BuildTooltip()
+        {
+            _tooltipPanel = CreateRect("ItemTooltip", _root);
+            _tooltipPanel.pivot     = new Vector2(0f, 0f);
+            _tooltipPanel.anchorMin = Vector2.zero;
+            _tooltipPanel.anchorMax = Vector2.zero;
+            _tooltipPanel.sizeDelta = new Vector2(220f, 0f);
+
+            Image bg = AddImage(_tooltipPanel.gameObject, new Color(0.06f, 0.07f, 0.08f, 0.97f));
+            bg.raycastTarget = false;
+
+            VerticalLayoutGroup layout = _tooltipPanel.gameObject.AddComponent<VerticalLayoutGroup>();
+            layout.padding             = new RectOffset(12, 12, 10, 10);
+            layout.spacing             = 4f;
+            layout.childControlHeight  = true;
+            layout.childControlWidth   = true;
+            layout.childForceExpandWidth  = true;
+            layout.childForceExpandHeight = false;
+
+            ContentSizeFitter fitter = _tooltipPanel.gameObject.AddComponent<ContentSizeFitter>();
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            _tooltipNameText = CreateText("TooltipName", _tooltipPanel, 15f, FontStyles.Bold, TextAlignmentOptions.Left);
+            _tooltipNameText.textWrappingMode = TextWrappingModes.Normal;
+
+            _tooltipDescText = CreateText("TooltipDesc", _tooltipPanel, 13f, FontStyles.Normal, TextAlignmentOptions.Left);
+            _tooltipDescText.color            = new Color(0.72f, 0.78f, 0.82f);
+            _tooltipDescText.textWrappingMode = TextWrappingModes.Normal;
+
+            _tooltipMetaText = CreateText("TooltipMeta", _tooltipPanel, 12f, FontStyles.Normal, TextAlignmentOptions.Left);
+            _tooltipMetaText.color            = new Color(0.55f, 0.65f, 0.45f);
+            _tooltipMetaText.textWrappingMode = TextWrappingModes.Normal;
+
+            _tooltipPanel.gameObject.SetActive(false);
+        }
+
+        /// <summary>Show the tooltip for the given item.</summary>
+        private void ShowTooltip(ItemSO item)
+        {
+            if (_tooltipPanel == null || item == null) return;
+
+            _tooltipNameText.text = item.DisplayName;
+
+            bool hasDesc = !string.IsNullOrWhiteSpace(item.Description);
+            _tooltipDescText.gameObject.SetActive(hasDesc);
+            if (hasDesc) _tooltipDescText.text = item.Description;
+
+            _tooltipMetaText.text =
+                $"Закупка: {item.BaseBuyPrice:0.##} | Продажа: {item.BaseSellPrice:0.##}";
+
+            _tooltipPanel.gameObject.SetActive(true);
+            PositionTooltip();
+        }
+
+        /// <summary>Hide the tooltip.</summary>
+        private void HideTooltip()
+        {
+            if (_tooltipPanel != null)
+                _tooltipPanel.gameObject.SetActive(false);
+        }
+
+        /// <summary>Move the tooltip panel to follow the mouse cursor.</summary>
+        private void PositionTooltip()
+        {
+            Vector2 mouse = Input.mousePosition;
+            float x = Mathf.Clamp(mouse.x + 18f, 0f, Mathf.Max(0f, Screen.width - 220f));
+            float y = mouse.y + 20f;
+            _tooltipPanel.position = new Vector3(x, y, 0f);
+        }
+
+        /// <summary>Add an <see cref="ItemTooltipTrigger"/> to a row for the given item.</summary>
+        private void AddTooltipTrigger(RectTransform row, ItemSO item)
+        {
+            ItemTooltipTrigger trigger = row.gameObject.AddComponent<ItemTooltipTrigger>();
+            trigger.Setup(item, ShowTooltip, HideTooltip);
         }
 
         private TMP_Text CreateRowText(string name, RectTransform parent, string text, float size, TextAlignmentOptions alignment)

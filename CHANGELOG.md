@@ -12,6 +12,23 @@ reviews it, verifies via Unity MCP, bumps the version, tags it, and pushes. See 
 
 _Nothing pending._
 
+## [1.4.0] - 2026-06-08
+
+### Added
+- C2: `ItemTooltipTrigger` component (`Market.UI`) — attaches to any UI row and fires
+  show/hide callbacks on pointer enter/exit via `IPointerEnterHandler`/`IPointerExitHandler`. (Claude)
+- `MarketUIController`: floating hover tooltip (item name, description, buy/sell prices) built
+  at runtime; appears for every item row across the Inventory, Supplier, and Stall panels.
+  Tooltip follows the mouse cursor and is dismissed on panel open/close. (Claude)
+
+### Changed
+- `AGENTS.md`: added a three-line "every session" reminder at the very top —
+  `git pull`, implementer/recorder role, no merge/tag. (Claude)
+
+### Verification
+- MCP `recompile_scripts`: success after Asset/Refresh (new .cs file needed meta generation).
+- MCP `get_health_report`: ok, compileFailed=false, consoleErrors=0, dirtyScenes=0. (Claude)
+
 ## [1.3.2] - 2026-06-07
 
 ### Changed
@@ -108,7 +125,14 @@ _Nothing pending._
   (`Bogdychka/market-game`); `COLLAB.md` branch-per-task protocol; Claude Code enforcement hooks;
   Unity-aware C# reviewer subagent. (Claude)
 
-[Unreleased]: https://github.com/Bogdychka/market-game/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/Bogdychka/market-game/compare/v1.4.0...HEAD
+[1.4.0]: https://github.com/Bogdychka/market-game/compare/v1.3.2...v1.4.0
+[1.3.2]: https://github.com/Bogdychka/market-game/compare/v1.3.1...v1.3.2
+[1.3.1]: https://github.com/Bogdychka/market-game/compare/v1.3.0...v1.3.1
+[1.3.0]: https://github.com/Bogdychka/market-game/compare/v1.2.3...v1.3.0
+[1.2.3]: https://github.com/Bogdychka/market-game/compare/v1.2.2...v1.2.3
+[1.2.2]: https://github.com/Bogdychka/market-game/compare/v1.2.1...v1.2.2
+[1.2.1]: https://github.com/Bogdychka/market-game/compare/v1.1.0...v1.2.1
 [1.1.0]: https://github.com/Bogdychka/market-game/compare/v1.0.1...v1.1.0
 [1.0.1]: https://github.com/Bogdychka/market-game/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/Bogdychka/market-game/releases/tag/v1.0.0

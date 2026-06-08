@@ -633,7 +633,7 @@ place: `VERSION` + `CHANGELOG.md` + `vX.Y.Z` tags.)
 
 ### Block C — UX & player-facing surface
 - [x] C1 Cursor/UI-mode service
-- [ ] C2 InventoryUI
+- [x] C2 InventoryUI
 - [x] C3 ShopUI (supplier)
 - [ ] C4 StallUI
 - [ ] C5 PauseMenu
