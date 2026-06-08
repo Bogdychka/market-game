@@ -10,31 +10,33 @@ reviews it, verifies via Unity MCP, bumps the version, tags it, and pushes. See 
 
 ## [Unreleased]
 
+_Nothing pending._
+
+## [1.5.2] - 2026-06-08
+
 ### Changed
 - `AGENTS.md`: added gotcha #9 — never use `UnityEngine.Input.*`; legacy Input is disabled
   (`activeInputHandler = 1`); use New Input System (`Mouse.current`, `Keyboard.current`, etc.). (Claude)
+- `MarketUIController`: entire item row is now a `Button` — clicking anywhere on the row triggers
+  the action; the separate action button widget is replaced by a right-aligned text label. (Codex)
+- `MarketUIController`: `TextOverflowModes.Ellipsis` → `Truncate` on all TMP text, eliminating
+  missing-ellipsis-glyph console warnings from LiberationSans SDF. (Codex)
+- `MarketUIController`: item icon now renders the sprite on a child RectTransform (3 px inset) over
+  the category-color background, so the colour fallback stays visible. (Codex)
+- `MarketUIController`: `raycastTarget = false` on all TMP text components for correct click-through. (Codex)
 
 ### Fixed
-- `MarketUIController`: use TMP truncate overflow instead of ellipsis overflow so LiberationSans SDF
-  no longer logs missing ellipsis glyph warnings when market UI rows are created. (Codex)
-- `MarketUIController`: supplier and stall action rows now respond to clicks across the whole item
-  row, and item icons keep a visible category/letter fallback even when a sprite does not render.
-  (Codex)
-- `MarketUIController`: stall inventory rows now place items when clicked across the row while keeping
-  the price field editable. (Codex)
-- Added world prefabs for carrot, corn, pumpkin, and bread and assigned them to their `ItemSO`
-  `worldPrefab` fields so stall placement spawns visible 3D items beyond apple. (Codex)
+- `MarketUIController`: stall inventory rows now place items on click while keeping price field
+  editable; placement logic extracted to `PlaceInventoryItemInFirstFreeSlot`. (Codex)
+
+### Added
+- World prefabs for carrot, corn, pumpkin, and bread; assigned to matching `ItemSO.worldPrefab`
+  fields so stall placement spawns the correct 3D mesh for all seasonal items. (Codex)
+- Kenney preview sprites (`apple/bread/carrot/corn/pumpkin.png`) assigned as `ItemSO.icon`
+  so inventory and stall rows show coloured item sprites instead of letter placeholders. (Codex)
 
 ### Verification
-- MCP `recompile_scripts`: success, 0 warnings.
-- MCP `get_health_report`: ok, compileFailed=false, consoleErrors=0, dirtyScenes=0. (Codex)
-- Direct WebSocket `get_health_report`: compileFailed=false, warningCount=0, dirtyScenes=0; report
-  shows attention only from MCP WebSocket self-errors after an MCP timeout. (Codex)
-- Checked `game.log`: spring availability correctly allows apple/carrot and rejects corn, pumpkin,
-  and bread as out of season; later purchase failures were from 0 funds. (Codex)
-- Unity `Assets/Refresh`: success after generated item world prefab variants.
-- MCP `recompile_scripts`: success, 0 warnings.
-- MCP `get_health_report`: ok, compileFailed=false, consoleErrors=0, dirtyScenes=0. (Codex)
+- MCP `get_health_report`: ok, compileFailed=false, consoleErrors=0, dirtyScenes=0. (Codex + Claude)
 
 ## [1.5.1] - 2026-06-08
 
@@ -174,7 +176,8 @@ reviews it, verifies via Unity MCP, bumps the version, tags it, and pushes. See 
   (`Bogdychka/market-game`); `COLLAB.md` branch-per-task protocol; Claude Code enforcement hooks;
   Unity-aware C# reviewer subagent. (Claude)
 
-[Unreleased]: https://github.com/Bogdychka/market-game/compare/v1.5.1...HEAD
+[Unreleased]: https://github.com/Bogdychka/market-game/compare/v1.5.2...HEAD
+[1.5.2]: https://github.com/Bogdychka/market-game/compare/v1.5.1...v1.5.2
 [1.5.1]: https://github.com/Bogdychka/market-game/compare/v1.5.0...v1.5.1
 [1.5.0]: https://github.com/Bogdychka/market-game/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/Bogdychka/market-game/compare/v1.3.2...v1.4.0
