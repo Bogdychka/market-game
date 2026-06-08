@@ -714,9 +714,12 @@ namespace Market.UI
         /// <summary>Move the tooltip panel to follow the mouse cursor.</summary>
         private void PositionTooltip()
         {
-            Vector2 mouse = Input.mousePosition;
-            float x = Mathf.Clamp(mouse.x + 18f, 0f, Mathf.Max(0f, Screen.width - 220f));
-            float y = mouse.y + 20f;
+            Mouse mouse = Mouse.current;
+            if (mouse == null) return;
+
+            Vector2 pos = mouse.position.ReadValue();
+            float x = Mathf.Clamp(pos.x + 18f, 0f, Mathf.Max(0f, Screen.width - 220f));
+            float y = pos.y + 20f;
             _tooltipPanel.position = new Vector3(x, y, 0f);
         }
 
@@ -762,7 +765,7 @@ namespace Market.UI
             text.alignment = alignment;
             text.color = Color.white;
             text.textWrappingMode = TextWrappingModes.Normal;
-            text.overflowMode = TextOverflowModes.Ellipsis;
+            text.overflowMode = TextOverflowModes.Truncate;
             return text;
         }
 

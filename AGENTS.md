@@ -402,6 +402,12 @@ These are the things that have repeatedly burned time. Internalize them.
 7. **New `.cs` in an embedded package (`Packages/…`) needs its `.meta` + an `AssetDatabase.Refresh`.**
    Until imported, the server sees the registration but not the class. Create the `.meta` and refresh;
    don't work around it by dumping the class into an unrelated already-imported file.
+9. **Never use `UnityEngine.Input.*` — the legacy Input Manager is disabled (`activeInputHandler = 1`).**
+   Calling `Input.mousePosition`, `Input.GetKey`, `Input.GetAxis`, etc. compiles fine but throws
+   `InvalidOperationException` at runtime (5000+ per session for a per-frame call). Always use the New
+   Input System: `Keyboard.current[key]`, `Mouse.current.position.ReadValue()`, `Gamepad.current`, etc.
+   This bit v1.4.0's tooltip (v1.5.1 fix).
+
 8. **ALL code text must be ASCII English — no Russian anywhere in comments, tooltips, or log strings.**
    Russian in source files causes mojibake that makes targeted patches land in the wrong place or fail
    to match context entirely. This rule was violated across the codebase and required a dedicated

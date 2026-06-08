@@ -10,6 +10,31 @@ reviews it, verifies via Unity MCP, bumps the version, tags it, and pushes. See 
 
 ## [Unreleased]
 
+### Changed
+- `AGENTS.md`: added gotcha #9 — never use `UnityEngine.Input.*`; legacy Input is disabled
+  (`activeInputHandler = 1`); use New Input System (`Mouse.current`, `Keyboard.current`, etc.). (Claude)
+
+### Fixed
+- `MarketUIController`: use TMP truncate overflow instead of ellipsis overflow so LiberationSans SDF
+  no longer logs missing ellipsis glyph warnings when market UI rows are created. (Codex)
+
+### Verification
+- MCP `recompile_scripts`: success, 0 warnings.
+- MCP `get_health_report`: ok, compileFailed=false, consoleErrors=0, dirtyScenes=0. (Codex)
+
+## [1.5.1] - 2026-06-08
+
+### Fixed
+- `MarketUIController.PositionTooltip`: replaced legacy `UnityEngine.Input.mousePosition` with
+  `Mouse.current.position.ReadValue()` (New Input System). Legacy `Input` is disabled in this project
+  (`activeInputHandler = 1`), causing ~5000 `InvalidOperationException` per session in Play Mode. (Claude)
+
+### Verification
+- MCP `recompile_scripts`: success, 0 warnings.
+- MCP `get_health_report`: ok, compileFailed=false, consoleErrors=0, dirtyScenes=0. (Claude)
+
+## [1.5.0] - 2026-06-08
+
 ### Added
 - C4: Stall placement price inputs now warn when the entered price is below `ItemSO.BaseBuyPrice` by
   coloring the TMP input red and showing "< закупочной"; placement remains allowed at any positive
@@ -19,8 +44,8 @@ reviews it, verifies via Unity MCP, bumps the version, tags it, and pushes. See 
 
 ### Verification
 - Unity `Assets/Refresh`: success after item icon sprite import updates.
-- MCP `recompile_scripts`: success, 0 warnings.
-- MCP `get_health_report`: ok, compileFailed=false, consoleErrors=0, dirtyScenes=0. (Codex)
+- MCP `recompile_scripts`: success, 0 warnings. (Codex)
+- MCP `get_health_report`: ok, compileFailed=false, consoleErrors=0, dirtyScenes=0. (Codex + Claude)
 
 ## [1.4.0] - 2026-06-08
 
@@ -135,7 +160,9 @@ reviews it, verifies via Unity MCP, bumps the version, tags it, and pushes. See 
   (`Bogdychka/market-game`); `COLLAB.md` branch-per-task protocol; Claude Code enforcement hooks;
   Unity-aware C# reviewer subagent. (Claude)
 
-[Unreleased]: https://github.com/Bogdychka/market-game/compare/v1.4.0...HEAD
+[Unreleased]: https://github.com/Bogdychka/market-game/compare/v1.5.1...HEAD
+[1.5.1]: https://github.com/Bogdychka/market-game/compare/v1.5.0...v1.5.1
+[1.5.0]: https://github.com/Bogdychka/market-game/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/Bogdychka/market-game/compare/v1.3.2...v1.4.0
 [1.3.2]: https://github.com/Bogdychka/market-game/compare/v1.3.1...v1.3.2
 [1.3.1]: https://github.com/Bogdychka/market-game/compare/v1.3.0...v1.3.1
