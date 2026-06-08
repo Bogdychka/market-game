@@ -27,6 +27,7 @@ Repo is under **git** (remote `Bogdychka/market-game`, private); binary assets v
 - One task = one branch named `codex/<step>-<slug>` = one PR.
 - Start a task: `git switch main; git pull; git switch -c codex/<step>-<slug>`.
 - Verify via MCP / WS fallback before committing; tick the matching `dev_plan_3.md` box in the same branch; Conventional Commit; `gh pr create`.
+- **Push every commit immediately: `git push origin <branch>` after every `git commit`.** Never leave commits only in the local repo — unpushed commits are invisible to Claude and to the user's Unity Editor if they switch branches. If `gh pr create` fails, push anyway and leave the URL from the remote hint.
 - Don't edit the same files Claude is editing. Scenes/prefabs: one agent at a time.
 - **Your role (Codex):** implement the step and **record what you did** under `CHANGELOG.md` `[Unreleased]` (+ PR body). Do **not** merge to `main` or create version tags — Claude reviews, verifies via Unity MCP, versions (SemVer tag `vX.Y.Z`), and pushes.
 - **Versioning:** every shipped change gets a `CHANGELOG.md` entry; releases are SemVer tags `vX.Y.Z` on `main` (current line **v1.x**).
