@@ -10,7 +10,22 @@ reviews it, verifies via Unity MCP, bumps the version, tags it, and pushes. See 
 
 ## [Unreleased]
 
-_Nothing pending._
+### Added
+- C5 PauseMenu: `Esc` in the Market scene opens a runtime uGUI/TMP pause menu with Resume, Save,
+  Settings placeholder, and Main Menu actions. The pause menu enters `UIModeService` menu mode,
+  sets `Time.timeScale = 0`, resumes through Escape or the Resume button, and restores
+  `Time.timeScale = 1` before closing or loading MainMenu. (Codex)
+
+### Changed
+- `GameBootstrap` now preserves existing UI Escape priority in Market: supplier/stall/inventory
+  panels consume Escape first, otherwise Escape opens the pause menu instead of immediately
+  returning to MainMenu. (Codex)
+
+### Verification
+- MCP `recompile_scripts`: success, 0 warnings. (Codex)
+- MCP `get_health_report`: ok, compileFailed=false, consoleErrors=0, dirtyScenes=0. (Codex)
+- MCP scene inspection: `HUD` has `PauseMenuController` with `gameSaver` wired to `GameServer`
+  and `uiModeService` wired to the existing `HUD` service. (Codex)
 
 ## [1.5.6] - 2026-06-08
 

@@ -126,9 +126,15 @@ namespace Market.Core
                 return;
 
             if (current == SceneNames.MainMenu)
+            {
                 QuitApplication();
-            else
-                ReturnToMainMenu();
+                return;
+            }
+
+            if (current == SceneNames.Market && TryOpenPauseMenu())
+                return;
+
+            ReturnToMainMenu();
         }
 
         private static bool TryConsumeUiEscape()
@@ -146,6 +152,18 @@ namespace Market.Core
         {
             Debug.Log("[GameBootstrap] Escape: returning to MainMenu.");
             ServiceLocator.Get<SceneLoader>().Load(SceneNames.MainMenu);
+        }
+
+        private static bool TryOpenPauseMenu()
+        {
+            if (!ServiceLocator.TryGet<PauseMenuController>(out PauseMenuController pauseMenu))
+            {
+                Debug.LogWarning("[GameBootstrap] PauseMenuController not registered; Escape falls back to MainMenu.");
+                return false;
+            }
+
+            pauseMenu.Open();
+            return true;
         }
 
         private void OnSceneLoadCompleted(string sceneName)
