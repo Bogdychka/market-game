@@ -425,6 +425,13 @@ These are the things that have repeatedly burned time. Internalize them.
     until the v1.5.4 fix. Rule: scroll viewports / clip rects use `RectMask2D` (rect-based, no graphic
     needed); reserve legacy `Mask` for non-rectangular sprite masks, and if you must use it, give the
     mask graphic alpha ≥ 1/255 so it isn't culled.
+11. **When building UI in code, set stretch anchors BEFORE `offsetMin`/`offsetMax`.** A fresh
+    `RectTransform` has its anchors collapsed to a point (`anchorMin == anchorMax`), so setting
+    `offsetMin = (6,0)` / `offsetMax = (-6,0)` yields a **zero/negative-size** rect and the element
+    (text, image) never renders — looking like an empty box. Call `StretchToParent` (anchorMin `0,0`,
+    anchorMax `1,1`) first, then apply the offsets as insets. This hid the stall price-input value
+    (empty grey box) until the v1.5.6 fix. Rule: offsets are insets relative to anchors — anchors must
+    be stretched first, or the offsets mean nothing useful.
 
 ---
 
