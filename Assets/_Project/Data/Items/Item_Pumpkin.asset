@@ -15,7 +15,7 @@ MonoBehaviour:
   id: Item_Pumpkin
   displayName: "\u0422\u044B\u043A\u0432\u0430"
   icon: {fileID: 21300000, guid: a96e4b086c178454299116c3bfe5193e, type: 3}
-  worldPrefab: {fileID: 0}
+  worldPrefab: {fileID: 845956869737488116, guid: 14287f47bf97e85489f6ffeaaf1c887a, type: 3}
   category: 0
   baseBuyPrice: 16
   baseSellPrice: 24

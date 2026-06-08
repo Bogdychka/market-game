@@ -384,6 +384,11 @@ namespace Market.UI
         {
             float suggestedPrice = marketStall != null ? marketStall.SuggestedSellPrice(item) : item.BaseSellPrice;
             RectTransform row = CreateRow("PlaceRow");
+            Image rowImage = row.GetComponent<Image>();
+            Button rowButton = row.gameObject.AddComponent<Button>();
+            rowButton.targetGraphic = rowImage;
+            rowButton.interactable = canPlace;
+
             AddItemIcon(row, item);
 
             TMP_Text titleLabel = CreateRowText(
@@ -400,26 +405,25 @@ namespace Market.UI
             RefreshPriceWarning(priceInput, priceWarning, item, priceInput.text);
             priceInput.onValueChanged.AddListener(value => RefreshPriceWarning(priceInput, priceWarning, item, value));
 
-            Button button = CreateButton(
-                "Action",
-                row,
-                "Выложить",
-                () =>
-                {
-                    int targetSlot = FindFirstFreeSlot();
-                    if (targetSlot >= 0 && TryReadPrice(priceInput.text, out float price))
-                        marketStall.PlaceItem(targetSlot, item, price);
-                    Refresh();
-                });
+            rowButton.onClick.AddListener(() => PlaceInventoryItemInFirstFreeSlot(item, priceInput));
 
-            RectTransform buttonTransform = (RectTransform)button.transform;
-            buttonTransform.anchorMin = new Vector2(1f, 0.5f);
-            buttonTransform.anchorMax = new Vector2(1f, 0.5f);
-            buttonTransform.pivot = new Vector2(1f, 0.5f);
-            buttonTransform.anchoredPosition = new Vector2(-10f, 0f);
-            buttonTransform.sizeDelta = new Vector2(ActionButtonWidth, 34f);
-            button.interactable = canPlace;
+            TMP_Text actionLabel = CreateRowText("Action", row, "Выложить", 15f, TextAlignmentOptions.Right);
+            actionLabel.fontStyle = FontStyles.Bold;
+            actionLabel.rectTransform.offsetMin = new Vector2(0f, 0f);
+            actionLabel.rectTransform.offsetMax = new Vector2(-14f, 0f);
+            if (!canPlace)
+                actionLabel.color = new Color(0.62f, 0.66f, 0.68f);
+
             AddTooltipTrigger(row, item);
+        }
+
+        private void PlaceInventoryItemInFirstFreeSlot(ItemSO item, TMP_InputField priceInput)
+        {
+            int targetSlot = FindFirstFreeSlot();
+            if (targetSlot >= 0 && TryReadPrice(priceInput.text, out float price))
+                marketStall.PlaceItem(targetSlot, item, price);
+
+            Refresh();
         }
 
         private void CreateInfoRow(ItemSO item, string title, string value, string detail)

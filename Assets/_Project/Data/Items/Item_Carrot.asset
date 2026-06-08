@@ -15,7 +15,7 @@ MonoBehaviour:
   id: Item_Carrot
   displayName: "\u041C\u043E\u0440\u043A\u043E\u0432\u044C"
   icon: {fileID: 21300000, guid: eab0523b7b36dbc4c9d0be629f0a5194, type: 3}
-  worldPrefab: {fileID: 0}
+  worldPrefab: {fileID: 1989888957620261355, guid: 30a07c124e802c948a1bea1069ab472b, type: 3}
   category: 0
   baseBuyPrice: 8
   baseSellPrice: 12
