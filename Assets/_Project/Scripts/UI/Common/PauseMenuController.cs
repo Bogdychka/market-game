@@ -20,6 +20,7 @@ namespace Market.UI
         [Header("References")]
         [Tooltip("Market scene save coordinator used by the Save button.")]
         [SerializeField] private GameSaver gameSaver;
+        [Tooltip("Manages cursor lock and player-input suppression; source of the CloseRequested event used to close the menu.")]
         [SerializeField] private UIModeService uiModeService;
 
         private RectTransform _root;
@@ -121,10 +122,7 @@ namespace Market.UI
 
         private void OnMainMenu()
         {
-            Time.timeScale = 1f;
-            _isPaused = false;
-            SetVisible(false);
-            uiModeService?.ExitMenuMode(this);
+            Resume();
 
             if (_sceneLoader == null)
                 ResolveSceneLoader();
@@ -166,7 +164,7 @@ namespace Market.UI
             AddLayout(settingsTitle.gameObject, 48f);
 
             TMP_Text placeholder = CreateText("Placeholder", _settingsPanel, 17f, FontStyles.Normal, TextAlignmentOptions.Center);
-            placeholder.text = "Настройки появятся в C6.";
+            placeholder.text = "Настройки появятся в следующем обновлении.";
             placeholder.color = new Color(0.72f, 0.78f, 0.82f);
             AddLayout(placeholder.gameObject, 80f);
 
