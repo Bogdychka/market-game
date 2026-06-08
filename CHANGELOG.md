@@ -14,8 +14,11 @@ reviews it, verifies via Unity MCP, bumps the version, tags it, and pushes. See 
 - C4: Stall placement price inputs now warn when the entered price is below `ItemSO.BaseBuyPrice` by
   coloring the TMP input red and showing "< закупочной"; placement remains allowed at any positive
   price. (Codex)
+- Assigned Kenney preview sprites to the five current `ItemSO` assets so item icons render in market
+  UI rows instead of falling back to empty icon slots. (Codex)
 
 ### Verification
+- Unity `Assets/Refresh`: success after item icon sprite import updates.
 - MCP `recompile_scripts`: success, 0 warnings.
 - MCP `get_health_report`: ok, compileFailed=false, consoleErrors=0, dirtyScenes=0. (Codex)
 

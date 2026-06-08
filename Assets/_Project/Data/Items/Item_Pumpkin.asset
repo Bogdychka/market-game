@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Market.Economy.ItemSO
   id: Item_Pumpkin
   displayName: "\u0422\u044B\u043A\u0432\u0430"
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: a96e4b086c178454299116c3bfe5193e, type: 3}
   worldPrefab: {fileID: 0}
   category: 0
   baseBuyPrice: 16
