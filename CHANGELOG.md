@@ -10,14 +10,18 @@ reviews it, verifies via Unity MCP, bumps the version, tags it, and pushes. See 
 
 ## [Unreleased]
 
+_Nothing pending._
+
+## [1.5.0] - 2026-06-08
+
 ### Added
 - C4: Stall placement price inputs now warn when the entered price is below `ItemSO.BaseBuyPrice` by
   coloring the TMP input red and showing "< закупочной"; placement remains allowed at any positive
   price. (Codex)
 
 ### Verification
-- MCP `recompile_scripts`: success, 0 warnings.
-- MCP `get_health_report`: ok, compileFailed=false, consoleErrors=0, dirtyScenes=0. (Codex)
+- MCP `recompile_scripts`: success, 0 warnings. (Codex)
+- MCP `get_health_report`: ok, compileFailed=false, consoleErrors=0, dirtyScenes=0. (Codex + Claude)
 
 ## [1.4.0] - 2026-06-08
 
@@ -132,7 +136,8 @@ reviews it, verifies via Unity MCP, bumps the version, tags it, and pushes. See 
   (`Bogdychka/market-game`); `COLLAB.md` branch-per-task protocol; Claude Code enforcement hooks;
   Unity-aware C# reviewer subagent. (Claude)
 
-[Unreleased]: https://github.com/Bogdychka/market-game/compare/v1.4.0...HEAD
+[Unreleased]: https://github.com/Bogdychka/market-game/compare/v1.5.0...HEAD
+[1.5.0]: https://github.com/Bogdychka/market-game/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/Bogdychka/market-game/compare/v1.3.2...v1.4.0
 [1.3.2]: https://github.com/Bogdychka/market-game/compare/v1.3.1...v1.3.2
 [1.3.1]: https://github.com/Bogdychka/market-game/compare/v1.3.0...v1.3.1
