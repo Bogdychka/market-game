@@ -12,6 +12,17 @@ reviews it, verifies via Unity MCP, bumps the version, tags it, and pushes. See 
 
 _Nothing pending._
 
+## [1.5.5] - 2026-06-08
+
+### Fixed
+- Stall price-input fields rendered as harsh near-black bars (background `0.07,0.08,0.09`, darker than
+  the row), making the field look broken and the price hard to read. Lightened the input background to
+  `0.24,0.27,0.31` so it reads as a proper input field. (Claude)
+
+### Verification
+- MCP `recompile_scripts`: success, 0 warnings.
+- MCP `get_health_report`: ok, compileFailed=false, consoleErrors=0, dirtyScenes=0. (Claude)
+
 ## [1.5.4] - 2026-06-08
 
 ### Fixed
@@ -210,7 +221,8 @@ _Nothing pending._
   (`Bogdychka/market-game`); `COLLAB.md` branch-per-task protocol; Claude Code enforcement hooks;
   Unity-aware C# reviewer subagent. (Claude)
 
-[Unreleased]: https://github.com/Bogdychka/market-game/compare/v1.5.4...HEAD
+[Unreleased]: https://github.com/Bogdychka/market-game/compare/v1.5.5...HEAD
+[1.5.5]: https://github.com/Bogdychka/market-game/compare/v1.5.4...v1.5.5
 [1.5.4]: https://github.com/Bogdychka/market-game/compare/v1.5.3...v1.5.4
 [1.5.3]: https://github.com/Bogdychka/market-game/compare/v1.5.2...v1.5.3
 [1.5.2]: https://github.com/Bogdychka/market-game/compare/v1.5.1...v1.5.2

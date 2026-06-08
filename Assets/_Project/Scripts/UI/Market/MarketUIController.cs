@@ -501,18 +501,25 @@ namespace Market.UI
             rect.anchoredPosition = new Vector2(-ActionButtonWidth - 20f, 8f);
             rect.sizeDelta = new Vector2(PriceInputWidth, 26f);
 
-            Image image = AddImage(rect.gameObject, new Color(0.07f, 0.08f, 0.09f, 1f));
+            // Lighter than the row (0.14) so the field reads as an input, not a black bar.
+            Image image = AddImage(rect.gameObject, new Color(0.24f, 0.27f, 0.31f, 1f));
             TMP_InputField input = rect.gameObject.AddComponent<TMP_InputField>();
             input.targetGraphic = image;
             input.contentType = TMP_InputField.ContentType.DecimalNumber;
             input.characterLimit = 6;
 
-            TMP_Text text = CreateText("Text", rect, 15f, FontStyles.Bold, TextAlignmentOptions.Center);
+            // TMP_InputField requires a textViewport child with RectMask2D for text to render.
+            RectTransform viewport = CreateRect("Text Area", rect);
+            viewport.gameObject.AddComponent<RectMask2D>();
+            StretchToParent(viewport);
+            input.textViewport = viewport;
+
+            TMP_Text text = CreateText("Text", viewport, 15f, FontStyles.Bold, TextAlignmentOptions.Center);
             text.textWrappingMode = TextWrappingModes.NoWrap;
             text.rectTransform.offsetMin = new Vector2(6f, 0f);
             text.rectTransform.offsetMax = new Vector2(-6f, 0f);
 
-            TMP_Text placeholder = CreateText("Placeholder", rect, 14f, FontStyles.Normal, TextAlignmentOptions.Center);
+            TMP_Text placeholder = CreateText("Placeholder", viewport, 14f, FontStyles.Normal, TextAlignmentOptions.Center);
             placeholder.text = "Цена";
             placeholder.color = new Color(0.45f, 0.50f, 0.54f);
             placeholder.rectTransform.offsetMin = new Vector2(6f, 0f);
