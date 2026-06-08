@@ -12,6 +12,26 @@ reviews it, verifies via Unity MCP, bumps the version, tags it, and pushes. See 
 
 _Nothing pending._
 
+## [1.5.3] - 2026-06-08
+
+### Fixed
+- Stall could not be opened: the MarketStall's only interaction collider was a thin 0.2m-tall counter
+  slab on the child "Cube", which the player's horizontal crosshair passed over. Added a generous
+  trigger `BoxCollider` on the MarketStall GameObject (center 2.84,1.4,0; size 4x2.2x1.6) so the
+  "Управлять прилавком" prompt reliably appears at eye level. Confirmed via game.log (previously zero
+  stall-interaction events; the stall had only been exercised through `DebugStallPlace` F3). (Claude)
+- `MarketUIController.AddItemIcon`: no longer draws the letter fallback on top of an assigned sprite
+  (early return when `item.Icon != null`); the food sprite is now shown alone. (Claude)
+
+### Added
+- `CodexBranchCheckCube` + `CodexBranchCheck_Magenta` material: a temporary, nonblocking magenta marker
+  in the Market scene to confirm the editor is running the latest `main`. Remove once the branch-sync
+  confusion is settled. (Codex)
+
+### Verification
+- MCP `recompile_scripts`: success, 0 warnings.
+- MCP `get_health_report`: ok, compileFailed=false, consoleErrors=0, dirtyScenes=0. (Claude)
+
 ## [1.5.2] - 2026-06-08
 
 ### Changed
@@ -176,7 +196,8 @@ _Nothing pending._
   (`Bogdychka/market-game`); `COLLAB.md` branch-per-task protocol; Claude Code enforcement hooks;
   Unity-aware C# reviewer subagent. (Claude)
 
-[Unreleased]: https://github.com/Bogdychka/market-game/compare/v1.5.2...HEAD
+[Unreleased]: https://github.com/Bogdychka/market-game/compare/v1.5.3...HEAD
+[1.5.3]: https://github.com/Bogdychka/market-game/compare/v1.5.2...v1.5.3
 [1.5.2]: https://github.com/Bogdychka/market-game/compare/v1.5.1...v1.5.2
 [1.5.1]: https://github.com/Bogdychka/market-game/compare/v1.5.0...v1.5.1
 [1.5.0]: https://github.com/Bogdychka/market-game/compare/v1.4.0...v1.5.0
