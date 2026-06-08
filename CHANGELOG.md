@@ -12,6 +12,20 @@ reviews it, verifies via Unity MCP, bumps the version, tags it, and pushes. See 
 
 _Nothing pending._
 
+## [1.5.4] - 2026-06-08
+
+### Fixed
+- Market panel list rows (supplier, stall, inventory) were invisible — only the floating hover tooltip
+  rendered. The scroll viewport used a legacy `Mask` whose mask graphic was a fully transparent
+  (alpha 0) `Image`; uGUI culls fully-transparent graphics, so the `Mask` never wrote the stencil and
+  every masked child failed the stencil test and disappeared — while still receiving raycasts (hence
+  rows were clickable/hoverable but unseen). Replaced `Mask` with `RectMask2D` (rect-based clipping,
+  no graphic needed); kept a transparent raycast-target image for ScrollRect drags. (Claude)
+
+### Verification
+- MCP `recompile_scripts`: success, 0 warnings.
+- MCP `get_health_report`: ok, compileFailed=false, consoleErrors=0, dirtyScenes=0. (Claude)
+
 ## [1.5.3] - 2026-06-08
 
 ### Fixed
@@ -196,7 +210,8 @@ _Nothing pending._
   (`Bogdychka/market-game`); `COLLAB.md` branch-per-task protocol; Claude Code enforcement hooks;
   Unity-aware C# reviewer subagent. (Claude)
 
-[Unreleased]: https://github.com/Bogdychka/market-game/compare/v1.5.3...HEAD
+[Unreleased]: https://github.com/Bogdychka/market-game/compare/v1.5.4...HEAD
+[1.5.4]: https://github.com/Bogdychka/market-game/compare/v1.5.3...v1.5.4
 [1.5.3]: https://github.com/Bogdychka/market-game/compare/v1.5.2...v1.5.3
 [1.5.2]: https://github.com/Bogdychka/market-game/compare/v1.5.1...v1.5.2
 [1.5.1]: https://github.com/Bogdychka/market-game/compare/v1.5.0...v1.5.1
