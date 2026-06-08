@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Market.Economy.ItemSO
   id: Item_Corn
   displayName: "\u041A\u0443\u043A\u0443\u0440\u0443\u0437\u0430"
-  icon: {fileID: 0}
-  worldPrefab: {fileID: 0}
+  icon: {fileID: 21300000, guid: 460ebd7d35897b2459ae3c3b0f4e7324, type: 3}
+  worldPrefab: {fileID: 9146260511989624292, guid: b84577c205755e34db27a4c000524645, type: 3}
   category: 0
   baseBuyPrice: 12
   baseSellPrice: 18

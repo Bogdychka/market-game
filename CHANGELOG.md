@@ -14,6 +14,28 @@ reviews it, verifies via Unity MCP, bumps the version, tags it, and pushes. See 
 - `AGENTS.md`: added gotcha #9 — never use `UnityEngine.Input.*`; legacy Input is disabled
   (`activeInputHandler = 1`); use New Input System (`Mouse.current`, `Keyboard.current`, etc.). (Claude)
 
+### Fixed
+- `MarketUIController`: use TMP truncate overflow instead of ellipsis overflow so LiberationSans SDF
+  no longer logs missing ellipsis glyph warnings when market UI rows are created. (Codex)
+- `MarketUIController`: supplier and stall action rows now respond to clicks across the whole item
+  row, and item icons keep a visible category/letter fallback even when a sprite does not render.
+  (Codex)
+- `MarketUIController`: stall inventory rows now place items when clicked across the row while keeping
+  the price field editable. (Codex)
+- Added world prefabs for carrot, corn, pumpkin, and bread and assigned them to their `ItemSO`
+  `worldPrefab` fields so stall placement spawns visible 3D items beyond apple. (Codex)
+
+### Verification
+- MCP `recompile_scripts`: success, 0 warnings.
+- MCP `get_health_report`: ok, compileFailed=false, consoleErrors=0, dirtyScenes=0. (Codex)
+- Direct WebSocket `get_health_report`: compileFailed=false, warningCount=0, dirtyScenes=0; report
+  shows attention only from MCP WebSocket self-errors after an MCP timeout. (Codex)
+- Checked `game.log`: spring availability correctly allows apple/carrot and rejects corn, pumpkin,
+  and bread as out of season; later purchase failures were from 0 funds. (Codex)
+- Unity `Assets/Refresh`: success after generated item world prefab variants.
+- MCP `recompile_scripts`: success, 0 warnings.
+- MCP `get_health_report`: ok, compileFailed=false, consoleErrors=0, dirtyScenes=0. (Codex)
+
 ## [1.5.1] - 2026-06-08
 
 ### Fixed
@@ -31,8 +53,11 @@ reviews it, verifies via Unity MCP, bumps the version, tags it, and pushes. See 
 - C4: Stall placement price inputs now warn when the entered price is below `ItemSO.BaseBuyPrice` by
   coloring the TMP input red and showing "< закупочной"; placement remains allowed at any positive
   price. (Codex)
+- Assigned Kenney preview sprites to the five current `ItemSO` assets so item icons render in market
+  UI rows instead of falling back to empty icon slots. (Codex)
 
 ### Verification
+- Unity `Assets/Refresh`: success after item icon sprite import updates.
 - MCP `recompile_scripts`: success, 0 warnings. (Codex)
 - MCP `get_health_report`: ok, compileFailed=false, consoleErrors=0, dirtyScenes=0. (Codex + Claude)
 

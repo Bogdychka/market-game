@@ -384,6 +384,11 @@ namespace Market.UI
         {
             float suggestedPrice = marketStall != null ? marketStall.SuggestedSellPrice(item) : item.BaseSellPrice;
             RectTransform row = CreateRow("PlaceRow");
+            Image rowImage = row.GetComponent<Image>();
+            Button rowButton = row.gameObject.AddComponent<Button>();
+            rowButton.targetGraphic = rowImage;
+            rowButton.interactable = canPlace;
+
             AddItemIcon(row, item);
 
             TMP_Text titleLabel = CreateRowText(
@@ -400,26 +405,25 @@ namespace Market.UI
             RefreshPriceWarning(priceInput, priceWarning, item, priceInput.text);
             priceInput.onValueChanged.AddListener(value => RefreshPriceWarning(priceInput, priceWarning, item, value));
 
-            Button button = CreateButton(
-                "Action",
-                row,
-                "Выложить",
-                () =>
-                {
-                    int targetSlot = FindFirstFreeSlot();
-                    if (targetSlot >= 0 && TryReadPrice(priceInput.text, out float price))
-                        marketStall.PlaceItem(targetSlot, item, price);
-                    Refresh();
-                });
+            rowButton.onClick.AddListener(() => PlaceInventoryItemInFirstFreeSlot(item, priceInput));
 
-            RectTransform buttonTransform = (RectTransform)button.transform;
-            buttonTransform.anchorMin = new Vector2(1f, 0.5f);
-            buttonTransform.anchorMax = new Vector2(1f, 0.5f);
-            buttonTransform.pivot = new Vector2(1f, 0.5f);
-            buttonTransform.anchoredPosition = new Vector2(-10f, 0f);
-            buttonTransform.sizeDelta = new Vector2(ActionButtonWidth, 34f);
-            button.interactable = canPlace;
+            TMP_Text actionLabel = CreateRowText("Action", row, "Выложить", 15f, TextAlignmentOptions.Right);
+            actionLabel.fontStyle = FontStyles.Bold;
+            actionLabel.rectTransform.offsetMin = new Vector2(0f, 0f);
+            actionLabel.rectTransform.offsetMax = new Vector2(-14f, 0f);
+            if (!canPlace)
+                actionLabel.color = new Color(0.62f, 0.66f, 0.68f);
+
             AddTooltipTrigger(row, item);
+        }
+
+        private void PlaceInventoryItemInFirstFreeSlot(ItemSO item, TMP_InputField priceInput)
+        {
+            int targetSlot = FindFirstFreeSlot();
+            if (targetSlot >= 0 && TryReadPrice(priceInput.text, out float price))
+                marketStall.PlaceItem(targetSlot, item, price);
+
+            Refresh();
         }
 
         private void CreateInfoRow(ItemSO item, string title, string value, string detail)
@@ -451,12 +455,16 @@ namespace Market.UI
             bool muted = false)
         {
             RectTransform row = CreateRow("ActionRow");
+            Image rowImage = row.GetComponent<Image>();
             if (muted)
             {
-                Image rowImage = row.GetComponent<Image>();
                 if (rowImage != null)
                     rowImage.color = new Color(0.10f, 0.11f, 0.12f, 0.90f);
             }
+
+            Button rowButton = row.gameObject.AddComponent<Button>();
+            rowButton.targetGraphic = rowImage;
+            rowButton.onClick.AddListener(onClick);
 
             AddItemIcon(row, item);
 
@@ -466,18 +474,17 @@ namespace Market.UI
             if (muted)
                 titleLabel.color = new Color(0.62f, 0.66f, 0.68f);
 
-            Button button = CreateButton("Action", row, action, onClick);
-            RectTransform buttonTransform = (RectTransform)button.transform;
-            buttonTransform.anchorMin = new Vector2(1f, 0.5f);
-            buttonTransform.anchorMax = new Vector2(1f, 0.5f);
-            buttonTransform.pivot = new Vector2(1f, 0.5f);
-            buttonTransform.anchoredPosition = new Vector2(-10f, 0f);
-            buttonTransform.sizeDelta = new Vector2(ActionButtonWidth, 34f);
+            TMP_Text actionLabel = CreateRowText("Action", row, action, 15f, TextAlignmentOptions.Right);
+            actionLabel.fontStyle = FontStyles.Bold;
+            actionLabel.rectTransform.offsetMin = new Vector2(0f, 0f);
+            actionLabel.rectTransform.offsetMax = new Vector2(-14f, 0f);
+            if (muted)
+                actionLabel.color = new Color(0.62f, 0.66f, 0.68f);
 
             if (item != null)
                 AddTooltipTrigger(row, item);
 
-            return button;
+            return rowButton;
         }
 
         private TMP_InputField CreatePriceInput(RectTransform parent, float suggestedPrice)
@@ -560,19 +567,25 @@ namespace Market.UI
             icon.anchoredPosition = new Vector2(12f, 0f);
             icon.sizeDelta = new Vector2(IconSize, IconSize);
 
-            Image image = AddImage(icon.gameObject, CategoryColor(item.Category));
-            image.raycastTarget = false;
+            Image background = AddImage(icon.gameObject, CategoryColor(item.Category));
+            background.raycastTarget = false;
 
             if (item.Icon != null)
             {
-                image.sprite = item.Icon;
-                image.preserveAspect = true;
-                image.color = Color.white;
-                return;
+                RectTransform spriteRect = CreateRect("Sprite", icon);
+                StretchToParent(spriteRect);
+                spriteRect.offsetMin = new Vector2(3f, 3f);
+                spriteRect.offsetMax = new Vector2(-3f, -3f);
+
+                Image spriteImage = AddImage(spriteRect.gameObject, Color.white);
+                spriteImage.raycastTarget = false;
+                spriteImage.sprite = item.Icon;
+                spriteImage.preserveAspect = true;
             }
 
             TMP_Text fallback = CreateText("Letter", icon, 15f, FontStyles.Bold, TextAlignmentOptions.Center);
             fallback.text = IconLetter(item);
+            fallback.color = new Color(1f, 1f, 1f, 0.82f);
             StretchToParent(fallback.rectTransform);
         }
 
@@ -764,8 +777,9 @@ namespace Market.UI
             text.fontStyle = style;
             text.alignment = alignment;
             text.color = Color.white;
+            text.raycastTarget = false;
             text.textWrappingMode = TextWrappingModes.Normal;
-            text.overflowMode = TextOverflowModes.Ellipsis;
+            text.overflowMode = TextOverflowModes.Truncate;
             return text;
         }
 

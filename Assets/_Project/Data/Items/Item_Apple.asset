@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Market.Economy.ItemSO
   id: Item_Apple
   displayName: "\u042F\u0431\u043B\u043E\u043A\u043E"
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: cbfb18fa33d5a4c4dba3000fa0335684, type: 3}
   worldPrefab: {fileID: 866874922109178162, guid: d8cc884ce77197d468de2264fecd632e, type: 3}
   category: 0
   baseBuyPrice: 10
