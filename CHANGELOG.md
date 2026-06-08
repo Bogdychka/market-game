@@ -17,10 +17,15 @@ reviews it, verifies via Unity MCP, bumps the version, tags it, and pushes. See 
 ### Fixed
 - `MarketUIController`: use TMP truncate overflow instead of ellipsis overflow so LiberationSans SDF
   no longer logs missing ellipsis glyph warnings when market UI rows are created. (Codex)
+- `MarketUIController`: supplier and stall action rows now respond to clicks across the whole item
+  row, and item icons keep a visible category/letter fallback even when a sprite does not render.
+  (Codex)
 
 ### Verification
 - MCP `recompile_scripts`: success, 0 warnings.
 - MCP `get_health_report`: ok, compileFailed=false, consoleErrors=0, dirtyScenes=0. (Codex)
+- Direct WebSocket `get_health_report`: compileFailed=false, warningCount=0, dirtyScenes=0; report
+  shows attention only from MCP WebSocket self-errors after an MCP timeout. (Codex)
 
 ## [1.5.1] - 2026-06-08
 
