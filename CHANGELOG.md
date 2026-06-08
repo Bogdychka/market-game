@@ -10,7 +10,9 @@ reviews it, verifies via Unity MCP, bumps the version, tags it, and pushes. See 
 
 ## [Unreleased]
 
-_Nothing pending._
+### Changed
+- `AGENTS.md`: added gotcha #9 — never use `UnityEngine.Input.*`; legacy Input is disabled
+  (`activeInputHandler = 1`); use New Input System (`Mouse.current`, `Keyboard.current`, etc.). (Claude)
 
 ## [1.5.1] - 2026-06-08
 
