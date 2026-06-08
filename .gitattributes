@@ -22,14 +22,17 @@
 *.js         text eol=lf
 *.meta       text eol=lf
 
-# Unity YAML assets — text, with Unity's smart merge as a hint
-*.unity      text eol=lf merge=unityyamlmerge
-*.prefab     text eol=lf merge=unityyamlmerge
-*.asset      text eol=lf merge=unityyamlmerge
-*.mat        text eol=lf merge=unityyamlmerge
-*.anim       text eol=lf merge=unityyamlmerge
-*.controller text eol=lf merge=unityyamlmerge
-*.physicMaterial text eol=lf merge=unityyamlmerge
+# Unity YAML assets — text, with Unity's smart merge as a hint.
+# whitespace=-trailing-space: Unity intentionally writes trailing spaces (e.g. `m_Name: `
+# on empty names). Without this, `git diff --check` flags those lines and whitespace-fixing
+# operations strip them, producing spurious scene/prefab diffs. Leave Unity's YAML untouched.
+*.unity      text eol=lf merge=unityyamlmerge whitespace=-trailing-space
+*.prefab     text eol=lf merge=unityyamlmerge whitespace=-trailing-space
+*.asset      text eol=lf merge=unityyamlmerge whitespace=-trailing-space
+*.mat        text eol=lf merge=unityyamlmerge whitespace=-trailing-space
+*.anim       text eol=lf merge=unityyamlmerge whitespace=-trailing-space
+*.controller text eol=lf merge=unityyamlmerge whitespace=-trailing-space
+*.physicMaterial text eol=lf merge=unityyamlmerge whitespace=-trailing-space
 
 # Windows scripts must stay CRLF
 *.ps1        text eol=crlf

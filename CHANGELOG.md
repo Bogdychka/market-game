@@ -12,6 +12,32 @@ reviews it, verifies via Unity MCP, bumps the version, tags it, and pushes. See 
 
 _Nothing pending._
 
+## [1.6.0] - 2026-06-08
+
+### Added
+- C5 PauseMenu: `Esc` in the Market scene opens a runtime uGUI/TMP pause menu with Resume, Save,
+  Settings placeholder, and Main Menu actions. The pause menu enters `UIModeService` menu mode,
+  sets `Time.timeScale = 0`, resumes through Escape or the Resume button, and restores
+  `Time.timeScale = 1` before closing or loading MainMenu. (Codex)
+
+### Changed
+- `GameBootstrap` now preserves existing UI Escape priority in Market: supplier/stall/inventory
+  panels consume Escape first, otherwise Escape opens the pause menu instead of immediately
+  returning to MainMenu. (Codex)
+- Review fixes: `PauseMenuController.OnMainMenu` calls `Resume()` instead of duplicating its
+  timeScale/visibility/menu-mode reset; added a `[Tooltip]` on the `uiModeService` field; replaced
+  the player-visible "C6" plan id with neutral placeholder text. (Claude)
+- `.gitattributes`: set `whitespace=-trailing-space` on Unity YAML formats (`*.unity`/`*.prefab`/
+  `*.asset`/`*.mat`/`*.anim`/`*.controller`/`*.physicMaterial`). Unity intentionally writes trailing
+  spaces (e.g. `m_Name: `), so `git diff --check` no longer flags them and whitespace-fixing ops no
+  longer strip them — eliminating spurious scene/prefab diffs. (Claude)
+
+### Verification
+- MCP `recompile_scripts`: success, 0 warnings. (Codex + Claude after review fixes)
+- MCP `get_health_report`: ok, compileFailed=false, consoleErrors=0, dirtyScenes=0. (Codex + Claude)
+- MCP scene inspection: `HUD` has `PauseMenuController` with `gameSaver` and `uiModeService` wired. (Codex)
+- C# review via `unity-csharp-reviewer`: two HIGH findings addressed, MCP re-verified green. (Claude)
+
 ## [1.5.6] - 2026-06-08
 
 ### Fixed
@@ -238,7 +264,8 @@ _Nothing pending._
   (`Bogdychka/market-game`); `COLLAB.md` branch-per-task protocol; Claude Code enforcement hooks;
   Unity-aware C# reviewer subagent. (Claude)
 
-[Unreleased]: https://github.com/Bogdychka/market-game/compare/v1.5.6...HEAD
+[Unreleased]: https://github.com/Bogdychka/market-game/compare/v1.6.0...HEAD
+[1.6.0]: https://github.com/Bogdychka/market-game/compare/v1.5.6...v1.6.0
 [1.5.6]: https://github.com/Bogdychka/market-game/compare/v1.5.5...v1.5.6
 [1.5.5]: https://github.com/Bogdychka/market-game/compare/v1.5.4...v1.5.5
 [1.5.4]: https://github.com/Bogdychka/market-game/compare/v1.5.3...v1.5.4

@@ -187,7 +187,7 @@ validation (≥ 0; warn below buy price) · place spawns `worldPrefab`, remove r
 ### C5. PauseMenu `[assets: ready]`
 **Do:** Esc → Resume / Save / Settings / Main Menu; `Time.timeScale = 0`.
 **Sub-steps:** pause stack via UIModeService · Save calls `GameSaver` · safe return to MainMenu.
-**Check:** Esc halts the game, Save works from pause, double-Esc doesn't break Play Mode.
+**Check:** Esc halts the game, Save works from pause, double-Esc doesn't break Play Mode. **Done.**
 
 ### C6. Settings menu `[assets: ready]`
 **Do:** `SettingsSO`/PlayerPrefs — mouse sensitivity, invert-Y, volumes (Master/Music/SFX), key
@@ -636,7 +636,7 @@ place: `VERSION` + `CHANGELOG.md` + `vX.Y.Z` tags.)
 - [x] C2 InventoryUI
 - [x] C3 ShopUI (supplier)
 - [x] C4 StallUI
-- [ ] C5 PauseMenu
+- [x] C5 PauseMenu
 - [ ] C6 Settings menu
 - [ ] C7 AudioMixer & base audio
 - [ ] C8 NPC visual pool
