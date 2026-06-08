@@ -12,6 +12,23 @@ reviews it, verifies via Unity MCP, bumps the version, tags it, and pushes. See 
 
 _Nothing pending._
 
+## [1.5.6] - 2026-06-08
+
+### Fixed
+- Stall price-input value never displayed (field looked like an empty box): the input's `text` and
+  `placeholder` TMP components set `offsetMin/offsetMax` without stretch anchors, producing a
+  zero/negative-size rect so the suggested price never rendered. Added `StretchToParent` before the
+  offsets so the value is visible. (Claude)
+
+### Changed
+- `AGENTS.md`: gotcha #10 — use `RectMask2D` for rectangular UI clipping; a legacy `Mask` with an
+  alpha-0 graphic gets culled, never writes the stencil, and hides all masked children while they stay
+  clickable. (Claude)
+
+### Verification
+- MCP `recompile_scripts`: success, 0 warnings.
+- MCP `get_health_report`: ok, compileFailed=false, consoleErrors=0, dirtyScenes=0. (Claude)
+
 ## [1.5.5] - 2026-06-08
 
 ### Fixed
@@ -221,7 +238,8 @@ _Nothing pending._
   (`Bogdychka/market-game`); `COLLAB.md` branch-per-task protocol; Claude Code enforcement hooks;
   Unity-aware C# reviewer subagent. (Claude)
 
-[Unreleased]: https://github.com/Bogdychka/market-game/compare/v1.5.5...HEAD
+[Unreleased]: https://github.com/Bogdychka/market-game/compare/v1.5.6...HEAD
+[1.5.6]: https://github.com/Bogdychka/market-game/compare/v1.5.5...v1.5.6
 [1.5.5]: https://github.com/Bogdychka/market-game/compare/v1.5.4...v1.5.5
 [1.5.4]: https://github.com/Bogdychka/market-game/compare/v1.5.3...v1.5.4
 [1.5.3]: https://github.com/Bogdychka/market-game/compare/v1.5.2...v1.5.3
