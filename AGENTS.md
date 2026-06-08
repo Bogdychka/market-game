@@ -417,6 +417,14 @@ These are the things that have repeatedly burned time. Internalize them.
    - ✅ Russian kept: player-visible strings in uGUI/TMP (`text.text = "…"`), `ItemSO.displayName`
      defaults, `NPCTypeSO.typeName` defaults, season display names returned from `GetName()`
    - ❌ If you catch yourself typing a Russian word in a comment or tooltip — stop and write English.
+10. **For rectangular UI clipping use `RectMask2D`, never the legacy `Mask` with a transparent graphic.**
+    uGUI culls fully-transparent graphics, so a `Mask` whose mask `Image` has `alpha = 0` never writes
+    the stencil buffer — and then EVERY masked child fails the stencil test and renders invisible.
+    Raycasts don't depend on the stencil, so the hidden children still receive hover/click — the classic
+    "rows are clickable but you can't see them" symptom. This hid every market scroll-list row from C3
+    until the v1.5.4 fix. Rule: scroll viewports / clip rects use `RectMask2D` (rect-based, no graphic
+    needed); reserve legacy `Mask` for non-rectangular sprite masks, and if you must use it, give the
+    mask graphic alpha ≥ 1/255 so it isn't culled.
 
 ---
 
