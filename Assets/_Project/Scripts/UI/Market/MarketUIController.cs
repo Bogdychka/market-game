@@ -581,8 +581,10 @@ namespace Market.UI
                 spriteImage.raycastTarget = false;
                 spriteImage.sprite = item.Icon;
                 spriteImage.preserveAspect = true;
+                return;
             }
 
+            // No sprite assigned — fall back to the first letter over the category color.
             TMP_Text fallback = CreateText("Letter", icon, 15f, FontStyles.Bold, TextAlignmentOptions.Center);
             fallback.text = IconLetter(item);
             fallback.color = new Color(1f, 1f, 1f, 0.82f);
