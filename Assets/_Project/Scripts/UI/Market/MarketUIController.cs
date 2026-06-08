@@ -350,9 +350,14 @@ namespace Market.UI
             viewport.anchorMax = Vector2.one;
             viewport.offsetMin = new Vector2(20f, 20f);
             viewport.offsetMax = new Vector2(-20f, -108f);
-            AddImage(viewport.gameObject, new Color(0f, 0f, 0f, 0f));
-            Mask mask = viewport.gameObject.AddComponent<Mask>();
-            mask.showMaskGraphic = false;
+            // Transparent raycast catcher so ScrollRect drags register over empty areas.
+            // NOTE: clip with RectMask2D, NOT Mask. A legacy Mask whose graphic has alpha 0
+            // gets culled by the canvas, so it never writes the stencil and ALL masked
+            // children disappear (while still receiving raycasts). RectMask2D clips by rect
+            // and needs no graphic, so rows stay visible.
+            Image viewportImage = AddImage(viewport.gameObject, new Color(0f, 0f, 0f, 0f));
+            viewportImage.raycastTarget = true;
+            viewport.gameObject.AddComponent<RectMask2D>();
 
             RectTransform content = CreateRect("Content", viewport);
             content.anchorMin = new Vector2(0f, 1f);
