@@ -16,12 +16,21 @@ C#/Unity work. Don't duplicate the other contracts here:
 ## Token discipline — don't burn context on junk
 
 - Read only what you will edit or must verify. Don't re-read whole files or contracts "to be sure".
-- `dev_plan_3.md` checkboxes are the progress truth — don't rediscover project state by scanning the repo.
-- Diagnose from files: grep the relevant serialized `.unity`/`.prefab`/`.asset` and tail `game.log`;
-  don't dump whole scenes or consoles.
+- **`dev_plan_3.md` (36 KB): never read it whole.** Progress truth = the `## Progress` section at
+  the bottom; task details = the section of YOUR block only. Grep by step id (`C6`, `D8`…).
+- **`CHANGELOG.md`: handoffs need only the head** — `[Unreleased]` + the latest release (first
+  ~40 lines). Never read the version history. When the file exceeds ~30 KB, move entries older than
+  the last 5 releases to `CHANGELOG.archive.md`.
+- Diagnose from files: grep the relevant serialized `.unity`/`.prefab`/`.asset` with narrow patterns
+  (`Market.unity` is 80 KB — never dump a scene) and tail `game.log`.
 - Verification is proportional: a normal change needs `recompile_scripts` + `get_health_report`, done.
-  `run_tests` (filter `Market.Tests`) only for shared/risky logic. Never re-run a gate that already passed.
-- `get_console_logs`: always `includeStackTrace: false` and a small `limit`.
+  `run_tests` (filter `Market.Tests`) only for shared/risky logic.
+- **A passed gate is final.** Never re-run recompile/health/tests on unchanged code "to be sure".
+  After a new edit, re-run only the gates that edit invalidated (e.g. a comment-only fix needs
+  recompile + health, not the test suite).
+- **Cheap MCP calls by default:** `get_health_report` with `includeTests: false` (set true only when
+  you actually need test discovery); `get_console_logs` with `includeStackTrace: false` + small
+  `limit` (10–20); `run_tests` with `returnOnlyFailures: true`, `returnWithLogs: false`.
 - No progress essays in chat. Results are recorded once, in `CHANGELOG.md [Unreleased]`.
 
 ---
@@ -204,8 +213,10 @@ code defaults, and fix the wiring when that is the truth. Logs: `Get-Content .\g
 
 ## MCP Unity verification
 
-Loop: `recompile_scripts` → `get_health_report` (must be `ok`, 0 errors) → `get_console_logs`
-(`includeStackTrace: false`) when needed → `run_tests` for shared/risky logic.
+Loop: `recompile_scripts` → `get_health_report` (`includeTests: false`; must be `ok`, 0 errors) →
+`get_console_logs` (`includeStackTrace: false`, small `limit`) when needed → `run_tests`
+(filter `Market.Tests`, `returnOnlyFailures`) for shared/risky logic. A passed gate is final —
+re-run only what a later edit invalidated.
 
 WS fallback if MCP transport is closed (from project root; same pattern for any tool):
 

@@ -15,8 +15,11 @@ Standing contract for `C:\Users\bogre\My project`. Keep it short and current; it
 Codex implements plan steps and records them in `CHANGELOG.md [Unreleased]`. **Claude is the gate
 to `main`.** Per handoff:
 
-1. **Review** the diff + its `[Unreleased]` note against `AGENTS.md` and the plan. Run the
-   `unity-csharp-reviewer` subagent for C# changes.
+1. **Review** the diff + its `[Unreleased]` note against `AGENTS.md` and the plan.
+   The `unity-csharp-reviewer` subagent is expensive (~65k tokens/run): run it only for
+   **non-trivial C#** — new logic, economy, persistence, NPC behavior, shared systems — and give it
+   the exact file list + focus areas in the prompt so it doesn't explore. Trivial diffs (UI
+   colors/labels, comments, docs, value tweaks) Claude reviews inline, no subagent.
 2. **Verify via MCP:** `recompile_scripts` → `get_health_report` must be `ok` (0 errors, 0 dirty
    scenes). `get_console_logs` (`includeStackTrace: false`) and `run_tests` (filter `Market.Tests`)
    for risky or shared changes. If MCP can't run, state exactly what was NOT verified — never claim

@@ -8,9 +8,31 @@ Entries note the authoring agent (Claude / Codex / user). This file also doubles
 the `[Unreleased]` section is where in-flight work is recorded (especially by Codex) **before** Claude
 reviews it, verifies via Unity MCP, bumps the version, tags it, and pushes. See `COLLAB.md`.
 
+> **Agents: read only the head of this file** (`[Unreleased]` + the latest release, ~40 lines) —
+> never the full history. When the file exceeds ~30 KB, move entries older than the last 5 releases
+> to `CHANGELOG.archive.md`.
+
 ## [Unreleased]
 
 _Nothing pending._
+
+## [1.6.3] - 2026-06-11
+
+### Changed
+- Token-economy hardening of the agent rules (follow-up to v1.6.2, based on measured costs):
+  - `AGENTS.md` Token discipline: partial-read rules for `dev_plan_3.md` (Progress section +
+    own block only; never the whole 36 KB) and `CHANGELOG.md` (head only + archive-at-30KB policy);
+    "a passed gate is final" — re-run only gates invalidated by a later edit; cheap MCP defaults
+    (`get_health_report includeTests:false`, console logs without stack traces + small limit,
+    `run_tests` failures-only without logs). MCP loop section updated to match. (Claude)
+  - `CLAUDE.md`: `unity-csharp-reviewer` scoped — only for non-trivial C# (new logic / economy /
+    persistence / NPC / shared systems) with an exact file list + focus areas in the prompt
+    (measured cost ~65k tokens/run); trivial diffs are reviewed inline. (Claude)
+  - `dev_plan_3.md` and `CHANGELOG.md` got header notes telling agents to read them partially —
+    the rule now sits where the file is opened. (Claude)
+
+### Verification
+- Docs-only change; no C# touched, MCP loop not required. (Claude)
 
 ## [1.6.2] - 2026-06-11
 
