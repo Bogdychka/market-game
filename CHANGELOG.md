@@ -12,6 +12,44 @@ reviews it, verifies via Unity MCP, bumps the version, tags it, and pushes. See 
 
 _Nothing pending._
 
+## [1.6.1] - 2026-06-11
+
+### Changed
+- UI refactor, no behavior change: extracted the duplicated code-built-UI helpers from
+  `MarketUIController` (936 lines) and `PauseMenuController` into a shared static `UiFactory`
+  (`Market.UI`), and split `MarketUIController` into a thin coordinator (~250 lines) plus
+  `MarketPanelView` (panel chrome + shared row widgets), `ItemTooltipView`, and plain-C#
+  `InventoryPanelRenderer` / `SupplierPanelRenderer` / `StallPanelRenderer`. Scene wiring
+  untouched — the scene component, its GUID, and all serialized fields are unchanged. (Claude)
+- `dev_plan_3.md`: added **D0 MarketStallRegistry** as an explicit step (the B9 temporary
+  single-stall API must be retired before D11/D12 build on it); checkpoints D–I now each require
+  a `SaveData.version` bump + migration + EditMode migration test. (Claude)
+- Committed the warmed `LiberationSans SDF - Fallback` TMP dynamic-atlas state (runtime-added
+  Cyrillic glyphs kept the working tree permanently dirty). (Claude)
+
+### Added
+- Assembly definitions: `Market.Runtime` (all gameplay scripts), `Market.Editor`
+  (`Scripts/Debug/Editor`, editor-only, references `McpUnity.Editor`), and
+  `Market.Tests.EditMode` — makes the plan-step 0.1 "asmdefs" claim true and enables a test
+  assembly. (Claude)
+- First EditMode tests (17, all green) under `Assets/_Project/Tests/EditMode`: `EconomyTests`
+  (PriceCalculator read-through, ItemSO season availability, MoneySystem spend rules),
+  `InventoryTests` (add/remove/OnChanged contract), `SaveMigrationTests` (ItemDatabase id/name
+  resolution for v1 saves, v1-JSON time defaults, SaveData round-trip), plus a `TestItems`
+  SerializedObject factory. (Claude)
+
+### Removed
+- Empty leftover script folders `Scripts/Influence` and `Scripts/Outcomes` (+ `.meta`) —
+  planning artifacts that match no block of `dev_plan_3.md`. (Claude)
+
+### Verification
+- MCP `recompile_scripts`: success, 0 warnings. (Claude)
+- MCP `get_health_report`: ok, compileFailed=false, consoleErrors=0, dirtyScenes=0. (Claude)
+- MCP `run_tests` (EditMode, filter `Market.Tests`): 17/17 passed. (Claude)
+- C# review via `unity-csharp-reviewer`: no blocking findings; its one HIGH note (season event
+  re-subscribe on re-enable) was re-checked against the code and is a false positive —
+  `UnwireSeasonEvents` resets `_seasonEventsWired`, so re-enable re-subscribes. (Claude)
+
 ## [1.6.0] - 2026-06-08
 
 ### Added

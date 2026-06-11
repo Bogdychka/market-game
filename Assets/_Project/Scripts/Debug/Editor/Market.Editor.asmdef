@@ -1,0 +1,19 @@
+{
+    "name": "Market.Editor",
+    "rootNamespace": "Market",
+    "references": [
+        "Market.Runtime",
+        "McpUnity.Editor"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -217,6 +217,13 @@ visible in menus.
 *The "fun layer". A day becomes a short session; NPCs become characters; orders replace world events;
 growth shows up physically (staff/signs/decor) — never as hidden buffs.*
 
+### D0. MarketStallRegistry `[assets: ready]`
+**Do:** retire the temporary single-stall API from B9 *before* new systems build on it:
+`MarketStallRegistry` owns all stalls in the scene; `NPCSpawner.targetStall` and
+`GameSaver.marketStall` iterate the registry instead of holding one reference. D11 (props) and
+D12 (Stocker) depend on this.
+**Check:** two stalls in the scene — NPCs visit both, save/load restores both.
+
 ### D1. DayPhaseSystem `[assets: ready]`
 **Do:** phases Morning Prep → Market Open → Evening Summary → Night/Next Day; HUD shows the phase.
 **Check:** the day advances through phases; HUD reflects it.
@@ -316,6 +323,7 @@ visible.
 
 > **Checkpoint D:** the day has rhythm and stakes, NPCs are characters, orders drive goals, and growth
 > is visible in the world. This is the full fun-slice.
+> Ship with a `SaveData.version` bump + migration of old saves + an EditMode migration test.
 
 ---
 
@@ -369,6 +377,7 @@ models in the repo → backlog; prototype with colored stubs.
 **Check:** a new player completes the chain with no outside explanation.
 
 > **Checkpoint E:** full vertical slice — the "playable prototype" you show off.
+> Ship with a `SaveData.version` bump + migration of old saves + an EditMode migration test.
 
 ---
 
@@ -408,6 +417,7 @@ Ferry art → backlog.
 **Check:** ferry running → daily income; new supplier items appear.
 
 > **Checkpoint F:** one extra specialization fully playable.
+> Ship with a `SaveData.version` bump + migration of old saves + an EditMode migration test.
 
 ---
 
@@ -438,6 +448,7 @@ risky).
 **Check:** race runs; the bet pays out or burns.
 
 > **Checkpoint G:** animal branch fully playable.
+> Ship with a `SaveData.version` bump + migration of old saves + an EditMode migration test.
 
 ---
 
@@ -485,6 +496,7 @@ monopoly. (Reuses existing Food-Kit models.)
 **Check:** unlock a unique recipe → make a new item that shows up in orders/achievements.
 
 > **Checkpoint H:** all four specializations playable and linked by materials.
+> Ship with a `SaveData.version` bump + migration of old saves + an EditMode migration test.
 
 ---
 
@@ -512,6 +524,7 @@ Never changes prices directly.
 **Check:** high rep → more trust/content; low rep → refusals and closed branches.
 
 > **Checkpoint I:** the player builds relationships with the town, not just sells goods.
+> Ship with a `SaveData.version` bump + migration of old saves + an EditMode migration test.
 
 ---
 
@@ -643,6 +656,7 @@ place: `VERSION` + `CHANGELOG.md` + `vX.Y.Z` tags.)
 - [ ] C9 Interaction prompt & cursor polish
 
 ### Block D — Day rhythm, orders, progression & attraction
+- [ ] D0 MarketStallRegistry
 - [ ] D1 DayPhaseSystem
 - [ ] D2 Open/Close stall
 - [ ] D3 Evening Summary
