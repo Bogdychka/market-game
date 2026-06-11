@@ -1,0 +1,106 @@
+using Market.Economy;
+using Market.Persistence;
+using NUnit.Framework;
+using UnityEngine;
+
+namespace Market.Tests
+{
+    /// <summary>
+    /// Save-format compatibility: ItemDatabase id/name resolution (the v1-to-v2 item
+    /// migration path) and SaveData JSON defaults for fields missing in old saves.
+    /// Extend these tests whenever SaveData.version is bumped.
+    /// </summary>
+    public class SaveMigrationTests
+    {
+        private ItemSO _apple;
+        private ItemSO _fish;
+        private ItemDatabase _database;
+
+        [SetUp]
+        public void SetUp()
+        {
+            _apple = TestItems.CreateItem("item_apple", "Apple");
+            _fish = TestItems.CreateItem("item_fish", "Fish");
+            _database = TestItems.CreateDatabase(_apple, _fish);
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            Object.DestroyImmediate(_database);
+            Object.DestroyImmediate(_apple);
+            Object.DestroyImmediate(_fish);
+        }
+
+        [Test]
+        public void Resolve_ById_IgnoresDisplayName()
+        {
+            // Id is the primary key: a stale display name must not break resolution.
+            Assert.AreSame(_apple, _database.Resolve("item_apple", "Renamed Apple"));
+        }
+
+        [Test]
+        public void Resolve_EmptyId_FallsBackToName()
+        {
+            // v1 saves stored only itemName; itemId arrived in save version 2.
+            Assert.AreSame(_fish, _database.Resolve(string.Empty, "Fish"));
+        }
+
+        [Test]
+        public void Resolve_UnknownIdAndName_ReturnsNull()
+        {
+            Assert.IsNull(_database.Resolve("item_missing", "Unknown Item"));
+        }
+
+        [Test]
+        public void SaveData_V1Json_FillsTimeDefaults()
+        {
+            // A v1 save has no day/hour/minute fields: JsonUtility must keep the
+            // SaveData field initializers (Day 1, 08:00) instead of zeroing them.
+            const string v1Json = "{\"version\":1,\"money\":120.5," +
+                "\"inventory\":[{\"itemId\":\"\",\"itemName\":\"Apple\",\"count\":2}]," +
+                "\"playerX\":1.0,\"playerY\":0.0,\"playerZ\":3.0,\"playerRotationY\":90.0}";
+
+            SaveData data = JsonUtility.FromJson<SaveData>(v1Json);
+
+            Assert.AreEqual(1, data.version);
+            Assert.AreEqual(120.5f, data.money);
+            Assert.AreEqual(1, data.day);
+            Assert.AreEqual(8, data.hour);
+            Assert.AreEqual(0, data.minute);
+            Assert.AreEqual(1, data.inventory.Count);
+            Assert.AreSame(_apple, _database.Resolve(data.inventory[0].itemId, data.inventory[0].itemName));
+        }
+
+        [Test]
+        public void SaveData_RoundTrip_PreservesFields()
+        {
+            var original = new SaveData
+            {
+                money = 333.25f,
+                day = 12,
+                hour = 19,
+                minute = 45,
+                playerX = 4.5f,
+                playerRotationY = 180f
+            };
+            original.inventory.Add(new InventoryItemData { itemId = "item_fish", itemName = "Fish", count = 7 });
+            original.stallSlots.Add(new StallSlotData { slotIndex = 1, itemId = "item_apple", itemName = "Apple", sellPrice = 25f });
+
+            SaveData restored = JsonUtility.FromJson<SaveData>(JsonUtility.ToJson(original));
+
+            Assert.AreEqual(original.version, restored.version);
+            Assert.AreEqual(333.25f, restored.money);
+            Assert.AreEqual(12, restored.day);
+            Assert.AreEqual(19, restored.hour);
+            Assert.AreEqual(45, restored.minute);
+            Assert.AreEqual(4.5f, restored.playerX);
+            Assert.AreEqual(180f, restored.playerRotationY);
+            Assert.AreEqual(1, restored.inventory.Count);
+            Assert.AreEqual("item_fish", restored.inventory[0].itemId);
+            Assert.AreEqual(7, restored.inventory[0].count);
+            Assert.AreEqual(1, restored.stallSlots.Count);
+            Assert.AreEqual(25f, restored.stallSlots[0].sellPrice);
+        }
+    }
+}
