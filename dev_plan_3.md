@@ -6,6 +6,9 @@ checkboxes. Contracts (how to write code, how the two agents collaborate) live e
 `AGENTS.md` (coding/architecture rules, shared by both agents), `CLAUDE.md` (Claude's review/publish
 role), `COLLAB.md` (branch-per-task + PR process). Don't duplicate progress anywhere but this file.
 
+> **Agents: don't read this file whole (36 KB ≈ 10k tokens).** Current state = the `## Progress`
+> section at the bottom; task details = the section of the block you're working on. Grep by step id.
+
 ---
 
 ## Philosophy
