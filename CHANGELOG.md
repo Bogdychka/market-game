@@ -12,6 +12,23 @@ reviews it, verifies via Unity MCP, bumps the version, tags it, and pushes. See 
 
 _Nothing pending._
 
+## [1.6.2] - 2026-06-11
+
+### Changed
+- Agent contract docs slimmed and updated for token economy (loaded into every session of both
+  agents): `AGENTS.md` 23.4KB→14.7KB, `CLAUDE.md` 5.8KB→3.3KB, `COLLAB.md` 5.1KB→3.2KB (−38%
+  total). All substantive rules kept; removed cross-file duplication (collab protocol lived in
+  three places, tech stack in two); gotcha numbering preserved as stable ids. (Claude)
+- `AGENTS.md` gains: a "Token discipline" section (proportional verification, minimal reads, no
+  ritual summaries); the v1.6.1 reality — asmdef layout + "new package deps go into asmdef
+  references", the `UiFactory`/`MarketPanelView`/renderer UI pattern for future screens, a Tests
+  section (where, how to run, what needs tests), the D–I save-version bump rule; planned Block D/E/H
+  ScriptableObjects in the SO contract table; new gotcha 12 (MCP recompile does not import brand-new
+  files — run Assets/Refresh first). (Claude)
+
+### Verification
+- Docs-only change; no C# touched, MCP loop not required. (Claude)
+
 ## [1.6.1] - 2026-06-11
 
 ### Changed
