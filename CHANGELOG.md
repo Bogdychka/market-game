@@ -24,6 +24,8 @@ reviews it, verifies via Unity MCP, bumps the version, tags it, and pushes. See 
 - Mixamo Idle, Walk, and Talk imports are configured as humanoid looping clips with root position
   baked for agent-driven movement; the NPC visual uses a neutral URP/Lit material to avoid pink
   built-in shader fallback. (Codex)
+- `NPC_Visitor` now keeps the `Animator` and `NPCAnimator` on the unpacked `UAL1_Standard` rig root
+  rather than the wrapper `Model` object, so Humanoid clip bindings reach the skeleton. (Codex)
 
 ### Verification
 - MCP `recompile_scripts`: success, 0 warnings. (Codex)
