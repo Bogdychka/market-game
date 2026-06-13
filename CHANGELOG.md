@@ -16,6 +16,13 @@ reviews it, verifies via Unity MCP, bumps the version, tags it, and pushes. See 
 
 _Nothing pending._
 
+## [1.7.1] - 2026-06-13
+
+### Fixed (Claude)
+- Settings button in MainMenu no longer shows empty screen. Added `SettingsMenuController`
+  MonoBehaviour that builds a centered `SettingsPanelRenderer` on Awake; wired to the pre-existing
+  `SettingsPanel` GameObject with `onBack → MainMenuController.CloseSettings()`.
+
 ## [1.7.0] - 2026-06-13
 
 ### Added — C6 Settings menu (Claude)
