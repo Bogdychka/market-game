@@ -1,3 +1,5 @@
+using Market.Core;
+using Market.UI;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -49,10 +51,43 @@ namespace Market.Player
                 return;
             }
 
-            _moveAction = _input.actions["Move"];
-            _lookAction = _input.actions["Look"];
+            _moveAction   = _input.actions["Move"];
+            _lookAction   = _input.actions["Look"];
             _sprintAction = _input.actions["Sprint"];
-            _jumpAction = _input.actions["Jump"];
+            _jumpAction   = _input.actions["Jump"];
+
+            LoadSettingsAndRebinds();
+        }
+
+        private void LoadSettingsAndRebinds()
+        {
+            if (!ServiceLocator.TryGet<SettingsService>(out SettingsService svc)) return;
+
+            mouseSensitivity = svc.MouseSensitivity;
+            invertY          = svc.InvertY;
+
+            string json = svc.GetRebindsJson();
+            if (!string.IsNullOrEmpty(json))
+                _input.actions.LoadBindingOverridesFromJson(json);
+        }
+
+        /// <summary>Applies look settings from <see cref="SettingsService"/> at runtime.</summary>
+        public void ApplyLookSettings(float sensitivity, bool invert)
+        {
+            mouseSensitivity = sensitivity;
+            invertY          = invert;
+        }
+
+        private void OnEnable()
+        {
+            if (ServiceLocator.TryGet<SettingsService>(out SettingsService svc))
+                svc.LookSettingsChanged += ApplyLookSettings;
+        }
+
+        private void OnDisable()
+        {
+            if (ServiceLocator.TryGet<SettingsService>(out SettingsService svc))
+                svc.LookSettingsChanged -= ApplyLookSettings;
         }
 
         private void Update()

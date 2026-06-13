@@ -167,6 +167,7 @@ MonoBehaviour:
   skipMenuInEditor: 0
   minutesPerRealSecond: 2
   escapeSceneLoadCooldown: 1.5
+  settingsSO: {fileID: 11400000, guid: 628b5f18e817e7743aba5b87093fbdbb, type: 2}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

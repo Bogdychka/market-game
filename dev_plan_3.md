@@ -653,7 +653,7 @@ place: `VERSION` + `CHANGELOG.md` + `vX.Y.Z` tags.)
 - [x] C3 ShopUI (supplier)
 - [x] C4 StallUI
 - [x] C5 PauseMenu
-- [ ] C6 Settings menu
+- [x] C6 Settings menu
 - [ ] C7 AudioMixer & base audio
 - [ ] C8 NPC visual pool
 - [ ] C9 Interaction prompt & cursor polish

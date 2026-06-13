@@ -21,6 +21,10 @@ namespace Market.Core
         [SerializeField] private string firstScene = SceneNames.MainMenu;
         [SerializeField] private bool   skipMenuInEditor = false;
 
+        [Header("Settings")]
+        [Tooltip("Assign the SettingsSO asset so settings are available before any scene loads.")]
+        [SerializeField] private SettingsSO settingsSO;
+
         [Header("Time")]
         [Tooltip("How many game minutes pass per real second (2 = 12 real minutes per game day).")]
         [SerializeField] private float minutesPerRealSecond = 2f;
@@ -88,6 +92,11 @@ namespace Market.Core
 
             _timeSystem = new TimeSystem(minutesPerRealSecond);
             ServiceLocator.Register(_timeSystem);
+
+            if (settingsSO != null)
+                ServiceLocator.Register(new SettingsService(settingsSO));
+            else
+                Debug.LogWarning("[GameBootstrap] settingsSO not assigned; SettingsService not registered.");
 
             Debug.Log("[GameBootstrap] Services initialized.");
         }
