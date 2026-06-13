@@ -14,7 +14,20 @@ reviews it, verifies via Unity MCP, bumps the version, tags it, and pushes. See 
 
 ## [Unreleased]
 
-_Nothing pending._
+### Added
+- C8 NPC animated model: replaced the gray capsule visual in `NPC_Visitor.prefab` with the UAL
+  humanoid model, added `NPC_Anim.controller` with Speed/Talking parameters, and added
+  `NPCAnimator` to drive Idle/Walk/Talk from `NavMeshAgent.velocity` and `NPCVisitor.CurrentState`.
+  Visual mesh/outfit variety is deferred until additional humanoid assets exist. (Codex)
+
+### Changed
+- Mixamo Idle, Walk, and Talk imports are configured as humanoid looping clips with root position
+  baked for agent-driven movement; the NPC visual uses a neutral URP/Lit material to avoid pink
+  built-in shader fallback. (Codex)
+
+### Verification
+- MCP `recompile_scripts`: success, 0 warnings. (Codex)
+- MCP `get_health_report`: ok, compileFailed=false, consoleErrors=0, dirtyScenes=0. (Codex)
 
 ## [1.7.1] - 2026-06-13
 

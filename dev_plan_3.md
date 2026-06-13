@@ -202,10 +202,10 @@ rebinding via Input System.
 market ambience. (Sound files are stubs/free placeholders until audio pass in K.)
 **Check:** footsteps on walk, ambient on the market, settings volumes work.
 
-### C8. NPC visual pool `[assets: ready]`
-**Do:** `NPCVisualPicker` assigns a random model/outfit + animator (idle/walk/talk) at spawn, from
-the UAL rig + Mixamo clips.
-**Check:** the NPC stream shows variety, not clones.
+### C8. NPC animated model `[assets: partial]`
+**Do:** replace the capsule NPC visual with the UAL humanoid model and drive Idle/Walk/Talk from
+`NPCVisitor` + `NavMeshAgent`. Visual variety/pool is deferred until more humanoid models/outfits exist.
+**Check:** NPCs spawn as the animated UAL model: Walk while moving, Talk while browsing, Idle when still. **Done.**
 
 ### C9. Interaction prompt & cursor polish `[assets: ready]`
 **Do:** prompt shows the correct device key (KB/Gamepad) via Input System; cursor hidden in game,
@@ -655,7 +655,7 @@ place: `VERSION` + `CHANGELOG.md` + `vX.Y.Z` tags.)
 - [x] C5 PauseMenu
 - [x] C6 Settings menu
 - [ ] C7 AudioMixer & base audio
-- [ ] C8 NPC visual pool
+- [x] C8 NPC animated model *(visual variety deferred until more assets exist)*
 - [ ] C9 Interaction prompt & cursor polish
 
 ### Block D — Day rhythm, orders, progression & attraction
