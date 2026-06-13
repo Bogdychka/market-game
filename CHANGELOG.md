@@ -28,10 +28,14 @@ reviews it, verifies via Unity MCP, bumps the version, tags it, and pushes. See 
   rather than the wrapper `Model` object, so Humanoid clip bindings reach the skeleton. (Codex)
 - UAL model import now creates a Humanoid avatar, allowing the NPC prefab's Animator avatar reference
   to resolve at runtime instead of loading as empty. (Codex)
+- `NPC_Anim.controller` now uses the UAL rig-native Idle/Walk/Talk clips so the controller drives
+  visible skeleton motion on the NPC prefab instead of only advancing Animator states. (Codex)
 
 ### Verification
 - MCP `recompile_scripts`: success, 0 warnings. (Codex)
 - MCP `get_health_report`: ok, compileFailed=false, consoleErrors=0, dirtyScenes=0. (Codex)
+- Temporary Play Mode probe verified the prefab Animator has a controller and moves bones in
+  Idle/Walk/Talk states before the probe was removed. (Codex)
 
 ## [1.7.1] - 2026-06-13
 
