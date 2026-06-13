@@ -1,8 +1,10 @@
 using Market.Core;
 using Market.Persistence;
+using Market.Player;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 namespace Market.UI
@@ -23,11 +25,21 @@ namespace Market.UI
         [Tooltip("Manages cursor lock and player-input suppression; source of the CloseRequested event used to close the menu.")]
         [SerializeField] private UIModeService uiModeService;
 
+        [Header("Settings")]
+        [Tooltip("Default values asset for the settings panel.")]
+        [SerializeField] private SettingsSO settingsSO;
+        [Tooltip("Player controller; receives look settings changes at runtime.")]
+        [SerializeField] private FirstPersonController playerController;
+        [Tooltip("PlayerInput on the player GameObject; required for key rebinding.")]
+        [SerializeField] private PlayerInput playerInput;
+
         private RectTransform _root;
         private RectTransform _mainPanel;
         private RectTransform _settingsPanel;
         private TMP_Text _statusLabel;
         private SceneLoader _sceneLoader;
+        private SettingsService _settingsService;
+        private SettingsPanelRenderer _settingsPanelRenderer;
         private bool _isPaused;
 
         /// <summary>True while the pause menu is open.</summary>
@@ -37,6 +49,7 @@ namespace Market.UI
         {
             ResolveUIModeService();
             ResolveSceneLoader();
+            ResolveSettingsService();
             ValidateReferences();
             BuildUi();
             SetVisible(false);
@@ -117,6 +130,7 @@ namespace Market.UI
 
         private void OnBackToMain()
         {
+            _settingsPanelRenderer?.CancelActiveRebind();
             ShowMainPanel();
         }
 
@@ -163,10 +177,9 @@ namespace Market.UI
             settingsTitle.text = "Настройки";
             UiFactory.AddLayoutHeight(settingsTitle.gameObject, 48f);
 
-            TMP_Text placeholder = CreateText("Placeholder", _settingsPanel, 17f, FontStyles.Normal, TextAlignmentOptions.Center);
-            placeholder.text = "Настройки появятся в следующем обновлении.";
-            placeholder.color = UiFactory.MutedText;
-            UiFactory.AddLayoutHeight(placeholder.gameObject, 80f);
+            if (_settingsService != null && settingsSO != null)
+                _settingsPanelRenderer = new SettingsPanelRenderer(
+                    _settingsPanel, gameObject.layer, _settingsService, settingsSO, playerInput);
 
             CreateButton("BackButton", _settingsPanel, "Назад", OnBackToMain);
             _settingsPanel.gameObject.SetActive(false);
@@ -236,6 +249,19 @@ namespace Market.UI
         {
             if (uiModeService != null) return;
             uiModeService = GetComponent<UIModeService>();
+        }
+
+        private void ResolveSettingsService()
+        {
+            if (ServiceLocator.TryGet<SettingsService>(out _settingsService)) return;
+            if (settingsSO == null)
+            {
+                Debug.LogWarning("[PauseMenuController] settingsSO not assigned; settings panel will be empty.", this);
+                return;
+            }
+            _settingsService = new SettingsService(settingsSO);
+            ServiceLocator.Register(_settingsService);
+            Debug.LogWarning("[PauseMenuController] SettingsService not found. Created local instance for direct Market startup.", this);
         }
 
         private void ResolveSceneLoader()

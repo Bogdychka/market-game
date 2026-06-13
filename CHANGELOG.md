@@ -16,6 +16,27 @@ reviews it, verifies via Unity MCP, bumps the version, tags it, and pushes. See 
 
 _Nothing pending._
 
+## [1.7.0] - 2026-06-13
+
+### Added — C6 Settings menu (Claude)
+- `SettingsSO` (`Assets/_Project/Data/SettingsSO.asset`) — ScriptableObject with default values for all
+  player-configurable settings (mouse sensitivity min/max/default, invert-Y, master/music/sfx volumes).
+- `SettingsService` — plain C# service registered in `ServiceLocator` at boot; loads/persists all
+  settings via `PlayerPrefs`; fires `LookSettingsChanged` and `VolumesChanged` events.
+- `SettingsPanelRenderer` — code-built settings panel: mouse-sensitivity slider (0.02–0.60),
+  invert-Y toggle, Master/Music/SFX volume sliders (0–1, shown as %), and interactive key-rebind
+  buttons for Interact / Jump / Sprint (Keyboard&Mouse group); rebind overrides saved as JSON to
+  `PlayerPrefs`. Volume UI persists values; AudioMixer wiring deferred to C7.
+- `GameBootstrap` now creates and registers `SettingsService` before any scene loads; `settingsSO`
+  field wired in the Bootstrap scene Inspector.
+- `FirstPersonController` loads saved sensitivity + invert-Y on `Awake`, applies binding-override
+  JSON, and subscribes to `LookSettingsChanged` in `OnEnable`/`OnDisable` for live updates.
+- `PauseMenuController` replaces the settings stub panel with `SettingsPanelRenderer`; references
+  wired in the Market scene Inspector (`settingsSO`, `playerController`, `playerInput`).
+
+### Verification
+- `recompile_scripts` → 0 errors, 0 warnings. `get_health_report` → ok. (Claude)
+
 ## [1.6.3] - 2026-06-11
 
 ### Changed
