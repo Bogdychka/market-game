@@ -229,6 +229,8 @@ growth shows up physically (staff/signs/decor) — never as hidden buffs.*
 D12 (Stocker) depend on this.
 **Check:** two stalls in the scene — NPCs visit both, save/load restores both.
 
+**Status:** Done.
+
 ### D1. DayPhaseSystem `[assets: ready]`
 **Do:** phases Morning Prep → Market Open → Evening Summary → Night/Next Day; HUD shows the phase.
 **Check:** the day advances through phases; HUD reflects it.
@@ -663,7 +665,7 @@ place: `VERSION` + `CHANGELOG.md` + `vX.Y.Z` tags.)
 - [x] C9 Interaction prompt & cursor polish
 
 ### Block D — Day rhythm, orders, progression & attraction
-- [ ] D0 MarketStallRegistry
+- [x] D0 MarketStallRegistry
 - [ ] D1 DayPhaseSystem
 - [ ] D2 Open/Close stall
 - [ ] D3 Evening Summary

@@ -6,7 +6,7 @@ namespace Market.Persistence
     [Serializable]
     public class SaveData
     {
-        public int version = 3;
+        public int version = 4;
         public float money;
         public List<InventoryItemData> inventory = new();
         public List<StallSlotData> stallSlots    = new();
@@ -31,6 +31,7 @@ namespace Market.Persistence
     [Serializable]
     public class StallSlotData
     {
+        public string stallId;
         public int    slotIndex;
         public string itemId;
         public string itemName;

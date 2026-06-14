@@ -15,6 +15,9 @@ reviews it, verifies via Unity MCP, bumps the version, tags it, and pushes. See 
 ## [Unreleased]
 
 ### Added
+- D0 `MarketStallRegistry`: Market scene now owns two registered stalls through a registry
+  coordinator; NPC spawning, stall UI wiring, and save/load no longer depend on a single stall
+  reference. (Codex)
 - C9 interaction prompt polish: the HUD prompt now resolves the displayed Interact key from the
   active Input System control scheme and binding overrides, with keyboard/gamepad fallbacks. (Codex)
 - C8 NPC animated model: replaced the gray capsule visual in `NPC_Visitor.prefab` with the UAL
@@ -25,6 +28,8 @@ reviews it, verifies via Unity MCP, bumps the version, tags it, and pushes. See 
   needed). Visual mesh/outfit variety is deferred until more humanoid assets exist. (Codex)
 
 ### Changed
+- Save data is now version 4 and records `stallId` for stall slots, while old saves without
+  `stallId` restore to the first registered stall for compatibility. (Codex)
 - `UIModeService` reapplies cursor lock/visibility when the app regains focus or resumes, reducing
   cursor state drift after focus changes. (Codex)
 - `NPC_Visitor` keeps the `Animator` + `NPCAnimator` on the UAL rig root so Humanoid clip bindings
@@ -46,6 +51,8 @@ reviews it, verifies via Unity MCP, bumps the version, tags it, and pushes. See 
   match. Residual stop/turn slide is inherent to in-place clips without root motion. (Claude)
 
 ### Verification
+- D0 MCP `recompile_scripts`: success, 0 warnings. MCP `get_health_report`: ok, 0 errors,
+  0 dirty scenes. `Market.Tests.SaveMigrationTests`: 6/6 passed. (Codex)
 - C9 MCP `recompile_scripts`: success, 0 warnings. MCP `get_health_report`: ok, 0 errors,
   0 dirty scenes. (Codex)
 - MCP `recompile_scripts`: success, 0 warnings. `get_health_report`: ok (0 errors, 0 dirty scenes).

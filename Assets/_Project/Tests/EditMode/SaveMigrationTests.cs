@@ -85,7 +85,14 @@ namespace Market.Tests
                 playerRotationY = 180f
             };
             original.inventory.Add(new InventoryItemData { itemId = "item_fish", itemName = "Fish", count = 7 });
-            original.stallSlots.Add(new StallSlotData { slotIndex = 1, itemId = "item_apple", itemName = "Apple", sellPrice = 25f });
+            original.stallSlots.Add(new StallSlotData
+            {
+                stallId = "MarketStall_1",
+                slotIndex = 1,
+                itemId = "item_apple",
+                itemName = "Apple",
+                sellPrice = 25f
+            });
 
             SaveData restored = JsonUtility.FromJson<SaveData>(JsonUtility.ToJson(original));
 
@@ -100,7 +107,23 @@ namespace Market.Tests
             Assert.AreEqual("item_fish", restored.inventory[0].itemId);
             Assert.AreEqual(7, restored.inventory[0].count);
             Assert.AreEqual(1, restored.stallSlots.Count);
+            Assert.AreEqual("MarketStall_1", restored.stallSlots[0].stallId);
             Assert.AreEqual(25f, restored.stallSlots[0].sellPrice);
+        }
+
+        [Test]
+        public void SaveData_V3Json_StallSlotsAllowMissingStallId()
+        {
+            const string v3Json = "{\"version\":3,\"money\":50," +
+                "\"stallSlots\":[{\"slotIndex\":2,\"itemId\":\"item_apple\",\"itemName\":\"Apple\",\"sellPrice\":18.5}]}";
+
+            SaveData data = JsonUtility.FromJson<SaveData>(v3Json);
+
+            Assert.AreEqual(3, data.version);
+            Assert.AreEqual(1, data.stallSlots.Count);
+            Assert.IsTrue(string.IsNullOrEmpty(data.stallSlots[0].stallId));
+            Assert.AreEqual(2, data.stallSlots[0].slotIndex);
+            Assert.AreEqual(18.5f, data.stallSlots[0].sellPrice);
         }
     }
 }

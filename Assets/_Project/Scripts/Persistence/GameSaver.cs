@@ -23,10 +23,7 @@ namespace Market.Persistence
         [Header("Scene References")]
         [SerializeField] private MoneySystem  moneySystem;
         [SerializeField] private Inventory    inventory;
-        // TEMP single-stall API (B9). Multi-stall save/load will iterate a
-        // MarketStallRegistry instead of this single reference.
-        [Tooltip("TEMP: single stall. Future multi-stall iterates MarketStallRegistry.")]
-        [SerializeField] private MarketStall  marketStall;
+        [SerializeField] private MarketStallRegistry stallRegistry;
         [SerializeField] private Transform    playerTransform;
         [SerializeField] private ItemDatabase itemDatabase;
         [SerializeField] private NPCSpawner   npcSpawner;
@@ -56,6 +53,7 @@ namespace Market.Persistence
 #endif
             ResolveSaveSystem();
             ResolveTimeSystem();
+            ResolveStallRegistry();
             ValidateReferences();
         }
 
@@ -168,18 +166,25 @@ namespace Market.Persistence
 
         private void CollectStallSlots(SaveData data)
         {
-            var slots = marketStall.Slots;
-            for (int i = 0; i < slots.Length; i++)
+            foreach (MarketStall stall in stallRegistry.Stalls)
             {
-                var slot = slots[i];
-                if (!slot.IsOccupied) continue;
-                data.stallSlots.Add(new StallSlotData
+                if (stall == null || stall.Slots == null) continue;
+
+                StallSlot[] slots = stall.Slots;
+                for (int i = 0; i < slots.Length; i++)
                 {
-                    slotIndex = i,
-                    itemId    = slot.Item.Id,
-                    itemName  = slot.Item.DisplayName,
-                    sellPrice = slot.SellPrice
-                });
+                    StallSlot slot = slots[i];
+                    if (slot == null || !slot.IsOccupied) continue;
+
+                    data.stallSlots.Add(new StallSlotData
+                    {
+                        stallId = stall.StallId,
+                        slotIndex = i,
+                        itemId = slot.Item.Id,
+                        itemName = slot.Item.DisplayName,
+                        sellPrice = slot.SellPrice
+                    });
+                }
             }
         }
 
@@ -230,18 +235,28 @@ namespace Market.Persistence
 
         private void ApplyStallSlots(SaveData data)
         {
-            // Clear current stall state
-            foreach (var slot in marketStall.Slots)
-                if (slot.IsOccupied) slot.Clear();
+            foreach (MarketStall stall in stallRegistry.Stalls)
+            {
+                if (stall == null || stall.Slots == null) continue;
+
+                foreach (StallSlot slot in stall.Slots)
+                {
+                    if (slot != null && slot.IsOccupied)
+                        slot.Clear();
+                }
+            }
 
             if (data.stallSlots == null) return;
 
             foreach (var slotData in data.stallSlots)
             {
-                if (slotData.slotIndex < 0 || slotData.slotIndex >= marketStall.Slots.Length) continue;
+                MarketStall stall = ResolveSavedStall(slotData);
+                if (stall == null || stall.Slots == null) continue;
+                if (slotData.slotIndex < 0 || slotData.slotIndex >= stall.Slots.Length) continue;
+
                 var so = itemDatabase.Resolve(slotData.itemId, slotData.itemName);
                 if (so != null)
-                    marketStall.Slots[slotData.slotIndex].Place(so, slotData.sellPrice);
+                    stall.Slots[slotData.slotIndex].Place(so, slotData.sellPrice);
             }
         }
 
@@ -290,7 +305,8 @@ namespace Market.Persistence
         {
             bool canSave = moneySystem != null
                 && inventory != null
-                && marketStall != null
+                && stallRegistry != null
+                && stallRegistry.Count > 0
                 && playerTransform != null
                 && itemDatabase != null
                 && npcSpawner != null;
@@ -324,11 +340,31 @@ namespace Market.Persistence
                              "Created a local TimeSystem for direct Market scene startup.");
         }
 
+        private void ResolveStallRegistry()
+        {
+            if (stallRegistry != null) return;
+            ServiceLocator.TryGet<MarketStallRegistry>(out stallRegistry);
+        }
+
+        private MarketStall ResolveSavedStall(StallSlotData slotData)
+        {
+            if (slotData == null || stallRegistry == null) return null;
+
+            if (!string.IsNullOrWhiteSpace(slotData.stallId) &&
+                stallRegistry.TryGetStall(slotData.stallId, out MarketStall stall))
+            {
+                return stall;
+            }
+
+            return stallRegistry.GetFirstStall();
+        }
+
         private void ValidateReferences()
         {
             if (moneySystem     == null) Debug.LogError("[GameSaver] moneySystem not assigned",     this);
             if (inventory       == null) Debug.LogError("[GameSaver] inventory not assigned",       this);
-            if (marketStall     == null) Debug.LogError("[GameSaver] marketStall not assigned",     this);
+            if (stallRegistry == null || stallRegistry.Count == 0)
+                Debug.LogError("[GameSaver] stallRegistry not assigned or empty", this);
             if (playerTransform == null) Debug.LogError("[GameSaver] playerTransform not assigned", this);
             if (itemDatabase    == null) Debug.LogError("[GameSaver] itemDatabase not assigned",    this);
             if (npcSpawner      == null) Debug.LogError("[GameSaver] npcSpawner not assigned",      this);

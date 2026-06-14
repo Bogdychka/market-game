@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using Market.Core;
 using Market.Economy;
 using Market.Market;
@@ -28,6 +30,7 @@ namespace Market.UI
         [SerializeField] private Inventory inventory;
         [SerializeField] private MoneySystem moneySystem;
         [SerializeField] private SupplierShop supplierShop;
+        [SerializeField] private MarketStallRegistry stallRegistry;
         [SerializeField] private MarketStall marketStall;
         [SerializeField] private UIModeService uiModeService;
 
@@ -46,6 +49,7 @@ namespace Market.UI
         private void Awake()
         {
             ResolveUIModeService();
+            ResolveStallRegistry();
             ValidateReferences();
 
             _view = new MarketPanelView(transform, gameObject.layer, ClosePanel);
@@ -180,9 +184,8 @@ namespace Market.UI
         private void WireEvents()
         {
             if (supplierShop != null) supplierShop.OpenRequested += ShowSupplier;
-            if (marketStall != null) marketStall.OpenRequested += ShowStall;
+            WireStallEvents();
             if (inventory != null) inventory.OnChanged += Refresh;
-            if (marketStall != null) marketStall.OnStockChanged += Refresh;
             if (moneySystem != null) moneySystem.OnChanged += RefreshMoney;
             if (uiModeService != null) uiModeService.CloseRequested += ClosePanel;
             WireSeasonEvents();
@@ -191,12 +194,31 @@ namespace Market.UI
         private void UnwireEvents()
         {
             if (supplierShop != null) supplierShop.OpenRequested -= ShowSupplier;
-            if (marketStall != null) marketStall.OpenRequested -= ShowStall;
+            UnwireStallEvents();
             if (inventory != null) inventory.OnChanged -= Refresh;
-            if (marketStall != null) marketStall.OnStockChanged -= Refresh;
             if (moneySystem != null) moneySystem.OnChanged -= RefreshMoney;
             if (uiModeService != null) uiModeService.CloseRequested -= ClosePanel;
             UnwireSeasonEvents();
+        }
+
+        private void WireStallEvents()
+        {
+            foreach (MarketStall stall in GetRegisteredStalls())
+            {
+                if (stall == null) continue;
+                stall.OpenRequested += ShowStall;
+                stall.OnStockChanged += Refresh;
+            }
+        }
+
+        private void UnwireStallEvents()
+        {
+            foreach (MarketStall stall in GetRegisteredStalls())
+            {
+                if (stall == null) continue;
+                stall.OpenRequested -= ShowStall;
+                stall.OnStockChanged -= Refresh;
+            }
         }
 
         private void RefreshMoney(float amount)
@@ -241,12 +263,30 @@ namespace Market.UI
             uiModeService = GetComponent<UIModeService>();
         }
 
+        private void ResolveStallRegistry()
+        {
+            if (stallRegistry != null) return;
+            ServiceLocator.TryGet<MarketStallRegistry>(out stallRegistry);
+        }
+
+        private IEnumerable<MarketStall> GetRegisteredStalls()
+        {
+            ResolveStallRegistry();
+            if (stallRegistry != null && stallRegistry.Count > 0)
+                return stallRegistry.Stalls;
+
+            return marketStall != null
+                ? new[] { marketStall }
+                : Array.Empty<MarketStall>();
+        }
+
         private void ValidateReferences()
         {
             if (inventory    == null) Debug.LogError("[MarketUIController] inventory not assigned",    this);
             if (moneySystem  == null) Debug.LogError("[MarketUIController] moneySystem not assigned",  this);
             if (supplierShop == null) Debug.LogError("[MarketUIController] supplierShop not assigned", this);
-            if (marketStall  == null) Debug.LogError("[MarketUIController] marketStall not assigned",  this);
+            if ((stallRegistry == null || stallRegistry.Count == 0) && marketStall == null)
+                Debug.LogError("[MarketUIController] stallRegistry not assigned or empty", this);
             if (uiModeService == null) Debug.LogError("[MarketUIController] uiModeService not assigned", this);
         }
     }

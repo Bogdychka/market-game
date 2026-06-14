@@ -45,10 +45,7 @@ namespace Market.NPC
         [SerializeField] private int   maxActiveNPCsAtPeak  = 5;
 
         [Header("Scene References")]
-        // TEMP single-stall API (B9). Multi-stall will resolve the target via a future
-        // MarketStallRegistry and let NPCs pick a stall by preference/route.
-        [Tooltip("TEMP: single stall. Future multi-stall resolves the target via MarketStallRegistry.")]
-        [SerializeField] private MarketStall targetStall;
+        [SerializeField] private MarketStallRegistry stallRegistry;
         [SerializeField] private Transform   exitPoint;
         [SerializeField] private MoneySystem playerMoney;
 
@@ -67,6 +64,7 @@ namespace Market.NPC
         // ── Lifecycle ──────────────────────────────────────────────────
         private void Awake()
         {
+            ResolveStallRegistry();
             ValidateReferences();
 
             if (!ServiceLocator.TryGet<TimeSystem>(out _timeSystem))
@@ -148,9 +146,10 @@ namespace Market.NPC
         {
             if (npcTypes == null    || npcTypes.Length == 0)    return false;
             if (spawnPoints == null || spawnPoints.Length == 0) return false;
+            MarketStall targetStall = SelectTargetStall();
             if (targetStall == null || exitPoint == null || playerMoney == null)
             {
-                Debug.LogError("[NPCSpawner] targetStall/exitPoint/playerMoney not assigned — NPC not created.", this);
+                Debug.LogError("[NPCSpawner] stallRegistry/exitPoint/playerMoney not assigned - NPC not created.", this);
                 return false;
             }
 
@@ -219,6 +218,14 @@ namespace Market.NPC
             if (visitor == null)
             {
                 Debug.LogError("[NPCSpawner] Prefab from save does not contain NPCVisitor!", go);
+                Destroy(go);
+                return;
+            }
+
+            MarketStall targetStall = SelectTargetStall();
+            if (targetStall == null)
+            {
+                Debug.LogWarning("[NPCSpawner] No stall available for restored NPC.", this);
                 Destroy(go);
                 return;
             }
@@ -326,14 +333,26 @@ namespace Market.NPC
         }
 
         // ── Validation ─────────────────────────────────────────────────
+        private MarketStall SelectTargetStall()
+        {
+            ResolveStallRegistry();
+            return stallRegistry != null ? stallRegistry.GetRandomStall() : null;
+        }
+
+        private void ResolveStallRegistry()
+        {
+            if (stallRegistry != null) return;
+            ServiceLocator.TryGet<MarketStallRegistry>(out stallRegistry);
+        }
+
         private void ValidateReferences()
         {
             if (npcTypes == null || npcTypes.Length == 0)
                 Debug.LogError("[NPCSpawner] npcTypes not assigned!", this);
             if (spawnPoints == null || spawnPoints.Length == 0)
                 Debug.LogError("[NPCSpawner] spawnPoints not assigned!", this);
-            if (targetStall == null)
-                Debug.LogError("[NPCSpawner] targetStall not assigned!", this);
+            if (stallRegistry == null || stallRegistry.Count == 0)
+                Debug.LogError("[NPCSpawner] stallRegistry not assigned or empty!", this);
             if (exitPoint == null)
                 Debug.LogError("[NPCSpawner] exitPoint not assigned!", this);
             if (playerMoney == null)

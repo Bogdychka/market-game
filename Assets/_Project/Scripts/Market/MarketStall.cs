@@ -8,11 +8,12 @@ namespace Market.Market
     /// <summary>
     /// Player stall with a slot array. Each slot holds an ItemSO with a price.
     /// NPCs purchase via TakeSale(). Fires OnStockChanged on any stock change.
-    /// B9: single stall for now — multiple stalls will be coordinated via a future MarketStallRegistry.
     /// </summary>
     public class MarketStall : MonoBehaviour, IInteractable
     {
         [Header("Config")]
+        [Tooltip("Stable save key. Falls back to the GameObject name when empty.")]
+        [SerializeField] private string stallId;
         [SerializeField] private string prompt = "Управлять прилавком";
 
         [Header("Slots")]
@@ -34,6 +35,7 @@ namespace Market.Market
         public string PromptText => prompt;
         public bool   CanInteract => true;
         public StallSlot[] Slots  => slots;
+        public string StallId => string.IsNullOrWhiteSpace(stallId) ? gameObject.name : stallId;
 
         private PriceCalculator _priceCalculator;
 
