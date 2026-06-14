@@ -38,6 +38,8 @@ reviews it, verifies via Unity MCP, bumps the version, tags it, and pushes. See 
   a neutral URP/Lit material to avoid the pink built-in-shader fallback. (Codex)
 
 ### Fixed
+- Disabled the extra root `BoxCollider` on the Market `Supplier` object in the D0 scene version;
+  the visible child capsule still provides supplier collision/interaction. (Codex)
 - Enabled Loop Time on the three UAL clips the controller uses (`Idle_Loop`, `Walk_Loop`,
   `Idle_Talking_Loop`). Without it each clip played once and froze on its last frame, so NPCs walked,
   locked up, then appeared to slide while the agent kept moving the frozen body. Applied via a small
