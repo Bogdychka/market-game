@@ -15,6 +15,13 @@ reviews it, verifies via Unity MCP, bumps the version, tags it, and pushes. See 
 ## [Unreleased]
 
 ### Added
+- D2/D5 day controls: added `MarketOpenSystem`, root-level debug cubes for Open/Close Market and
+  Sleep Until Morning, and tests for explicit market state plus sleep-gated day advancement. NPCs
+  now spawn as shoppers only while the market is open; when closed, traffic still appears as
+  passersby that walk out without browsing or buying. (Codex)
+- D1 `DayPhaseSystem`: game time now maps to Morning Prep, Market Open, Evening Summary, and
+  Night / Next Day phases; the service publishes phase changes, direct Market scene startup gets a
+  local fallback, and the HUD shows the current phase next to day/time/season. (Codex)
 - D0 `MarketStallRegistry`: Market scene now owns two registered stalls through a registry
   coordinator; NPC spawning, stall UI wiring, and save/load no longer depend on a single stall
   reference. (Codex)
@@ -28,6 +35,8 @@ reviews it, verifies via Unity MCP, bumps the version, tags it, and pushes. See 
   needed). Visual mesh/outfit variety is deferred until more humanoid assets exist. (Codex)
 
 ### Changed
+- Time now stops at 00:00 and waits for the player to sleep before advancing to the next day, so
+  day/season rollover is player-driven instead of automatic. (Codex)
 - Save data is now version 4 and records `stallId` for stall slots, while old saves without
   `stallId` restore to the first registered stall for compatibility. (Codex)
 - `UIModeService` reapplies cursor lock/visibility when the app regains focus or resumes, reducing
@@ -38,6 +47,15 @@ reviews it, verifies via Unity MCP, bumps the version, tags it, and pushes. See 
   a neutral URP/Lit material to avoid the pink built-in-shader fallback. (Codex)
 
 ### Fixed
+- NPC visitors now keep browsing other registered stalls after an empty, uninteresting, or over-budget
+  stall instead of leaving after the first failed purchase attempt. (Codex)
+- Reworked NPC save/load to a schedule-style, intent-only model (like Stardew/Animal Crossing) so
+  restored visitors no longer teleport, jitter, or clip through geometry after Save → Continue.
+  `NPCVisitorData` now stores only intent — `npcTypeKey`, `targetStallId`, `visitedStallIds` (no saved
+  transform/timer). On load, only still-shopping visitors are re-spawned at an entrance (always a valid
+  navmesh spot) and walk in toward their saved target stall, skipping already-browsed ones; visitors
+  already leaving regenerate as fresh traffic. Removed the fragile mid-stride position restore
+  (`RestoreState`/`PlaceOnNavMesh`/deferred pathing). Old saves load unaffected. (Claude)
 - Disabled the extra root `BoxCollider` on the Market `Supplier` object in the D0 scene version;
   the visible child capsule still provides supplier collision/interaction. (Codex)
 - Enabled Loop Time on the three UAL clips the controller uses (`Idle_Loop`, `Walk_Loop`,
@@ -53,6 +71,8 @@ reviews it, verifies via Unity MCP, bumps the version, tags it, and pushes. See 
   match. Residual stop/turn slide is inherent to in-place clips without root motion. (Claude)
 
 ### Verification
+- NPC multi-stall browse fix MCP `recompile_scripts`: success, 0 warnings. MCP
+  `get_health_report`: ok, 0 errors, 0 dirty scenes. (Codex)
 - D0 MCP `recompile_scripts`: success, 0 warnings. MCP `get_health_report`: ok, 0 errors,
   0 dirty scenes. `Market.Tests.SaveMigrationTests`: 6/6 passed. (Codex)
 - C9 MCP `recompile_scripts`: success, 0 warnings. MCP `get_health_report`: ok, 0 errors,

@@ -666,11 +666,11 @@ place: `VERSION` + `CHANGELOG.md` + `vX.Y.Z` tags.)
 
 ### Block D — Day rhythm, orders, progression & attraction
 - [x] D0 MarketStallRegistry
-- [ ] D1 DayPhaseSystem
-- [ ] D2 Open/Close stall
+- [x] D1 DayPhaseSystem
+- [x] D2 Open/Close stall
 - [ ] D3 Evening Summary
 - [ ] D4 Daily Goals v1
-- [ ] D5 Sleep / Next Day
+- [x] D5 Sleep / Next Day
 - [ ] D6 NPC personalities
 - [ ] D7 Dialogue bubble & haggling
 - [ ] D8 Wishboard / Orders (D8a–D8f)

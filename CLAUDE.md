@@ -32,6 +32,8 @@ completed plan step · MAJOR = milestone / breaking save or architecture change.
    (never hand-rolled rects). Debug scripts → `_Project/Scripts/Debug/`, `Market.DebugTools`.
 6. **Token discipline** per `AGENTS.md`: minimal reads, proportional verification, no ritual
    summaries or re-narration of the contracts.
+   Unity scene edits: confirm active scene first, use one precise MCP batch or tiny Editor builder,
+   then verify narrowly (`get_gameobject` / targeted `rg`) instead of dumping scene diffs.
 7. **Compare against how other games solve it.** For any non-trivial gameplay/system/UX decision
    (saves, NPC AI, economy, progression, controls, content flow…), briefly say how comparable games
    handle it, where our approach sits relative to them, and proactively propose the better-fitting

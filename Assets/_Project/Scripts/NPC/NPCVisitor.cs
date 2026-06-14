@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Market.Economy;
 using Market.Market;
 using UnityEngine;
@@ -16,6 +17,7 @@ namespace Market.NPC
         public enum State { WalkToStall, Browsing, WalkToExit, Done }
 
         [Header("References")]
+        [SerializeField] private MarketStallRegistry stallRegistry;
         [SerializeField] private MarketStall targetStall;
         [SerializeField] private Transform   exitPoint;
         [SerializeField] private MoneySystem playerMoney;
@@ -32,14 +34,16 @@ namespace Market.NPC
         public event Action<NPCVisitor> OnDespawned;
         public State CurrentState => _state;
         public NPCTypeSO Type => _type;
-        public float BrowseTimer => _browseTimer;
+        public string TargetStallId => targetStall != null ? targetStall.StallId : null;
+        public IReadOnlyList<MarketStall> VisitedStalls => _visitedStalls;
 
         private NavMeshAgent    _agent;
         private NPCTypeSO       _type;
         private State           _state;
         private float           _browseTimer;
         private ItemCategory[]  _preferredCategories;
-        private bool            _hasRestoredState;
+        private bool            _isPasserby;
+        private readonly List<MarketStall> _visitedStalls = new();
 
         // ── Lifecycle ──────────────────────────────────────────────────
         private void Awake()
@@ -51,6 +55,36 @@ namespace Market.NPC
         /// Configure from NPCSpawner. Call after Instantiate, before Start.
         /// </summary>
         public void Initialize(NPCTypeSO type, MarketStall stall, Transform exit, MoneySystem money)
+        {
+            stallRegistry = null;
+            _visitedStalls.Clear();
+            _isPasserby = false;
+            Configure(type, stall, exit, money);
+        }
+
+        /// <summary>
+        /// Configure with the stall registry so the visitor can browse multiple stalls.
+        /// </summary>
+        public void Initialize(NPCTypeSO type, MarketStallRegistry registry, Transform exit, MoneySystem money)
+        {
+            stallRegistry = registry;
+            _visitedStalls.Clear();
+            _isPasserby = false;
+            Configure(type, SelectInitialStall(), exit, money);
+        }
+
+        /// <summary>
+        /// Configure a closed-market passerby. The NPC walks past the market and leaves without shopping.
+        /// </summary>
+        public void InitializePasserby(NPCTypeSO type, Transform exit, MoneySystem money)
+        {
+            stallRegistry = null;
+            _visitedStalls.Clear();
+            _isPasserby = true;
+            Configure(type, null, exit, money);
+        }
+
+        private void Configure(NPCTypeSO type, MarketStall stall, Transform exit, MoneySystem money)
         {
             _type        = type;
             targetStall  = stall;
@@ -66,36 +100,40 @@ namespace Market.NPC
         private void Start()
         {
             ValidateReferences();
-            if (_hasRestoredState) return;
-
-            EnterState(State.WalkToStall);
+            EnterState(_isPasserby ? State.WalkToExit : State.WalkToStall);
         }
 
-        public void RestoreState(State state, float savedBrowseTimer, Vector3 position, float rotationY)
+        /// <summary>Redirect this visitor away from stalls, usually because the market was closed.</summary>
+        public void LeaveMarket()
         {
-            Vector3 navPosition = SnapToNavMesh(position);
-            transform.SetPositionAndRotation(navPosition, Quaternion.Euler(0f, rotationY, 0f));
-            if (_agent.enabled)
-                _agent.Warp(navPosition);
+            if (_state == State.WalkToExit || _state == State.Done)
+                return;
 
-            _hasRestoredState = true;
-            switch (state)
+            _isPasserby = true;
+            targetStall = null;
+            EnterState(State.WalkToExit);
+        }
+
+        /// <summary>
+        /// Restore the saved target/visited stalls (resolved via the registry) so a loaded NPC walks
+        /// in from the entrance toward the stall it still wanted, skipping ones it already browsed.
+        /// Call after Initialize(registry, ...). Unknown ids (old saves / removed stalls) are ignored,
+        /// leaving the random initial stall from Initialize as a fallback.
+        /// </summary>
+        public void RestoreStalls(string targetStallId, List<string> visitedStallIds)
+        {
+            _visitedStalls.Clear();
+            if (stallRegistry == null) return;
+
+            if (visitedStallIds != null)
             {
-                case State.Browsing:
-                    _state = State.Browsing;
-                    _agent.ResetPath();
-                    _browseTimer = Mathf.Max(0.1f, savedBrowseTimer);
-                    break;
-                case State.WalkToExit:
-                    EnterState(State.WalkToExit);
-                    break;
-                case State.Done:
-                    EnterState(State.Done);
-                    break;
-                default:
-                    EnterState(State.WalkToStall);
-                    break;
+                foreach (string id in visitedStallIds)
+                    if (stallRegistry.TryGetStall(id, out MarketStall visited))
+                        RememberVisitedStall(visited);
             }
+
+            if (stallRegistry.TryGetStall(targetStallId, out MarketStall target))
+                targetStall = target;
         }
 
         private void Update()
@@ -124,6 +162,13 @@ namespace Market.NPC
         // ── State: WalkToStall ─────────────────────────────────────────
         private void EnterWalkToStall()
         {
+            if (targetStall == null)
+            {
+                EnterState(State.WalkToExit);
+                return;
+            }
+
+            RememberVisitedStall(targetStall);
             _agent.SetDestination(SnapToNavMesh(targetStall.transform.position));
         }
 
@@ -144,15 +189,28 @@ namespace Market.NPC
             _browseTimer -= Time.deltaTime;
             if (_browseTimer > 0f) return;
 
-            TryBuy();
+            if (TryBuy())
+            {
+                EnterState(State.WalkToExit);
+                return;
+            }
+
+            if (TrySelectNextStall())
+            {
+                EnterState(State.WalkToStall);
+                return;
+            }
+
             EnterState(State.WalkToExit);
         }
 
-        private void TryBuy()
+        private bool TryBuy()
         {
-            if (TryBuyPreferredItem(out string failureReason)) return;
+            if (TryBuyPreferredItem(out string failureReason))
+                return true;
 
-            Debug.Log($"[NPC] Did not buy: {failureReason}, leaving.");
+            Debug.Log($"[NPC] Did not buy at {GetStallLabel(targetStall)}: {failureReason}.");
+            return false;
         }
 
         /// <summary>
@@ -161,6 +219,12 @@ namespace Market.NPC
         private bool TryBuyPreferredItem(out string failureReason)
         {
             failureReason = "no items";
+            if (targetStall == null || targetStall.Slots == null)
+            {
+                failureReason = "missing stall";
+                return false;
+            }
+
             var slots = targetStall.Slots;
             bool hasStock = false;
             bool hasInterestingCategory = false;
@@ -212,6 +276,75 @@ namespace Market.NPC
             return "no deal available";
         }
 
+        private MarketStall SelectInitialStall()
+        {
+            return stallRegistry != null ? stallRegistry.GetRandomStall() : targetStall;
+        }
+
+        private bool TrySelectNextStall()
+        {
+            MarketStall nextStall = SelectNextStall();
+            if (nextStall == null)
+                return false;
+
+            targetStall = nextStall;
+            Debug.Log($"[NPC] Browsing next stall: {GetStallLabel(targetStall)}.");
+            return true;
+        }
+
+        private MarketStall SelectNextStall()
+        {
+            if (stallRegistry == null || stallRegistry.Count == 0)
+                return null;
+
+            MarketStall fallback = null;
+            IReadOnlyList<MarketStall> stalls = stallRegistry.Stalls;
+            for (int i = 0; i < stalls.Count; i++)
+            {
+                MarketStall stall = stalls[i];
+                if (!CanVisitStall(stall)) continue;
+
+                fallback ??= stall;
+                if (HasStock(stall))
+                    return stall;
+            }
+
+            return fallback;
+        }
+
+        private bool CanVisitStall(MarketStall stall)
+        {
+            return stall != null
+                   && stall != targetStall
+                   && !_visitedStalls.Contains(stall);
+        }
+
+        private bool HasStock(MarketStall stall)
+        {
+            if (stall == null || stall.Slots == null)
+                return false;
+
+            var slots = stall.Slots;
+            for (int i = 0; i < slots.Length; i++)
+            {
+                if (slots[i].IsOccupied)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private void RememberVisitedStall(MarketStall stall)
+        {
+            if (stall != null && !_visitedStalls.Contains(stall))
+                _visitedStalls.Add(stall);
+        }
+
+        private string GetStallLabel(MarketStall stall)
+        {
+            return stall != null ? stall.StallId : "missing stall";
+        }
+
         // ── State: WalkToExit ──────────────────────────────────────────
         private void EnterWalkToExit()
         {
@@ -244,16 +377,28 @@ namespace Market.NPC
         /// </summary>
         private Vector3 SnapToNavMesh(Vector3 worldPos)
         {
-            if (NavMesh.SamplePosition(worldPos, out NavMeshHit hit, navMeshSampleRadius, NavMesh.AllAreas))
-                return hit.position;
+            if (TrySampleNavMesh(worldPos, out Vector3 navPos))
+                return navPos;
 
             Debug.LogWarning($"[NPCVisitor] Point {worldPos} is not on the NavMesh — NPC may not reach it!");
-            return worldPos;
+            return navPos;
+        }
+
+        private bool TrySampleNavMesh(Vector3 worldPos, out Vector3 navPos)
+        {
+            if (NavMesh.SamplePosition(worldPos, out NavMeshHit hit, navMeshSampleRadius, NavMesh.AllAreas))
+            {
+                navPos = hit.position;
+                return true;
+            }
+
+            navPos = worldPos;
+            return false;
         }
 
         private void ValidateReferences()
         {
-            if (targetStall == null) Debug.LogError("[NPCVisitor] targetStall not assigned", this);
+            if (!_isPasserby && targetStall == null) Debug.LogError("[NPCVisitor] targetStall not assigned", this);
             if (exitPoint   == null) Debug.LogError("[NPCVisitor] exitPoint not assigned",   this);
             if (playerMoney == null) Debug.LogError("[NPCVisitor] playerMoney not assigned", this);
         }

@@ -18,11 +18,13 @@ namespace Market.Core
         private readonly float _minutesPerRealSecond;
         private float _accumulatedMinutes;
         private bool  _paused;
+        private bool  _waitingForSleep;
 
         public int   Hour    { get; private set; } = 8;
         public int   Day     { get; private set; } = 1;
         public int   Minute  => Mathf.FloorToInt(_accumulatedMinutes);
         public float TimeScale { get; set; } = 1f;
+        public bool  IsWaitingForSleep => _waitingForSleep;
 
         public TimeSystem(float minutesPerRealSecond = 2f)
         {
@@ -31,7 +33,7 @@ namespace Market.Core
 
         public void Tick(float deltaTime)
         {
-            if (_paused) return;
+            if (_paused || _waitingForSleep) return;
 
             _accumulatedMinutes += deltaTime * _minutesPerRealSecond * TimeScale;
 
@@ -54,6 +56,9 @@ namespace Market.Core
             _accumulatedMinutes = 0f;
             TimeScale = 1f;
             _paused   = false;
+            _waitingForSleep = false;
+            OnDayChanged?.Invoke(Day);
+            OnHourChanged?.Invoke(Hour);
         }
 
         /// <summary>
@@ -65,15 +70,34 @@ namespace Market.Core
             Day    = Mathf.Max(1, day);
             Hour   = Mathf.Clamp(hour, 0, 23);
             _accumulatedMinutes = Mathf.Clamp(minute, 0, 59);
+            _waitingForSleep = Hour == 0 && Minute == 0;
 
             OnDayChanged?.Invoke(Day);
             OnHourChanged?.Invoke(Hour);
         }
 
+        /// <summary>Advance from midnight to the next morning. Used by bed/sleep interactions.</summary>
+        public bool SleepToNextDay()
+        {
+            if (!_waitingForSleep)
+                return false;
+
+            Day++;
+            Hour = 8;
+            _accumulatedMinutes = 0f;
+            _waitingForSleep = false;
+            _paused = false;
+
+            OnDayChanged?.Invoke(Day);
+            OnHourChanged?.Invoke(Hour);
+            Debug.Log($"[TimeSystem] Slept until day: {Day}");
+            return true;
+        }
+
         /// <summary>Instantly skip N game hours (debug use).</summary>
         public void SkipHours(int hours)
         {
-            for (int i = 0; i < hours; i++)
+            for (int i = 0; i < hours && !_waitingForSleep; i++)
                 AdvanceHour();
         }
 
@@ -81,13 +105,17 @@ namespace Market.Core
 
         private void AdvanceHour()
         {
-            Hour = (Hour + 1) % (int)HoursPerDay;
-            if (Hour == 0)
+            if (Hour >= (int)HoursPerDay - 1)
             {
-                Day++;
-                OnDayChanged?.Invoke(Day);
-                Debug.Log($"[TimeSystem] New day: {Day}");
+                Hour = 0;
+                _accumulatedMinutes = 0f;
+                _waitingForSleep = true;
+                OnHourChanged?.Invoke(Hour);
+                Debug.Log("[TimeSystem] Midnight reached. Waiting for sleep.");
+                return;
             }
+
+            Hour++;
             OnHourChanged?.Invoke(Hour);
         }
     }

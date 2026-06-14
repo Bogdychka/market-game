@@ -1,4 +1,5 @@
 using Market.Core;
+using Market.Core.Events;
 using Market.DebugTools;
 using Market.Economy;
 using Market.Market;
@@ -38,8 +39,12 @@ namespace Market.Persistence
         private SaveSystem    _saveSystem;
         private SceneLoader    _sceneLoader;
         private TimeSystem    _timeSystem;
+        private DayPhaseSystem _dayPhaseSystem;
+        private MarketOpenSystem _marketOpenSystem;
         private SeasonManager _seasonManager;
         private bool          _ownsLocalTimeSystem;
+        private bool          _ownsLocalDayPhaseSystem;
+        private bool          _ownsLocalMarketOpenSystem;
         private bool          _startedInPlayMode;
         private bool          _hasAutoSavedOnExit;
 
@@ -53,6 +58,8 @@ namespace Market.Persistence
 #endif
             ResolveSaveSystem();
             ResolveTimeSystem();
+            ResolveDayPhaseSystem();
+            ResolveMarketOpenSystem();
             ResolveStallRegistry();
             ValidateReferences();
         }
@@ -85,6 +92,18 @@ namespace Market.Persistence
 
             if (_ownsLocalTimeSystem)
                 ServiceLocator.Unregister<TimeSystem>();
+
+            if (_ownsLocalDayPhaseSystem)
+            {
+                _dayPhaseSystem?.Dispose();
+                ServiceLocator.Unregister<DayPhaseSystem>();
+            }
+
+            if (_ownsLocalMarketOpenSystem)
+            {
+                _marketOpenSystem?.Dispose();
+                ServiceLocator.Unregister<MarketOpenSystem>();
+            }
         }
 
         private void OnDisable()
@@ -338,6 +357,30 @@ namespace Market.Persistence
             ServiceLocator.Register(_timeSystem);
             Debug.LogWarning("[GameSaver] TimeSystem not found in ServiceLocator. " +
                              "Created a local TimeSystem for direct Market scene startup.");
+        }
+
+        private void ResolveDayPhaseSystem()
+        {
+            if (ServiceLocator.TryGet<DayPhaseSystem>(out _dayPhaseSystem)) return;
+
+            ServiceLocator.TryGet<EventBus>(out EventBus eventBus);
+            _dayPhaseSystem = new DayPhaseSystem(_timeSystem, eventBus);
+            _ownsLocalDayPhaseSystem = true;
+            ServiceLocator.Register(_dayPhaseSystem);
+            Debug.LogWarning("[GameSaver] DayPhaseSystem not found in ServiceLocator. " +
+                             "Created a local DayPhaseSystem for direct Market scene startup.");
+        }
+
+        private void ResolveMarketOpenSystem()
+        {
+            if (ServiceLocator.TryGet<MarketOpenSystem>(out _marketOpenSystem)) return;
+
+            ServiceLocator.TryGet<EventBus>(out EventBus eventBus);
+            _marketOpenSystem = new MarketOpenSystem(_dayPhaseSystem, eventBus);
+            _ownsLocalMarketOpenSystem = true;
+            ServiceLocator.Register(_marketOpenSystem);
+            Debug.LogWarning("[GameSaver] MarketOpenSystem not found in ServiceLocator. " +
+                             "Created a local MarketOpenSystem for direct Market scene startup.");
         }
 
         private void ResolveStallRegistry()

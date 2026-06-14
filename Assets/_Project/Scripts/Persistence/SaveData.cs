@@ -41,12 +41,10 @@ namespace Market.Persistence
     [Serializable]
     public class NPCVisitorData
     {
+        // Intent only (schedule-style restore): the visitor is re-spawned at an entrance and walks in,
+        // so no transform/timer/state is stored. Avoids restoring an agent mid-stride off the navmesh.
         public string npcTypeKey;
-        public int    state;
-        public float  x;
-        public float  y;
-        public float  z;
-        public float  rotationY;
-        public float  browseTimer;
+        public string targetStallId;                  // stall the visitor still wants to reach
+        public List<string> visitedStallIds = new();  // already-browsed stalls, so it won't revisit
     }
 }

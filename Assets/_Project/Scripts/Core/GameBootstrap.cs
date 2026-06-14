@@ -37,6 +37,8 @@ namespace Market.Core
         private bool _isPrimaryInstance;
         private SceneLoader _sceneLoader;
         private TimeSystem _timeSystem;  // cached to avoid ServiceLocator.TryGet every frame
+        private DayPhaseSystem _dayPhaseSystem;
+        private MarketOpenSystem _marketOpenSystem;
         private float _ignoreEscapeUntil;
 
         // ── Lifecycle ──────────────────────────────────────────────────
@@ -71,6 +73,8 @@ namespace Market.Core
             if (_sceneLoader != null)
                 _sceneLoader.OnSceneLoadCompleted -= OnSceneLoadCompleted;
 
+            _dayPhaseSystem?.Dispose();
+            _marketOpenSystem?.Dispose();
             ServiceLocator.Clear();
             _initialized = false;
             _isPrimaryInstance = false;
@@ -92,6 +96,12 @@ namespace Market.Core
 
             _timeSystem = new TimeSystem(minutesPerRealSecond);
             ServiceLocator.Register(_timeSystem);
+
+            _dayPhaseSystem = new DayPhaseSystem(_timeSystem, ServiceLocator.Get<EventBus>());
+            ServiceLocator.Register(_dayPhaseSystem);
+
+            _marketOpenSystem = new MarketOpenSystem(_dayPhaseSystem, ServiceLocator.Get<EventBus>());
+            ServiceLocator.Register(_marketOpenSystem);
 
             if (settingsSO != null)
                 ServiceLocator.Register(new SettingsService(settingsSO));

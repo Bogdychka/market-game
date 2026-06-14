@@ -49,10 +49,11 @@ namespace Market.NPC
         [SerializeField] private Transform   exitPoint;
         [SerializeField] private MoneySystem playerMoney;
 
-        private TimeSystem _timeSystem;
-        private int        _activeCount;
-        private float      _spawnTimer;
-        private bool       _restoredFromSave;
+        private TimeSystem       _timeSystem;
+        private MarketOpenSystem _marketOpenSystem;
+        private int              _activeCount;
+        private float            _spawnTimer;
+        private bool             _restoredFromSave;
         private readonly List<NPCVisitor> _spawnedVisitors = new();
 
         /// <summary>Number of NPCs currently alive in the scene through this spawner.</summary>
@@ -69,6 +70,13 @@ namespace Market.NPC
 
             if (!ServiceLocator.TryGet<TimeSystem>(out _timeSystem))
                 Debug.LogWarning("[NPCSpawner] TimeSystem not found — density will be constant.", this);
+
+            ResolveMarketOpenSystem();
+        }
+
+        private void OnEnable()
+        {
+            WireMarketOpenEvents();
         }
 
         private void Start()
@@ -110,20 +118,25 @@ namespace Market.NPC
             RemoveMissingVisitors();
             foreach (NPCVisitor visitor in _spawnedVisitors)
             {
-                if (visitor == null || visitor.Type == null || visitor.CurrentState == NPCVisitor.State.Done)
+                if (visitor == null || visitor.Type == null) continue;
+
+                // Only persist visitors that still intend to shop; ones already leaving (WalkToExit/Done)
+                // are transient and simply regenerate as new traffic.
+                if (visitor.CurrentState != NPCVisitor.State.WalkToStall &&
+                    visitor.CurrentState != NPCVisitor.State.Browsing)
                     continue;
 
-                Vector3 position = visitor.transform.position;
-                visitors.Add(new NPCVisitorData
+                NPCVisitorData data = new()
                 {
-                    npcTypeKey  = visitor.Type.name,
-                    state       = (int)visitor.CurrentState,
-                    x           = position.x,
-                    y           = position.y,
-                    z           = position.z,
-                    rotationY   = visitor.transform.eulerAngles.y,
-                    browseTimer = visitor.BrowseTimer
-                });
+                    npcTypeKey    = visitor.Type.name,
+                    targetStallId = visitor.TargetStallId
+                };
+
+                foreach (MarketStall stall in visitor.VisitedStalls)
+                    if (stall != null)
+                        data.visitedStallIds.Add(stall.StallId);
+
+                visitors.Add(data);
             }
         }
 
@@ -132,6 +145,9 @@ namespace Market.NPC
             ClearActiveVisitors();
             _restoredFromSave = true;
             _spawnTimer = ComputeInterval(GetCurrentDensity());
+
+            if (_marketOpenSystem != null && !_marketOpenSystem.IsOpen)
+                return;
 
             if (visitors == null || visitors.Count == 0) return;
 
@@ -146,10 +162,16 @@ namespace Market.NPC
         {
             if (npcTypes == null    || npcTypes.Length == 0)    return false;
             if (spawnPoints == null || spawnPoints.Length == 0) return false;
-            MarketStall targetStall = SelectTargetStall();
-            if (targetStall == null || exitPoint == null || playerMoney == null)
+            if (exitPoint == null || playerMoney == null)
             {
-                Debug.LogError("[NPCSpawner] stallRegistry/exitPoint/playerMoney not assigned - NPC not created.", this);
+                Debug.LogError("[NPCSpawner] exitPoint/playerMoney not assigned - NPC not created.", this);
+                return false;
+            }
+
+            bool marketOpen = _marketOpenSystem == null || _marketOpenSystem.IsOpen;
+            if (marketOpen && !HasAvailableStall())
+            {
+                Debug.LogError("[NPCSpawner] stallRegistry not assigned or empty - shopper NPC not created.", this);
                 return false;
             }
 
@@ -184,10 +206,15 @@ namespace Market.NPC
                 return false;
             }
 
-            visitor.Initialize(type, targetStall, exitPoint, playerMoney);
+            if (marketOpen)
+                visitor.Initialize(type, stallRegistry, exitPoint, playerMoney);
+            else
+                visitor.InitializePasserby(type, exitPoint, playerMoney);
+
             RegisterVisitor(visitor);
 
-            Debug.Log($"[NPCSpawner] Spawned {type.TypeName} (density={GetCurrentDensity():F2}). " +
+            string role = marketOpen ? "shopper" : "passerby";
+            Debug.Log($"[NPCSpawner] Spawned {role} {type.TypeName} (density={GetCurrentDensity():F2}). " +
                       $"Active: {_activeCount}/{EffectiveMaxNPCs(GetCurrentDensity())}");
             return true;
         }
@@ -195,7 +222,6 @@ namespace Market.NPC
         private void RestoreVisitor(NPCVisitorData visitorData)
         {
             if (visitorData == null) return;
-            if (visitorData.state == (int)NPCVisitor.State.Done) return;
 
             NPCTypeSO type = FindType(visitorData.npcTypeKey);
             if (type == null)
@@ -210,9 +236,22 @@ namespace Market.NPC
                 return;
             }
 
-            Vector3 position = new Vector3(visitorData.x, visitorData.y, visitorData.z);
-            Quaternion rotation = Quaternion.Euler(0f, visitorData.rotationY, 0f);
-            GameObject go = Instantiate(type.NpcPrefab, position, rotation);
+            if (!HasAvailableStall())
+            {
+                Debug.LogWarning("[NPCSpawner] No stall available for restored NPC.", this);
+                return;
+            }
+
+            // Schedule-style restore: re-spawn at an entrance (always a valid navmesh spot) and let the
+            // visitor walk in toward its saved target stall — no mid-stride position to teleport into.
+            Transform point = PickSpawnPoint();
+            if (point == null)
+            {
+                Debug.LogWarning("[NPCSpawner] No spawn point for restored NPC.", this);
+                return;
+            }
+
+            GameObject go = Instantiate(type.NpcPrefab, point.position, point.rotation);
             NPCVisitor visitor = go.GetComponent<NPCVisitor>();
 
             if (visitor == null)
@@ -222,17 +261,15 @@ namespace Market.NPC
                 return;
             }
 
-            MarketStall targetStall = SelectTargetStall();
-            if (targetStall == null)
-            {
-                Debug.LogWarning("[NPCSpawner] No stall available for restored NPC.", this);
-                Destroy(go);
-                return;
-            }
-
-            visitor.Initialize(type, targetStall, exitPoint, playerMoney);
-            visitor.RestoreState((NPCVisitor.State)visitorData.state, visitorData.browseTimer, position, visitorData.rotationY);
+            visitor.Initialize(type, stallRegistry, exitPoint, playerMoney);
+            visitor.RestoreStalls(visitorData.targetStallId, visitorData.visitedStallIds);
             RegisterVisitor(visitor);
+        }
+
+        private Transform PickSpawnPoint()
+        {
+            if (spawnPoints == null || spawnPoints.Length == 0) return null;
+            return spawnPoints[Random.Range(0, spawnPoints.Length)];
         }
 
         private void RegisterVisitor(NPCVisitor visitor)
@@ -269,6 +306,7 @@ namespace Market.NPC
 
         private void OnDisable()
         {
+            UnwireMarketOpenEvents();
             UnsubscribeSpawnedVisitors();
         }
 
@@ -333,16 +371,52 @@ namespace Market.NPC
         }
 
         // ── Validation ─────────────────────────────────────────────────
-        private MarketStall SelectTargetStall()
+        private bool HasAvailableStall()
         {
             ResolveStallRegistry();
-            return stallRegistry != null ? stallRegistry.GetRandomStall() : null;
+            return stallRegistry != null && stallRegistry.Count > 0;
         }
 
         private void ResolveStallRegistry()
         {
             if (stallRegistry != null) return;
             ServiceLocator.TryGet<MarketStallRegistry>(out stallRegistry);
+        }
+
+        private void ResolveMarketOpenSystem()
+        {
+            ServiceLocator.TryGet<MarketOpenSystem>(out _marketOpenSystem);
+        }
+
+        private void WireMarketOpenEvents()
+        {
+            ResolveMarketOpenSystem();
+            if (_marketOpenSystem != null)
+                _marketOpenSystem.OnOpenChanged += HandleMarketOpenChanged;
+        }
+
+        private void UnwireMarketOpenEvents()
+        {
+            if (_marketOpenSystem != null)
+                _marketOpenSystem.OnOpenChanged -= HandleMarketOpenChanged;
+        }
+
+        private void HandleMarketOpenChanged(bool isOpen)
+        {
+            if (isOpen)
+                return;
+
+            for (int i = _spawnedVisitors.Count - 1; i >= 0; i--)
+            {
+                NPCVisitor visitor = _spawnedVisitors[i];
+                if (visitor == null) continue;
+
+                if (visitor.CurrentState == NPCVisitor.State.WalkToStall ||
+                    visitor.CurrentState == NPCVisitor.State.Browsing)
+                {
+                    visitor.LeaveMarket();
+                }
+            }
         }
 
         private void ValidateReferences()

@@ -13,13 +13,15 @@ namespace Market.UI
     {
         [SerializeField] private TMP_Text timeLabel;
 
-        private TimeSystem    _timeSystem;
-        private SeasonManager _seasonManager;
+        private TimeSystem     _timeSystem;
+        private DayPhaseSystem _dayPhaseSystem;
+        private SeasonManager  _seasonManager;
 
         private int    _lastMinute = -1;
         private int    _lastHour   = -1;
         private int    _lastDay    = -1;
-        private Season _lastSeason = (Season)(-1);
+        private Season   _lastSeason = (Season)(-1);
+        private DayPhase _lastPhase  = (DayPhase)(-1);
 
         private void Awake()
         {
@@ -31,6 +33,7 @@ namespace Market.UI
         {
             // SeasonManager is optional — may not exist
             ServiceLocator.TryGet<SeasonManager>(out _seasonManager);
+            ServiceLocator.TryGet<DayPhaseSystem>(out _dayPhaseSystem);
             Refresh();
         }
 
@@ -39,11 +42,13 @@ namespace Market.UI
             if (_timeSystem == null) return;
 
             Season curSeason = _seasonManager?.CurrentSeason ?? (Season)(-1);
+            DayPhase curPhase = _dayPhaseSystem?.Phase ?? (DayPhase)(-1);
 
             if (_timeSystem.Minute == _lastMinute
                 && _timeSystem.Hour == _lastHour
                 && _timeSystem.Day  == _lastDay
-                && curSeason        == _lastSeason) return;
+                && curSeason        == _lastSeason
+                && curPhase         == _lastPhase) return;
 
             Refresh();
         }
@@ -56,12 +61,17 @@ namespace Market.UI
             _lastHour   = _timeSystem.Hour;
             _lastDay    = _timeSystem.Day;
             _lastSeason = _seasonManager?.CurrentSeason ?? (Season)(-1);
+            _lastPhase  = _dayPhaseSystem?.Phase ?? (DayPhase)(-1);
 
             string seasonStr = _seasonManager != null
                 ? $"  {SeasonManager.GetName(_seasonManager.CurrentSeason)}"
                 : "";
 
-            timeLabel.text = _timeSystem.FormatTime() + seasonStr;
+            string phaseStr = _dayPhaseSystem != null
+                ? $"  {DayPhaseSystem.GetDisplayName(_dayPhaseSystem.Phase)}"
+                : "";
+
+            timeLabel.text = _timeSystem.FormatTime() + seasonStr + phaseStr;
         }
 
         private void ResolveTimeSystem()
