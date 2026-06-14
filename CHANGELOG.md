@@ -15,6 +15,9 @@ reviews it, verifies via Unity MCP, bumps the version, tags it, and pushes. See 
 ## [Unreleased]
 
 ### Added
+- D3 Evening Summary: added a daily summary service that tracks revenue, expenses, profit, items
+  sold, orders completed placeholder count, and best-selling item from supplier/NPC sale events;
+  closing the market now opens an end-of-day report panel using the shared market UI chrome. (Codex)
 - D2/D5 day controls: added `MarketOpenSystem`, root-level debug cubes for Open/Close Market and
   Sleep Until Morning, and tests for explicit market state plus sleep-gated day advancement. NPCs
   now spawn as shoppers only while the market is open; when closed, traffic still appears as

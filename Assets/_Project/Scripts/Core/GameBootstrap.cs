@@ -39,6 +39,7 @@ namespace Market.Core
         private TimeSystem _timeSystem;  // cached to avoid ServiceLocator.TryGet every frame
         private DayPhaseSystem _dayPhaseSystem;
         private MarketOpenSystem _marketOpenSystem;
+        private DailySummarySystem _dailySummarySystem;
         private float _ignoreEscapeUntil;
 
         // ── Lifecycle ──────────────────────────────────────────────────
@@ -75,6 +76,7 @@ namespace Market.Core
 
             _dayPhaseSystem?.Dispose();
             _marketOpenSystem?.Dispose();
+            _dailySummarySystem?.Dispose();
             ServiceLocator.Clear();
             _initialized = false;
             _isPrimaryInstance = false;
@@ -102,6 +104,9 @@ namespace Market.Core
 
             _marketOpenSystem = new MarketOpenSystem(_dayPhaseSystem, ServiceLocator.Get<EventBus>());
             ServiceLocator.Register(_marketOpenSystem);
+
+            _dailySummarySystem = new DailySummarySystem(ServiceLocator.Get<EventBus>(), _timeSystem);
+            ServiceLocator.Register(_dailySummarySystem);
 
             if (settingsSO != null)
                 ServiceLocator.Register(new SettingsService(settingsSO));
