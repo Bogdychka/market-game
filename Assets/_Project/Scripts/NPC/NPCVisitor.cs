@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Market.Economy;
 using Market.Market;
 using UnityEngine;
@@ -16,6 +17,7 @@ namespace Market.NPC
         public enum State { WalkToStall, Browsing, WalkToExit, Done }
 
         [Header("References")]
+        [SerializeField] private MarketStallRegistry stallRegistry;
         [SerializeField] private MarketStall targetStall;
         [SerializeField] private Transform   exitPoint;
         [SerializeField] private MoneySystem playerMoney;
@@ -40,6 +42,7 @@ namespace Market.NPC
         private float           _browseTimer;
         private ItemCategory[]  _preferredCategories;
         private bool            _hasRestoredState;
+        private readonly List<MarketStall> _visitedStalls = new();
 
         // ── Lifecycle ──────────────────────────────────────────────────
         private void Awake()
@@ -51,6 +54,23 @@ namespace Market.NPC
         /// Configure from NPCSpawner. Call after Instantiate, before Start.
         /// </summary>
         public void Initialize(NPCTypeSO type, MarketStall stall, Transform exit, MoneySystem money)
+        {
+            stallRegistry = null;
+            _visitedStalls.Clear();
+            Configure(type, stall, exit, money);
+        }
+
+        /// <summary>
+        /// Configure with the stall registry so the visitor can browse multiple stalls.
+        /// </summary>
+        public void Initialize(NPCTypeSO type, MarketStallRegistry registry, Transform exit, MoneySystem money)
+        {
+            stallRegistry = registry;
+            _visitedStalls.Clear();
+            Configure(type, SelectInitialStall(), exit, money);
+        }
+
+        private void Configure(NPCTypeSO type, MarketStall stall, Transform exit, MoneySystem money)
         {
             _type        = type;
             targetStall  = stall;
@@ -124,6 +144,13 @@ namespace Market.NPC
         // ── State: WalkToStall ─────────────────────────────────────────
         private void EnterWalkToStall()
         {
+            if (targetStall == null)
+            {
+                EnterState(State.WalkToExit);
+                return;
+            }
+
+            RememberVisitedStall(targetStall);
             _agent.SetDestination(SnapToNavMesh(targetStall.transform.position));
         }
 
@@ -144,15 +171,28 @@ namespace Market.NPC
             _browseTimer -= Time.deltaTime;
             if (_browseTimer > 0f) return;
 
-            TryBuy();
+            if (TryBuy())
+            {
+                EnterState(State.WalkToExit);
+                return;
+            }
+
+            if (TrySelectNextStall())
+            {
+                EnterState(State.WalkToStall);
+                return;
+            }
+
             EnterState(State.WalkToExit);
         }
 
-        private void TryBuy()
+        private bool TryBuy()
         {
-            if (TryBuyPreferredItem(out string failureReason)) return;
+            if (TryBuyPreferredItem(out string failureReason))
+                return true;
 
-            Debug.Log($"[NPC] Did not buy: {failureReason}, leaving.");
+            Debug.Log($"[NPC] Did not buy at {GetStallLabel(targetStall)}: {failureReason}.");
+            return false;
         }
 
         /// <summary>
@@ -161,6 +201,12 @@ namespace Market.NPC
         private bool TryBuyPreferredItem(out string failureReason)
         {
             failureReason = "no items";
+            if (targetStall == null || targetStall.Slots == null)
+            {
+                failureReason = "missing stall";
+                return false;
+            }
+
             var slots = targetStall.Slots;
             bool hasStock = false;
             bool hasInterestingCategory = false;
@@ -210,6 +256,75 @@ namespace Market.NPC
             if (!hasInterestingCategory) return "uninteresting category";
             if (hasOverBudgetItem) return $"over budget (budget {maxAcceptablePrice:0.##})";
             return "no deal available";
+        }
+
+        private MarketStall SelectInitialStall()
+        {
+            return stallRegistry != null ? stallRegistry.GetRandomStall() : targetStall;
+        }
+
+        private bool TrySelectNextStall()
+        {
+            MarketStall nextStall = SelectNextStall();
+            if (nextStall == null)
+                return false;
+
+            targetStall = nextStall;
+            Debug.Log($"[NPC] Browsing next stall: {GetStallLabel(targetStall)}.");
+            return true;
+        }
+
+        private MarketStall SelectNextStall()
+        {
+            if (stallRegistry == null || stallRegistry.Count == 0)
+                return null;
+
+            MarketStall fallback = null;
+            IReadOnlyList<MarketStall> stalls = stallRegistry.Stalls;
+            for (int i = 0; i < stalls.Count; i++)
+            {
+                MarketStall stall = stalls[i];
+                if (!CanVisitStall(stall)) continue;
+
+                fallback ??= stall;
+                if (HasStock(stall))
+                    return stall;
+            }
+
+            return fallback;
+        }
+
+        private bool CanVisitStall(MarketStall stall)
+        {
+            return stall != null
+                   && stall != targetStall
+                   && !_visitedStalls.Contains(stall);
+        }
+
+        private bool HasStock(MarketStall stall)
+        {
+            if (stall == null || stall.Slots == null)
+                return false;
+
+            var slots = stall.Slots;
+            for (int i = 0; i < slots.Length; i++)
+            {
+                if (slots[i].IsOccupied)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private void RememberVisitedStall(MarketStall stall)
+        {
+            if (stall != null && !_visitedStalls.Contains(stall))
+                _visitedStalls.Add(stall);
+        }
+
+        private string GetStallLabel(MarketStall stall)
+        {
+            return stall != null ? stall.StallId : "missing stall";
         }
 
         // ── State: WalkToExit ──────────────────────────────────────────

@@ -146,8 +146,7 @@ namespace Market.NPC
         {
             if (npcTypes == null    || npcTypes.Length == 0)    return false;
             if (spawnPoints == null || spawnPoints.Length == 0) return false;
-            MarketStall targetStall = SelectTargetStall();
-            if (targetStall == null || exitPoint == null || playerMoney == null)
+            if (!HasAvailableStall() || exitPoint == null || playerMoney == null)
             {
                 Debug.LogError("[NPCSpawner] stallRegistry/exitPoint/playerMoney not assigned - NPC not created.", this);
                 return false;
@@ -184,7 +183,7 @@ namespace Market.NPC
                 return false;
             }
 
-            visitor.Initialize(type, targetStall, exitPoint, playerMoney);
+            visitor.Initialize(type, stallRegistry, exitPoint, playerMoney);
             RegisterVisitor(visitor);
 
             Debug.Log($"[NPCSpawner] Spawned {type.TypeName} (density={GetCurrentDensity():F2}). " +
@@ -222,15 +221,14 @@ namespace Market.NPC
                 return;
             }
 
-            MarketStall targetStall = SelectTargetStall();
-            if (targetStall == null)
+            if (!HasAvailableStall())
             {
                 Debug.LogWarning("[NPCSpawner] No stall available for restored NPC.", this);
                 Destroy(go);
                 return;
             }
 
-            visitor.Initialize(type, targetStall, exitPoint, playerMoney);
+            visitor.Initialize(type, stallRegistry, exitPoint, playerMoney);
             visitor.RestoreState((NPCVisitor.State)visitorData.state, visitorData.browseTimer, position, visitorData.rotationY);
             RegisterVisitor(visitor);
         }
@@ -333,10 +331,10 @@ namespace Market.NPC
         }
 
         // ── Validation ─────────────────────────────────────────────────
-        private MarketStall SelectTargetStall()
+        private bool HasAvailableStall()
         {
             ResolveStallRegistry();
-            return stallRegistry != null ? stallRegistry.GetRandomStall() : null;
+            return stallRegistry != null && stallRegistry.Count > 0;
         }
 
         private void ResolveStallRegistry()

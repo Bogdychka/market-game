@@ -38,6 +38,8 @@ reviews it, verifies via Unity MCP, bumps the version, tags it, and pushes. See 
   a neutral URP/Lit material to avoid the pink built-in-shader fallback. (Codex)
 
 ### Fixed
+- NPC visitors now keep browsing other registered stalls after an empty, uninteresting, or over-budget
+  stall instead of leaving after the first failed purchase attempt. (Codex)
 - Disabled the extra root `BoxCollider` on the Market `Supplier` object in the D0 scene version;
   the visible child capsule still provides supplier collision/interaction. (Codex)
 - Enabled Loop Time on the three UAL clips the controller uses (`Idle_Loop`, `Walk_Loop`,
@@ -53,6 +55,8 @@ reviews it, verifies via Unity MCP, bumps the version, tags it, and pushes. See 
   match. Residual stop/turn slide is inherent to in-place clips without root motion. (Claude)
 
 ### Verification
+- NPC multi-stall browse fix MCP `recompile_scripts`: success, 0 warnings. MCP
+  `get_health_report`: ok, 0 errors, 0 dirty scenes. (Codex)
 - D0 MCP `recompile_scripts`: success, 0 warnings. MCP `get_health_report`: ok, 0 errors,
   0 dirty scenes. `Market.Tests.SaveMigrationTests`: 6/6 passed. (Codex)
 - C9 MCP `recompile_scripts`: success, 0 warnings. MCP `get_health_report`: ok, 0 errors,
