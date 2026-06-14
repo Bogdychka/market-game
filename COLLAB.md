@@ -17,9 +17,16 @@ Either agent may do gameplay work.
 2. **Don't edit the same files as the other agent at the same time.** Scenes/prefabs: one agent per task.
 3. **One Unity Editor + one working tree.** The actively-editing agent owns them; the other must not
    switch branches or trigger recompiles underneath.
+4. **Branch only from fresh `main`.** Before a new task: `git switch main && git pull --ff-only` → then
+   branch. Never fork the next branch while a scene/prefab fix from a prior branch is still unmerged —
+   `.unity`/`.prefab` merge badly, so the fix gets silently lost when you fork from a stale `main`. Keep
+   small scene/prefab bugfixes as their own short branches off `main`. For scene bugs, confirm the prior
+   fix survived: `git diff main...HEAD -- <scene>`.
 
 ## Branches
 `<agent>/<plan-step>-<slug>`, lowercase — e.g. `claude/b10-seasonal-assortment`, `codex/c4-stall-ui`.
+Keep **one active feature branch at a time** and delete it once it merges to `main`, so the repo stays
+at `main` + at most one feature branch — no pile of stale branches to fork from by mistake.
 
 ## Workflow
 **Codex:** `git switch main && git pull` → `git switch -c codex/<step>-<slug>` → implement ONE plan
