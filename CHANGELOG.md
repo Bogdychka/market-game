@@ -44,6 +44,10 @@ reviews it, verifies via Unity MCP, bumps the version, tags it, and pushes. See 
   and the `visitedStallIds`, so a restored visitor keeps its route instead of jumping to a random stall
   and re-walking already-browsed ones (resolved via `MarketStallRegistry`; unknown ids fall back
   gracefully, old saves unaffected). (Claude)
+- Restored NPCs no longer teleport/jitter or clip through geometry after Save → Continue. The visitor
+  is now placed with the agent disabled and re-`Warp`ed, the saved path is deferred until the agent is
+  actually on the navmesh (instead of pathing in the restore frame), and an off-mesh saved point falls
+  back to the target stall / exit rather than snapping far via a wide `SamplePosition`. (Claude)
 - Disabled the extra root `BoxCollider` on the Market `Supplier` object in the D0 scene version;
   the visible child capsule still provides supplier collision/interaction. (Codex)
 - Enabled Loop Time on the three UAL clips the controller uses (`Idle_Loop`, `Walk_Loop`,
