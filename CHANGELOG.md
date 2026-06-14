@@ -15,6 +15,8 @@ reviews it, verifies via Unity MCP, bumps the version, tags it, and pushes. See 
 ## [Unreleased]
 
 ### Added
+- C9 interaction prompt polish: the HUD prompt now resolves the displayed Interact key from the
+  active Input System control scheme and binding overrides, with keyboard/gamepad fallbacks. (Codex)
 - C8 NPC animated model: replaced the gray capsule visual in `NPC_Visitor.prefab` with the UAL
   humanoid model (skinned mesh + Humanoid avatar), added `NPC_Anim.controller` (Speed/Talking
   params: Idle⇄Walk blend tree + Talk state), and `NPCAnimator` driving it from
@@ -23,6 +25,8 @@ reviews it, verifies via Unity MCP, bumps the version, tags it, and pushes. See 
   needed). Visual mesh/outfit variety is deferred until more humanoid assets exist. (Codex)
 
 ### Changed
+- `UIModeService` reapplies cursor lock/visibility when the app regains focus or resumes, reducing
+  cursor state drift after focus changes. (Codex)
 - `NPC_Visitor` keeps the `Animator` + `NPCAnimator` on the UAL rig root so Humanoid clip bindings
   reach the skeleton; `ApplyRootMotion` is off (the NavMeshAgent drives movement). UAL model import
   now builds a Humanoid avatar so the prefab's avatar reference resolves at runtime, and the NPC uses
@@ -42,6 +46,8 @@ reviews it, verifies via Unity MCP, bumps the version, tags it, and pushes. See 
   match. Residual stop/turn slide is inherent to in-place clips without root motion. (Claude)
 
 ### Verification
+- C9 MCP `recompile_scripts`: success, 0 warnings. MCP `get_health_report`: ok, 0 errors,
+  0 dirty scenes. (Codex)
 - MCP `recompile_scripts`: success, 0 warnings. `get_health_report`: ok (0 errors, 0 dirty scenes).
   Play-mode visual confirmation pending user. (Claude)
 
