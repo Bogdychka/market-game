@@ -16,26 +16,34 @@ reviews it, verifies via Unity MCP, bumps the version, tags it, and pushes. See 
 
 ### Added
 - C8 NPC animated model: replaced the gray capsule visual in `NPC_Visitor.prefab` with the UAL
-  humanoid model, added `NPC_Anim.controller` with Speed/Talking parameters, and added
-  `NPCAnimator` to drive Idle/Walk/Talk from `NavMeshAgent.velocity` and `NPCVisitor.CurrentState`.
-  Visual mesh/outfit variety is deferred until additional humanoid assets exist. (Codex)
+  humanoid model (skinned mesh + Humanoid avatar), added `NPC_Anim.controller` (Speed/Talking
+  params: Idle⇄Walk blend tree + Talk state), and `NPCAnimator` driving it from
+  `NavMeshAgent.velocity` and `NPCVisitor.CurrentState`. Idle/Walk/Talk play the UAL rig's own
+  `Idle_Loop` / `Walk_Loop` / `Idle_Talking_Loop` clips on the shared UAL avatar (no Mixamo retarget
+  needed). Visual mesh/outfit variety is deferred until more humanoid assets exist. (Codex)
 
 ### Changed
-- Mixamo Idle, Walk, and Talk imports are configured as humanoid looping clips with root position
-  baked for agent-driven movement; the NPC visual uses a neutral URP/Lit material to avoid pink
-  built-in shader fallback. (Codex)
-- `NPC_Visitor` now keeps the `Animator` and `NPCAnimator` on the unpacked `UAL1_Standard` rig root
-  rather than the wrapper `Model` object, so Humanoid clip bindings reach the skeleton. (Codex)
-- UAL model import now creates a Humanoid avatar, allowing the NPC prefab's Animator avatar reference
-  to resolve at runtime instead of loading as empty. (Codex)
-- `NPC_Anim.controller` now uses the UAL rig-native Idle/Walk/Talk clips so the controller drives
-  visible skeleton motion on the NPC prefab instead of only advancing Animator states. (Codex)
+- `NPC_Visitor` keeps the `Animator` + `NPCAnimator` on the UAL rig root so Humanoid clip bindings
+  reach the skeleton; `ApplyRootMotion` is off (the NavMeshAgent drives movement). UAL model import
+  now builds a Humanoid avatar so the prefab's avatar reference resolves at runtime, and the NPC uses
+  a neutral URP/Lit material to avoid the pink built-in-shader fallback. (Codex)
+
+### Fixed
+- Enabled Loop Time on the three UAL clips the controller uses (`Idle_Loop`, `Walk_Loop`,
+  `Idle_Talking_Loop`). Without it each clip played once and froze on its last frame, so NPCs walked,
+  locked up, then appeared to slide while the agent kept moving the frozen body. Applied via a small
+  re-importable editor tool (`NpcAnimationLoopFixer`) that preserves the clips' fileIDs so the
+  controller references stay valid. (Claude)
+- Reduced NPC foot-sliding: `NPCAnimator` scales Walk playback to the agent's real ground speed via a
+  `WalkMult` controller parameter (floored at 1 so Idle never freezes), and the NPC NavMeshAgent was
+  tuned for snappier stops/turns (Acceleration 8→24, AngularSpeed 120→520, StoppingDistance 0→1.2 so
+  it brakes into the stall instead of arriving at full speed). NPC walk speed dropped from 3.5 to a
+  realistic 1.4 m/s (`NPCType_Default` + prefab agent), which also keeps `WalkMult` near 1x so the feet
+  match. Residual stop/turn slide is inherent to in-place clips without root motion. (Claude)
 
 ### Verification
-- MCP `recompile_scripts`: success, 0 warnings. (Codex)
-- MCP `get_health_report`: ok, compileFailed=false, consoleErrors=0, dirtyScenes=0. (Codex)
-- Temporary Play Mode probe verified the prefab Animator has a controller and moves bones in
-  Idle/Walk/Talk states before the probe was removed. (Codex)
+- MCP `recompile_scripts`: success, 0 warnings. `get_health_report`: ok (0 errors, 0 dirty scenes).
+  Play-mode visual confirmation pending user. (Claude)
 
 ## [1.7.1] - 2026-06-13
 

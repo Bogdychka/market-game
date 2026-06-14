@@ -15,6 +15,6 @@ MonoBehaviour:
   typeName: "\u041E\u0431\u044B\u0447\u043D\u044B\u0439 \u043F\u043E\u043A\u0443\u043F\u0430\u0442\u0435\u043B\u044C"
   npcPrefab: {fileID: 9113588633007267650, guid: 321888a0e37fd7945b37d14aaf301791, type: 3}
   budget: 50
-  walkSpeed: 3.5
+  walkSpeed: 1.4
   browseTime: 1.5
   preferredCategories: 

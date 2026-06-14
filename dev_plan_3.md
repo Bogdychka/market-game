@@ -197,10 +197,12 @@ validation (≥ 0; warn below buy price) · place spawns `worldPrefab`, remove r
 rebinding via Input System.
 **Check:** change a setting → applies immediately and persists across sessions.
 
-### C7. AudioMixer & base audio `[assets: stub]`
+### C7. AudioMixer & base audio `[assets: stub]` *(deferred → merged into K2)*
 **Do:** `AudioMixer` (Master/Music/SFX/Ambient), `AudioService` for one-shots, player footsteps and
-market ambience. (Sound files are stubs/free placeholders until audio pass in K.)
+market ambience. Wire the SettingsService volume values (C6) to the mixer groups.
+(Sound files are stubs/free placeholders until audio pass in K.)
 **Check:** footsteps on walk, ambient on the market, settings volumes work.
+**→ Skipped for now; implement together with K2 Sound design when audio assets exist.**
 
 ### C8. NPC animated model `[assets: partial]`
 **Do:** replace the capsule NPC visual with the UAL humanoid model and drive Idle/Walk/Talk from
@@ -568,9 +570,11 @@ Never changes prices directly.
 stubs as art lands.
 **Check:** the scene looks coherent; no pink materials; FPS holds.
 
-### K2. Sound design `[assets: backlog]`
-**Do:** time-of-day ambience, NPC purchase reactions, UI/order/build sounds, achievement jingles.
-**Check:** every significant action has a sound; mixer groups work.
+### K2. Sound design + AudioMixer `[assets: backlog]` *(includes C7)*
+**Do:** `AudioMixer` (Master/Music/SFX/Ambient) + `AudioService` for one-shots; wire
+SettingsService volume values (C6) to mixer groups; player footsteps, market ambience,
+NPC purchase reactions, UI/order/build sounds, achievement jingles.
+**Check:** every significant action has a sound; mixer groups work; settings volumes apply.
 
 ### K3. First-session tutorial `[assets: ready]`
 **Do:** 8–10 hint chain: buy → place → sell → take a board order → complete it → unlock something.
@@ -654,7 +658,7 @@ place: `VERSION` + `CHANGELOG.md` + `vX.Y.Z` tags.)
 - [x] C4 StallUI
 - [x] C5 PauseMenu
 - [x] C6 Settings menu
-- [ ] C7 AudioMixer & base audio
+- [ ] C7 AudioMixer & base audio *(deferred → K2)*
 - [x] C8 NPC animated model *(visual variety deferred until more assets exist)*
 - [ ] C9 Interaction prompt & cursor polish
 
