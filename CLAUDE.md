@@ -32,6 +32,10 @@ completed plan step · MAJOR = milestone / breaking save or architecture change.
    (never hand-rolled rects). Debug scripts → `_Project/Scripts/Debug/`, `Market.DebugTools`.
 6. **Token discipline** per `AGENTS.md`: minimal reads, proportional verification, no ritual
    summaries or re-narration of the contracts.
+7. **Compare against how other games solve it.** For any non-trivial gameplay/system/UX decision
+   (saves, NPC AI, economy, progression, controls, content flow…), briefly say how comparable games
+   handle it, where our approach sits relative to them, and proactively propose the better-fitting
+   option for this game — don't wait to be asked. Keep it a short recommendation, not a survey.
 
 ## Current state
 See `dev_plan_3.md` for what's done and what's next. Don't track progress here.
