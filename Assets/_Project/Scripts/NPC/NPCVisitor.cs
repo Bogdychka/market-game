@@ -34,7 +34,6 @@ namespace Market.NPC
         public event Action<NPCVisitor> OnDespawned;
         public State CurrentState => _state;
         public NPCTypeSO Type => _type;
-        public float BrowseTimer => _browseTimer;
         public string TargetStallId => targetStall != null ? targetStall.StallId : null;
         public IReadOnlyList<MarketStall> VisitedStalls => _visitedStalls;
 
@@ -43,8 +42,6 @@ namespace Market.NPC
         private State           _state;
         private float           _browseTimer;
         private ItemCategory[]  _preferredCategories;
-        private bool            _hasRestoredState;
-        private bool            _pendingRestorePath;
         private readonly List<MarketStall> _visitedStalls = new();
 
         // ── Lifecycle ──────────────────────────────────────────────────
@@ -89,16 +86,14 @@ namespace Market.NPC
         private void Start()
         {
             ValidateReferences();
-            if (_hasRestoredState) return;
-
             EnterState(State.WalkToStall);
         }
 
         /// <summary>
-        /// Restore the saved current/visited stalls (resolved via the registry) so a loaded NPC keeps
-        /// its routing instead of starting from a random stall and re-walking already-browsed ones.
-        /// Call after Initialize(registry, ...) and before <see cref="RestoreState"/>. Unknown ids
-        /// (old saves / removed stalls) are ignored, leaving the random initial stall as a fallback.
+        /// Restore the saved target/visited stalls (resolved via the registry) so a loaded NPC walks
+        /// in from the entrance toward the stall it still wanted, skipping ones it already browsed.
+        /// Call after Initialize(registry, ...). Unknown ids (old saves / removed stalls) are ignored,
+        /// leaving the random initial stall from Initialize as a fallback.
         /// </summary>
         public void RestoreStalls(string targetStallId, List<string> visitedStallIds)
         {
@@ -116,69 +111,8 @@ namespace Market.NPC
                 targetStall = target;
         }
 
-        public void RestoreState(State state, float savedBrowseTimer, Vector3 position, float rotationY)
-        {
-            PlaceOnNavMesh(position, rotationY);
-
-            _hasRestoredState = true;
-            switch (state)
-            {
-                case State.Browsing:
-                    _state = State.Browsing;
-                    if (_agent.isOnNavMesh) _agent.ResetPath();
-                    _browseTimer = Mathf.Max(0.1f, savedBrowseTimer);
-                    break;
-                case State.Done:
-                    EnterState(State.Done);
-                    break;
-                case State.WalkToExit:
-                    _state = State.WalkToExit;
-                    _pendingRestorePath = true;   // defer pathing until the agent settles on the navmesh
-                    break;
-                default:
-                    _state = State.WalkToStall;
-                    _pendingRestorePath = true;
-                    break;
-            }
-        }
-
-        /// <summary>
-        /// Place a restored NPC cleanly on the navmesh: disable the agent so moving the transform does
-        /// not fight the agent's own position, then re-enable and Warp. If the saved point is off the
-        /// mesh, fall back to the target stall / exit instead of teleporting far via a wide sample.
-        /// </summary>
-        private void PlaceOnNavMesh(Vector3 position, float rotationY)
-        {
-            if (!TrySampleNavMesh(position, out Vector3 navPosition) &&
-                !(targetStall != null && TrySampleNavMesh(targetStall.transform.position, out navPosition)) &&
-                !(exitPoint   != null && TrySampleNavMesh(exitPoint.position,            out navPosition)))
-            {
-                navPosition = position; // last resort; the deferred-path guard will wait for a valid mesh
-            }
-
-            Quaternion rotation = Quaternion.Euler(0f, rotationY, 0f);
-
-            bool wasEnabled = _agent.enabled;
-            _agent.enabled = false;
-            transform.SetPositionAndRotation(navPosition, rotation);
-            _agent.enabled = wasEnabled;
-
-            if (_agent.enabled)
-                _agent.Warp(navPosition);
-        }
-
         private void Update()
         {
-            // After a load, issue the saved path only once the warped agent is actually on the navmesh —
-            // pathing in the restore frame is what makes NPCs snap back and forth or clip through geometry.
-            if (_pendingRestorePath)
-            {
-                if (!_agent.isOnNavMesh) return;
-                _pendingRestorePath = false;
-                EnterState(_state);
-                return;
-            }
-
             switch (_state)
             {
                 case State.WalkToStall: UpdateWalkToStall(); break;

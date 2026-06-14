@@ -110,19 +110,17 @@ namespace Market.NPC
             RemoveMissingVisitors();
             foreach (NPCVisitor visitor in _spawnedVisitors)
             {
-                if (visitor == null || visitor.Type == null || visitor.CurrentState == NPCVisitor.State.Done)
+                if (visitor == null || visitor.Type == null) continue;
+
+                // Only persist visitors that still intend to shop; ones already leaving (WalkToExit/Done)
+                // are transient and simply regenerate as new traffic.
+                if (visitor.CurrentState != NPCVisitor.State.WalkToStall &&
+                    visitor.CurrentState != NPCVisitor.State.Browsing)
                     continue;
 
-                Vector3 position = visitor.transform.position;
                 NPCVisitorData data = new()
                 {
                     npcTypeKey    = visitor.Type.name,
-                    state         = (int)visitor.CurrentState,
-                    x             = position.x,
-                    y             = position.y,
-                    z             = position.z,
-                    rotationY     = visitor.transform.eulerAngles.y,
-                    browseTimer   = visitor.BrowseTimer,
                     targetStallId = visitor.TargetStallId
                 };
 
@@ -201,7 +199,6 @@ namespace Market.NPC
         private void RestoreVisitor(NPCVisitorData visitorData)
         {
             if (visitorData == null) return;
-            if (visitorData.state == (int)NPCVisitor.State.Done) return;
 
             NPCTypeSO type = FindType(visitorData.npcTypeKey);
             if (type == null)
@@ -216,9 +213,22 @@ namespace Market.NPC
                 return;
             }
 
-            Vector3 position = new Vector3(visitorData.x, visitorData.y, visitorData.z);
-            Quaternion rotation = Quaternion.Euler(0f, visitorData.rotationY, 0f);
-            GameObject go = Instantiate(type.NpcPrefab, position, rotation);
+            if (!HasAvailableStall())
+            {
+                Debug.LogWarning("[NPCSpawner] No stall available for restored NPC.", this);
+                return;
+            }
+
+            // Schedule-style restore: re-spawn at an entrance (always a valid navmesh spot) and let the
+            // visitor walk in toward its saved target stall — no mid-stride position to teleport into.
+            Transform point = PickSpawnPoint();
+            if (point == null)
+            {
+                Debug.LogWarning("[NPCSpawner] No spawn point for restored NPC.", this);
+                return;
+            }
+
+            GameObject go = Instantiate(type.NpcPrefab, point.position, point.rotation);
             NPCVisitor visitor = go.GetComponent<NPCVisitor>();
 
             if (visitor == null)
@@ -228,17 +238,15 @@ namespace Market.NPC
                 return;
             }
 
-            if (!HasAvailableStall())
-            {
-                Debug.LogWarning("[NPCSpawner] No stall available for restored NPC.", this);
-                Destroy(go);
-                return;
-            }
-
             visitor.Initialize(type, stallRegistry, exitPoint, playerMoney);
             visitor.RestoreStalls(visitorData.targetStallId, visitorData.visitedStallIds);
-            visitor.RestoreState((NPCVisitor.State)visitorData.state, visitorData.browseTimer, position, visitorData.rotationY);
             RegisterVisitor(visitor);
+        }
+
+        private Transform PickSpawnPoint()
+        {
+            if (spawnPoints == null || spawnPoints.Length == 0) return null;
+            return spawnPoints[Random.Range(0, spawnPoints.Length)];
         }
 
         private void RegisterVisitor(NPCVisitor visitor)
