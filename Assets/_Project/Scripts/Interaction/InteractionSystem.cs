@@ -22,6 +22,10 @@ namespace Market.Interaction
 
         public event Action<IInteractable> CurrentChanged;
         public IInteractable Current => _current;
+        /// <summary>PlayerInput used by the interaction action and prompt display.</summary>
+        public PlayerInput PlayerInput => playerInput;
+        /// <summary>Cached Interact action used to trigger the current target.</summary>
+        public InputAction InteractAction => _interactAction;
 
         private InputAction _interactAction;
         private IInteractable _current;

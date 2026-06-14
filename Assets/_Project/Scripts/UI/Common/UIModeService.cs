@@ -52,6 +52,18 @@ namespace Market.UI
                 ServiceLocator.Unregister<UIModeService>();
         }
 
+        private void OnApplicationFocus(bool hasFocus)
+        {
+            if (hasFocus)
+                ApplyMode(force: true);
+        }
+
+        private void OnApplicationPause(bool pauseStatus)
+        {
+            if (!pauseStatus)
+                ApplyMode(force: true);
+        }
+
         /// <summary>For scene-level menus that should keep UI mode active without a panel owner.</summary>
         public void SetPersistentMenuMode(bool enabled)
         {

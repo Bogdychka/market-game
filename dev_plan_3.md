@@ -212,7 +212,7 @@ market ambience. Wire the SettingsService volume values (C6) to the mixer groups
 ### C9. Interaction prompt & cursor polish `[assets: ready]`
 **Do:** prompt shows the correct device key (KB/Gamepad) via Input System; cursor hidden in game,
 visible in menus.
-**Check:** prompt key matches the active device; cursor toggles correctly.
+**Check:** prompt key matches the active device; cursor toggles correctly. **Done.**
 
 > **Checkpoint C:** looks like a game, not a prototype. Playable by a stranger.
 
@@ -660,7 +660,7 @@ place: `VERSION` + `CHANGELOG.md` + `vX.Y.Z` tags.)
 - [x] C6 Settings menu
 - [ ] C7 AudioMixer & base audio *(deferred → K2)*
 - [x] C8 NPC animated model *(visual variety deferred until more assets exist)*
-- [ ] C9 Interaction prompt & cursor polish
+- [x] C9 Interaction prompt & cursor polish
 
 ### Block D — Day rhythm, orders, progression & attraction
 - [ ] D0 MarketStallRegistry
