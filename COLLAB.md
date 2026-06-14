@@ -7,20 +7,16 @@ Releases: SemVer tags `vX.Y.Z` on `main`.
 ## Roles
 - **Codex = implementer + recorder.** Implements one plan step per branch and records what it did in
   `CHANGELOG.md [Unreleased]` (+ PR body). Never merges to `main`, never tags.
-- **Claude = reviewer + verifier + publisher.** Reviews the diff + recorded note, runs
-  `unity-csharp-reviewer` and the MCP loop (`recompile_scripts` → `get_health_report`), then
-  versions (bump `VERSION`, move the entry under `## [X.Y.Z]`), merges the PR, tags.
+- **Claude = verifier.** Runs the MCP loop (`recompile_scripts` → `get_health_report`), reports
+  green/red to the user. Does **not** commit, merge, tag, or push without explicit user instruction.
 
-Either agent may do gameplay work; the merge to `main` and the tag are Claude's gate.
+Either agent may do gameplay work.
 
 ## Golden rules
 1. **`main` is always green** — compiles, health `ok`. Never push broken code to `main`.
-2. **One task = one branch = one PR.** No direct commits to `main` (hook-enforced for Claude).
-3. **Don't edit the same files as the other agent at the same time.** Scenes/prefabs: one agent per task.
-4. **One Unity Editor + one working tree.** The actively-editing agent owns them; the other must not
+2. **Don't edit the same files as the other agent at the same time.** Scenes/prefabs: one agent per task.
+3. **One Unity Editor + one working tree.** The actively-editing agent owns them; the other must not
    switch branches or trigger recompiles underneath.
-5. **Push every commit immediately** — unpushed commits are invisible to the other agent and to the
-   Editor on branch switches. If `gh pr create` fails, push anyway and leave the URL.
 
 ## Branches
 `<agent>/<plan-step>-<slug>`, lowercase — e.g. `claude/b10-seasonal-assortment`, `codex/c4-stall-ui`.
@@ -30,16 +26,8 @@ Either agent may do gameplay work; the merge to `main` and the tag are Claude's 
 step → record under `CHANGELOG.md [Unreleased]` (what/why/how to verify) → Conventional Commit →
 `git push -u origin HEAD` → `gh pr create --fill`.
 
-**Claude:** review + MCP verify → if green: bump `VERSION`, move the changelog entry, tick the plan
-box → publish:
-```bash
-gh pr merge <n> --squash --delete-branch
-git fetch origin
-git tag -a vX.Y.Z origin/main -m "vX.Y.Z - <summary>"
-git push origin refs/tags/vX.Y.Z        # tag-only push is allowed even on main
-git switch main && git pull
-```
-If not green: request changes; Codex iterates on its branch.
+**Claude:** MCP verify → report green/red to the user. Wait for user to instruct
+commit / merge / tag / push.
 
 ## Versioning
 `VERSION` file holds the number; every merged change gets a `CHANGELOG.md` entry and a tag on `main`.

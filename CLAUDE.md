@@ -10,31 +10,14 @@ Standing contract for `C:\Users\bogre\My project`. Keep it short and current; it
 - Live state: Unity Editor via MCP (port 8090), `game.log`, serialized `.unity`/`.prefab`/`.asset`
   files — the truth about Inspector wiring.
 
-## Claude's role: reviewer · verifier · publisher
+## Claude's role: verifier
 
-Codex implements plan steps and records them in `CHANGELOG.md [Unreleased]`. **Claude is the gate
-to `main`.** Per handoff:
-
-1. **Review** the diff + its `[Unreleased]` note against `AGENTS.md` and the plan.
-   The `unity-csharp-reviewer` subagent is expensive (~65k tokens/run): run it only for
-   **non-trivial C#** — new logic, economy, persistence, NPC behavior, shared systems — and give it
-   the exact file list + focus areas in the prompt so it doesn't explore. Trivial diffs (UI
-   colors/labels, comments, docs, value tweaks) Claude reviews inline, no subagent.
-2. **Verify via MCP:** `recompile_scripts` → `get_health_report` must be `ok` (0 errors, 0 dirty
-   scenes). `get_console_logs` (`includeStackTrace: false`) and `run_tests` (filter `Market.Tests`)
-   for risky or shared changes. If MCP can't run, state exactly what was NOT verified — never claim
-   a green that wasn't observed.
-3. **Version** (only if green): bump `VERSION`, move the `[Unreleased]` entry under `## [X.Y.Z]`,
-   tick the plan box in `dev_plan_3.md`.
-4. **Publish:** merge the PR to `main`, tag `vX.Y.Z`, push `refs/tags/vX.Y.Z`.
-5. Not green → request changes; Codex iterates on its branch.
-
-Either agent may do gameplay work, but merge to `main` + the version tag are Claude's gate.
+After implementation, verify via MCP: `recompile_scripts` → `get_health_report` must be `ok`
+(0 errors, 0 dirty scenes). Report green/red to the user. **Do not commit, merge, tag, or push**
+— wait for explicit instruction. If MCP can't run, state exactly what was NOT verified.
 
 **SemVer (v1.x line):** PATCH = fixes/chores/docs/no-behavior refactors · MINOR = feature /
 completed plan step · MAJOR = milestone / breaking save or architecture change.
-A PreToolUse hook (`.claude/hooks/no-commit-to-main.sh`) blocks `git commit` and branch pushes on
-`main`; explicit tag-only pushes (`refs/tags/…` / `--tags`) are allowed.
 
 ## How to respond
 1. **Unity API answers strictly for Unity 6 (6000.x).** Unsure → say so or check
