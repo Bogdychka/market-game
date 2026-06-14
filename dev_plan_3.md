@@ -683,7 +683,7 @@ place: `VERSION` + `CHANGELOG.md` + `vX.Y.Z` tags.)
 - [ ] D15 Rent / Loans (optional)
 
 ### Block E — Farm
-- [ ] E1 CropPlot + CropSO · [ ] E2 Visual stages · [ ] E3 Seasonality · [ ] E4 Quality
+- [x] E1 CropPlot + CropSO · [ ] E2 Visual stages · [ ] E3 Seasonality · [ ] E4 Quality
 - [ ] E5 Cost of production · [ ] E6 Greenhouse · [ ] E7 Beehive · [ ] E8 Flowers & bouquets
 - [ ] E9 Farm tutorial
 

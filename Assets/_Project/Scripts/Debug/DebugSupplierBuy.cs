@@ -5,7 +5,7 @@ using UnityEngine.InputSystem;
 namespace Market.DebugTools
 {
     /// <summary>
-    /// Debug: digit keys 1-5 buy an item by index from the supplier shop.
+    /// Debug: digit keys buy an item by index from the supplier shop.
     /// </summary>
     public class DebugSupplierBuy : MonoBehaviour
     {
@@ -16,7 +16,7 @@ namespace Market.DebugTools
 
         [Header("Settings")]
         [Tooltip("How many digit keys to listen on. Clamped to keys 1-9.")]
-        [SerializeField] private int maxIndex = 5;
+        [SerializeField] private int maxIndex = 6;
 
         private void Update()
         {

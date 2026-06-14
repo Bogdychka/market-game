@@ -15,6 +15,8 @@ reviews it, verifies via Unity MCP, bumps the version, tags it, and pushes. See 
 ## [Unreleased]
 
 ### Added
+- E1 farming slice: added `CropSO`, `CropPlot`, carrot seed data, a carrot crop asset, supplier
+  seed stock, a debug Market-scene crop plot, and EditMode coverage for plant/grow/harvest. (Codex)
 - D2/D5 day controls: added `MarketOpenSystem`, root-level debug cubes for Open/Close Market and
   Sleep Until Morning, and tests for explicit market state plus sleep-gated day advancement. NPCs
   now spawn as shoppers only while the market is open; when closed, traffic still appears as
