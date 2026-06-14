@@ -48,5 +48,7 @@ namespace Market.Persistence
         public float  z;
         public float  rotationY;
         public float  browseTimer;
+        public string targetStallId;                  // current stall the visitor heads to / browses
+        public List<string> visitedStallIds = new();  // already-browsed stalls, so restore doesn't revisit
     }
 }

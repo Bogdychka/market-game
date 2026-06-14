@@ -35,6 +35,8 @@ namespace Market.NPC
         public State CurrentState => _state;
         public NPCTypeSO Type => _type;
         public float BrowseTimer => _browseTimer;
+        public string TargetStallId => targetStall != null ? targetStall.StallId : null;
+        public IReadOnlyList<MarketStall> VisitedStalls => _visitedStalls;
 
         private NavMeshAgent    _agent;
         private NPCTypeSO       _type;
@@ -89,6 +91,28 @@ namespace Market.NPC
             if (_hasRestoredState) return;
 
             EnterState(State.WalkToStall);
+        }
+
+        /// <summary>
+        /// Restore the saved current/visited stalls (resolved via the registry) so a loaded NPC keeps
+        /// its routing instead of starting from a random stall and re-walking already-browsed ones.
+        /// Call after Initialize(registry, ...) and before <see cref="RestoreState"/>. Unknown ids
+        /// (old saves / removed stalls) are ignored, leaving the random initial stall as a fallback.
+        /// </summary>
+        public void RestoreStalls(string targetStallId, List<string> visitedStallIds)
+        {
+            _visitedStalls.Clear();
+            if (stallRegistry == null) return;
+
+            if (visitedStallIds != null)
+            {
+                foreach (string id in visitedStallIds)
+                    if (stallRegistry.TryGetStall(id, out MarketStall visited))
+                        RememberVisitedStall(visited);
+            }
+
+            if (stallRegistry.TryGetStall(targetStallId, out MarketStall target))
+                targetStall = target;
         }
 
         public void RestoreState(State state, float savedBrowseTimer, Vector3 position, float rotationY)

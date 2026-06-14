@@ -114,16 +114,23 @@ namespace Market.NPC
                     continue;
 
                 Vector3 position = visitor.transform.position;
-                visitors.Add(new NPCVisitorData
+                NPCVisitorData data = new()
                 {
-                    npcTypeKey  = visitor.Type.name,
-                    state       = (int)visitor.CurrentState,
-                    x           = position.x,
-                    y           = position.y,
-                    z           = position.z,
-                    rotationY   = visitor.transform.eulerAngles.y,
-                    browseTimer = visitor.BrowseTimer
-                });
+                    npcTypeKey    = visitor.Type.name,
+                    state         = (int)visitor.CurrentState,
+                    x             = position.x,
+                    y             = position.y,
+                    z             = position.z,
+                    rotationY     = visitor.transform.eulerAngles.y,
+                    browseTimer   = visitor.BrowseTimer,
+                    targetStallId = visitor.TargetStallId
+                };
+
+                foreach (MarketStall stall in visitor.VisitedStalls)
+                    if (stall != null)
+                        data.visitedStallIds.Add(stall.StallId);
+
+                visitors.Add(data);
             }
         }
 
@@ -229,6 +236,7 @@ namespace Market.NPC
             }
 
             visitor.Initialize(type, stallRegistry, exitPoint, playerMoney);
+            visitor.RestoreStalls(visitorData.targetStallId, visitorData.visitedStallIds);
             visitor.RestoreState((NPCVisitor.State)visitorData.state, visitorData.browseTimer, position, visitorData.rotationY);
             RegisterVisitor(visitor);
         }

@@ -40,6 +40,10 @@ reviews it, verifies via Unity MCP, bumps the version, tags it, and pushes. See 
 ### Fixed
 - NPC visitors now keep browsing other registered stalls after an empty, uninteresting, or over-budget
   stall instead of leaving after the first failed purchase attempt. (Codex)
+- Multi-stall browse state now survives save/load: `NPCVisitorData` persists the current `targetStallId`
+  and the `visitedStallIds`, so a restored visitor keeps its route instead of jumping to a random stall
+  and re-walking already-browsed ones (resolved via `MarketStallRegistry`; unknown ids fall back
+  gracefully, old saves unaffected). (Claude)
 - Disabled the extra root `BoxCollider` on the Market `Supplier` object in the D0 scene version;
   the visible child capsule still provides supplier collision/interaction. (Codex)
 - Enabled Loop Time on the three UAL clips the controller uses (`Idle_Loop`, `Walk_Loop`,
