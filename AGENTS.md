@@ -16,21 +16,25 @@ C#/Unity work. Don't duplicate the other contracts here:
 ## Token discipline — don't burn context on junk
 
 - Read only what you will edit or must verify. Don't re-read whole files or contracts "to be sure".
+  **Never re-read a file you just edited** — `Edit`/`Write` already confirm the change succeeded.
 - **`dev_plan_3.md` (36 KB): never read it whole.** Progress truth = the `## Progress` section at
   the bottom; task details = the section of YOUR block only. Grep by step id (`C6`, `D8`…).
 - **`CHANGELOG.md`: handoffs need only the head** — `[Unreleased]` + the latest release (first
   ~40 lines). Never read the version history. When the file exceeds ~30 KB, move entries older than
   the last 5 releases to `CHANGELOG.archive.md`.
 - Diagnose from files: grep the relevant serialized `.unity`/`.prefab`/`.asset` with narrow patterns
-  (`Market.unity` is 80 KB — never dump a scene) and tail `game.log`.
+  and tail `game.log`. **Never full-Read a scene/prefab — `Grep` the specific component** (`Market.unity`
+  is 80 KB; `NPC_Visitor.prefab` is 2300+ lines of embedded rig — dumping it costs ~20k tokens).
 - Verification is proportional: a normal change needs `recompile_scripts` + `get_health_report`, done.
   `run_tests` (filter `Market.Tests`) only for shared/risky logic.
 - **A passed gate is final.** Never re-run recompile/health/tests on unchanged code "to be sure".
   After a new edit, re-run only the gates that edit invalidated (e.g. a comment-only fix needs
   recompile + health, not the test suite).
-- **Cheap MCP calls by default:** `get_health_report` with `includeTests: false` (set true only when
-  you actually need test discovery); `get_console_logs` with `includeStackTrace: false` + small
-  `limit` (10–20); `run_tests` with `returnOnlyFailures: true`, `returnWithLogs: false`.
+- **Cheap MCP calls by default:** **always** `get_health_report` with `includeTests: false` for a
+  green/red check — `overallStatus` + `consoleErrors` + `dirtyScenes` already tell you ok/red, and the
+  test-name list costs ~3k extra tokens per call (set `true` only to actually discover a specific test);
+  `get_console_logs` with `includeStackTrace: false` + small `limit` (10–20); `run_tests` with
+  `returnOnlyFailures: true`, `returnWithLogs: false`.
 - No progress essays in chat. Results are recorded once, in `CHANGELOG.md [Unreleased]`.
 
 ---
