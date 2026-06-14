@@ -35,6 +35,12 @@ namespace Market.Economy
 
         public bool HasMarketOpenedToday => _marketOpenedToday;
 
+        public bool HasReportData => _marketOpenedToday
+                                     || _revenue > 0f
+                                     || _expenses > 0f
+                                     || _itemsSold > 0
+                                     || _ordersCompleted > 0;
+
         public DailySummarySnapshot CreateSnapshot(int day)
         {
             ItemSalesSummary bestSeller = GetBestSeller();
@@ -104,6 +110,9 @@ namespace Market.Economy
 
         private void HandleDayChanged(int day)
         {
+            if (HasReportData)
+                _eventBus.Publish(new DailySummaryReadyEvent(CreateSnapshot(Math.Max(1, day - 1))));
+
             Reset();
         }
 

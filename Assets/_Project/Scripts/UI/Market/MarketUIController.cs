@@ -50,6 +50,8 @@ namespace Market.UI
         private EventBus _eventBus;
         private TimeSystem _timeSystem;
         private DailySummarySystem _dailySummarySystem;
+        private DailySummarySnapshot _activeSummary;
+        private bool _hasActiveSummary;
         private int _lastSummaryDayShown = -1;
         private bool _seasonEventsWired;
 
@@ -243,39 +245,31 @@ namespace Market.UI
         {
             ResolveSummaryServices();
             if (_eventBus != null)
-                _eventBus.Subscribe<MarketOpenChangedEvent>(HandleMarketOpenChanged);
+                _eventBus.Subscribe<DailySummaryReadyEvent>(HandleDailySummaryReady);
         }
 
         private void UnwireSummaryEvents()
         {
             if (_eventBus != null)
-                _eventBus.Unsubscribe<MarketOpenChangedEvent>(HandleMarketOpenChanged);
+                _eventBus.Unsubscribe<DailySummaryReadyEvent>(HandleDailySummaryReady);
         }
 
-        private void HandleMarketOpenChanged(MarketOpenChangedEvent evt)
+        private void HandleDailySummaryReady(DailySummaryReadyEvent evt)
         {
-            if (evt.IsOpen)
+            if (_lastSummaryDayShown == evt.Summary.Day)
                 return;
 
-            ShowEveningSummaryIfReady();
-        }
-
-        private void ShowEveningSummaryIfReady()
-        {
-            ResolveSummaryServices();
-            if (_dailySummarySystem == null || !_dailySummarySystem.HasMarketOpenedToday)
-                return;
-
-            int day = CurrentDay();
-            if (_lastSummaryDayShown == day)
-                return;
-
-            _lastSummaryDayShown = day;
+            _activeSummary = evt.Summary;
+            _hasActiveSummary = true;
+            _lastSummaryDayShown = evt.Summary.Day;
             OpenPanel(PanelMode.EveningSummary);
         }
 
         private DailySummarySnapshot CreateSummarySnapshot()
         {
+            if (_hasActiveSummary)
+                return _activeSummary;
+
             ResolveSummaryServices();
             return _dailySummarySystem != null
                 ? _dailySummarySystem.CreateSnapshot(CurrentDay())

@@ -58,6 +58,13 @@ namespace Market.Tests
         {
             var eventBus = new EventBus();
             var timeSystem = new TimeSystem();
+            DailySummarySnapshot completedSummary = default;
+            bool summaryReady = false;
+            eventBus.Subscribe<DailySummaryReadyEvent>(evt =>
+            {
+                completedSummary = evt.Summary;
+                summaryReady = true;
+            });
             using var summarySystem = new DailySummarySystem(eventBus, timeSystem);
 
             eventBus.Publish(new MarketOpenChangedEvent(true));
@@ -66,6 +73,9 @@ namespace Market.Tests
 
             DailySummarySnapshot snapshot = summarySystem.CreateSnapshot(2);
 
+            Assert.IsTrue(summaryReady);
+            Assert.AreEqual(1, completedSummary.Day);
+            Assert.AreEqual(15f, completedSummary.Revenue);
             Assert.IsFalse(summarySystem.HasMarketOpenedToday);
             Assert.AreEqual(0f, snapshot.Revenue);
             Assert.AreEqual(0, snapshot.ItemsSold);
