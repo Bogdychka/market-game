@@ -42,6 +42,7 @@ namespace Market.NPC
         private State           _state;
         private float           _browseTimer;
         private ItemCategory[]  _preferredCategories;
+        private bool            _isPasserby;
         private readonly List<MarketStall> _visitedStalls = new();
 
         // ── Lifecycle ──────────────────────────────────────────────────
@@ -57,6 +58,7 @@ namespace Market.NPC
         {
             stallRegistry = null;
             _visitedStalls.Clear();
+            _isPasserby = false;
             Configure(type, stall, exit, money);
         }
 
@@ -67,7 +69,19 @@ namespace Market.NPC
         {
             stallRegistry = registry;
             _visitedStalls.Clear();
+            _isPasserby = false;
             Configure(type, SelectInitialStall(), exit, money);
+        }
+
+        /// <summary>
+        /// Configure a closed-market passerby. The NPC walks past the market and leaves without shopping.
+        /// </summary>
+        public void InitializePasserby(NPCTypeSO type, Transform exit, MoneySystem money)
+        {
+            stallRegistry = null;
+            _visitedStalls.Clear();
+            _isPasserby = true;
+            Configure(type, null, exit, money);
         }
 
         private void Configure(NPCTypeSO type, MarketStall stall, Transform exit, MoneySystem money)
@@ -86,7 +100,18 @@ namespace Market.NPC
         private void Start()
         {
             ValidateReferences();
-            EnterState(State.WalkToStall);
+            EnterState(_isPasserby ? State.WalkToExit : State.WalkToStall);
+        }
+
+        /// <summary>Redirect this visitor away from stalls, usually because the market was closed.</summary>
+        public void LeaveMarket()
+        {
+            if (_state == State.WalkToExit || _state == State.Done)
+                return;
+
+            _isPasserby = true;
+            targetStall = null;
+            EnterState(State.WalkToExit);
         }
 
         /// <summary>
@@ -373,7 +398,7 @@ namespace Market.NPC
 
         private void ValidateReferences()
         {
-            if (targetStall == null) Debug.LogError("[NPCVisitor] targetStall not assigned", this);
+            if (!_isPasserby && targetStall == null) Debug.LogError("[NPCVisitor] targetStall not assigned", this);
             if (exitPoint   == null) Debug.LogError("[NPCVisitor] exitPoint not assigned",   this);
             if (playerMoney == null) Debug.LogError("[NPCVisitor] playerMoney not assigned", this);
         }

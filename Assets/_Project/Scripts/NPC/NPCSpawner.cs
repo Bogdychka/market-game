@@ -49,10 +49,11 @@ namespace Market.NPC
         [SerializeField] private Transform   exitPoint;
         [SerializeField] private MoneySystem playerMoney;
 
-        private TimeSystem _timeSystem;
-        private int        _activeCount;
-        private float      _spawnTimer;
-        private bool       _restoredFromSave;
+        private TimeSystem       _timeSystem;
+        private MarketOpenSystem _marketOpenSystem;
+        private int              _activeCount;
+        private float            _spawnTimer;
+        private bool             _restoredFromSave;
         private readonly List<NPCVisitor> _spawnedVisitors = new();
 
         /// <summary>Number of NPCs currently alive in the scene through this spawner.</summary>
@@ -69,6 +70,13 @@ namespace Market.NPC
 
             if (!ServiceLocator.TryGet<TimeSystem>(out _timeSystem))
                 Debug.LogWarning("[NPCSpawner] TimeSystem not found — density will be constant.", this);
+
+            ResolveMarketOpenSystem();
+        }
+
+        private void OnEnable()
+        {
+            WireMarketOpenEvents();
         }
 
         private void Start()
@@ -138,6 +146,9 @@ namespace Market.NPC
             _restoredFromSave = true;
             _spawnTimer = ComputeInterval(GetCurrentDensity());
 
+            if (_marketOpenSystem != null && !_marketOpenSystem.IsOpen)
+                return;
+
             if (visitors == null || visitors.Count == 0) return;
 
             foreach (NPCVisitorData visitorData in visitors)
@@ -151,9 +162,16 @@ namespace Market.NPC
         {
             if (npcTypes == null    || npcTypes.Length == 0)    return false;
             if (spawnPoints == null || spawnPoints.Length == 0) return false;
-            if (!HasAvailableStall() || exitPoint == null || playerMoney == null)
+            if (exitPoint == null || playerMoney == null)
             {
-                Debug.LogError("[NPCSpawner] stallRegistry/exitPoint/playerMoney not assigned - NPC not created.", this);
+                Debug.LogError("[NPCSpawner] exitPoint/playerMoney not assigned - NPC not created.", this);
+                return false;
+            }
+
+            bool marketOpen = _marketOpenSystem == null || _marketOpenSystem.IsOpen;
+            if (marketOpen && !HasAvailableStall())
+            {
+                Debug.LogError("[NPCSpawner] stallRegistry not assigned or empty - shopper NPC not created.", this);
                 return false;
             }
 
@@ -188,10 +206,15 @@ namespace Market.NPC
                 return false;
             }
 
-            visitor.Initialize(type, stallRegistry, exitPoint, playerMoney);
+            if (marketOpen)
+                visitor.Initialize(type, stallRegistry, exitPoint, playerMoney);
+            else
+                visitor.InitializePasserby(type, exitPoint, playerMoney);
+
             RegisterVisitor(visitor);
 
-            Debug.Log($"[NPCSpawner] Spawned {type.TypeName} (density={GetCurrentDensity():F2}). " +
+            string role = marketOpen ? "shopper" : "passerby";
+            Debug.Log($"[NPCSpawner] Spawned {role} {type.TypeName} (density={GetCurrentDensity():F2}). " +
                       $"Active: {_activeCount}/{EffectiveMaxNPCs(GetCurrentDensity())}");
             return true;
         }
@@ -283,6 +306,7 @@ namespace Market.NPC
 
         private void OnDisable()
         {
+            UnwireMarketOpenEvents();
             UnsubscribeSpawnedVisitors();
         }
 
@@ -357,6 +381,42 @@ namespace Market.NPC
         {
             if (stallRegistry != null) return;
             ServiceLocator.TryGet<MarketStallRegistry>(out stallRegistry);
+        }
+
+        private void ResolveMarketOpenSystem()
+        {
+            ServiceLocator.TryGet<MarketOpenSystem>(out _marketOpenSystem);
+        }
+
+        private void WireMarketOpenEvents()
+        {
+            ResolveMarketOpenSystem();
+            if (_marketOpenSystem != null)
+                _marketOpenSystem.OnOpenChanged += HandleMarketOpenChanged;
+        }
+
+        private void UnwireMarketOpenEvents()
+        {
+            if (_marketOpenSystem != null)
+                _marketOpenSystem.OnOpenChanged -= HandleMarketOpenChanged;
+        }
+
+        private void HandleMarketOpenChanged(bool isOpen)
+        {
+            if (isOpen)
+                return;
+
+            for (int i = _spawnedVisitors.Count - 1; i >= 0; i--)
+            {
+                NPCVisitor visitor = _spawnedVisitors[i];
+                if (visitor == null) continue;
+
+                if (visitor.CurrentState == NPCVisitor.State.WalkToStall ||
+                    visitor.CurrentState == NPCVisitor.State.Browsing)
+                {
+                    visitor.LeaveMarket();
+                }
+            }
         }
 
         private void ValidateReferences()

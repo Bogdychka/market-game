@@ -1,3 +1,4 @@
+using Market.Core;
 using Market.Economy;
 using Market.World;
 
@@ -31,5 +32,17 @@ namespace Market.Core.Events
     {
         public readonly Season NewSeason;
         public SeasonChangedEvent(Season season) { NewSeason = season; }
+    }
+
+    public readonly struct DayPhaseChangedEvent : IGameEvent
+    {
+        public readonly DayPhase NewPhase;
+        public DayPhaseChangedEvent(DayPhase phase) { NewPhase = phase; }
+    }
+
+    public readonly struct MarketOpenChangedEvent : IGameEvent
+    {
+        public readonly bool IsOpen;
+        public MarketOpenChangedEvent(bool isOpen) { IsOpen = isOpen; }
     }
 }

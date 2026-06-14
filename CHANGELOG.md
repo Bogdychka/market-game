@@ -15,6 +15,13 @@ reviews it, verifies via Unity MCP, bumps the version, tags it, and pushes. See 
 ## [Unreleased]
 
 ### Added
+- D2/D5 day controls: added `MarketOpenSystem`, root-level debug cubes for Open/Close Market and
+  Sleep Until Morning, and tests for explicit market state plus sleep-gated day advancement. NPCs
+  now spawn as shoppers only while the market is open; when closed, traffic still appears as
+  passersby that walk out without browsing or buying. (Codex)
+- D1 `DayPhaseSystem`: game time now maps to Morning Prep, Market Open, Evening Summary, and
+  Night / Next Day phases; the service publishes phase changes, direct Market scene startup gets a
+  local fallback, and the HUD shows the current phase next to day/time/season. (Codex)
 - D0 `MarketStallRegistry`: Market scene now owns two registered stalls through a registry
   coordinator; NPC spawning, stall UI wiring, and save/load no longer depend on a single stall
   reference. (Codex)
@@ -28,6 +35,8 @@ reviews it, verifies via Unity MCP, bumps the version, tags it, and pushes. See 
   needed). Visual mesh/outfit variety is deferred until more humanoid assets exist. (Codex)
 
 ### Changed
+- Time now stops at 00:00 and waits for the player to sleep before advancing to the next day, so
+  day/season rollover is player-driven instead of automatic. (Codex)
 - Save data is now version 4 and records `stallId` for stall slots, while old saves without
   `stallId` restore to the first registered stall for compatibility. (Codex)
 - `UIModeService` reapplies cursor lock/visibility when the app regains focus or resumes, reducing

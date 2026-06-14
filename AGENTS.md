@@ -35,6 +35,10 @@ C#/Unity work. Don't duplicate the other contracts here:
   test-name list costs ~3k extra tokens per call (set `true` only to actually discover a specific test);
   `get_console_logs` with `includeStackTrace: false` + small `limit` (10–20); `run_tests` with
   `returnOnlyFailures: true`, `returnWithLogs: false`.
+- **Scene edits must be deliberate and cheap.** Before any Unity scene edit, call `get_scene_info`
+  and load the intended scene if needed. Prefer one small Editor builder or one precise MCP batch over
+  interactive object fiddling. After editing, verify narrowly (`get_gameobject` or targeted `rg`) and
+  avoid large scene diffs/dumps. Debug props stay minimal — no polish/material churn unless it matters.
 - No progress essays in chat. Results are recorded once, in `CHANGELOG.md [Unreleased]`.
 
 ---
@@ -243,6 +247,9 @@ WS fallback if MCP transport is closed (from project root; same pattern for any 
    (`TimeSystem.SkipHours`) — "time isn't moving under MCP" is not a gameplay bug.
 5. Prefer MCP `update_component` over hand-writing scene YAML; manual YAML only for object-reference
    wiring or inactive scenes, and run `git diff --check` *before* committing scene edits.
+   Before creating/moving objects, confirm the active scene with `get_scene_info`; if the scene is
+   wrong, `load_scene` first. For new debug/scene props, prefer a tiny Editor builder that creates the
+   exact root objects once, then inspect those objects directly instead of poking around repeatedly.
 6. A new `[SerializeField]` field does NOT backfill into already-serialized scenes — set it
    explicitly (`update_component` / `save_scene`) or it silently stays `null`/`false`.
 7. A new `.cs` under `Packages/…` needs its `.meta` + `AssetDatabase.Refresh` before the class exists.
