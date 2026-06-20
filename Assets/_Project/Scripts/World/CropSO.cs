@@ -33,6 +33,7 @@ namespace Market.World
         public int YieldAmount => Mathf.Max(1, yieldAmount);
         public Season[] PlantSeasons => plantSeasons;
 
+        /// <summary>True if this crop may be planted in the given season (empty list = year-round).</summary>
         public bool CanPlantIn(Season season)
         {
             if (plantSeasons == null || plantSeasons.Length == 0)

@@ -55,6 +55,8 @@ namespace Market.NPC
         private float            _spawnTimer;
         private bool             _restoredFromSave;
         private readonly List<NPCVisitor> _spawnedVisitors = new();
+        // Inactive visitors kept for reuse, bucketed by type (each type has its own prefab).
+        private readonly Dictionary<NPCTypeSO, Stack<NPCVisitor>> _pool = new();
 
         /// <summary>Number of NPCs currently alive in the scene through this spawner.</summary>
         public int ActiveCount => _activeCount;
@@ -196,15 +198,8 @@ namespace Market.NPC
                 return false;
             }
 
-            var go      = Instantiate(type.NpcPrefab, point.position, point.rotation);
-            var visitor = go.GetComponent<NPCVisitor>();
-
-            if (visitor == null)
-            {
-                Debug.LogError("[NPCSpawner] Prefab does not contain NPCVisitor!", go);
-                Destroy(go);
-                return false;
-            }
+            NPCVisitor visitor = AcquireVisitor(type, point, out bool reused);
+            if (visitor == null) return false;
 
             if (marketOpen)
                 visitor.Initialize(type, stallRegistry, exitPoint, playerMoney);
@@ -212,6 +207,7 @@ namespace Market.NPC
                 visitor.InitializePasserby(type, exitPoint, playerMoney);
 
             RegisterVisitor(visitor);
+            if (reused) visitor.Begin();
 
             string role = marketOpen ? "shopper" : "passerby";
             Debug.Log($"[NPCSpawner] Spawned {role} {type.TypeName} (density={GetCurrentDensity():F2}). " +
@@ -251,25 +247,83 @@ namespace Market.NPC
                 return;
             }
 
-            GameObject go = Instantiate(type.NpcPrefab, point.position, point.rotation);
-            NPCVisitor visitor = go.GetComponent<NPCVisitor>();
-
-            if (visitor == null)
-            {
-                Debug.LogError("[NPCSpawner] Prefab from save does not contain NPCVisitor!", go);
-                Destroy(go);
-                return;
-            }
+            NPCVisitor visitor = AcquireVisitor(type, point, out bool reused);
+            if (visitor == null) return;
 
             visitor.Initialize(type, stallRegistry, exitPoint, playerMoney);
             visitor.RestoreStalls(visitorData.targetStallId, visitorData.visitedStallIds);
             RegisterVisitor(visitor);
+            if (reused) visitor.Begin();
         }
 
         private Transform PickSpawnPoint()
         {
             if (spawnPoints == null || spawnPoints.Length == 0) return null;
             return spawnPoints[Random.Range(0, spawnPoints.Length)];
+        }
+
+        /// <summary>
+        /// Returns a visitor for the type: reuses a pooled (inactive) one if available, otherwise
+        /// instantiates a fresh prefab. Pooling avoids per-spawn Instantiate hitches and the GC churn
+        /// of destroying NPCs every time they leave.
+        /// </summary>
+        private NPCVisitor AcquireVisitor(NPCTypeSO type, Transform point, out bool reused)
+        {
+            if (_pool.TryGetValue(type, out Stack<NPCVisitor> pooled))
+            {
+                while (pooled.Count > 0)
+                {
+                    NPCVisitor candidate = pooled.Pop();
+                    if (candidate == null) continue; // destroyed by a scene change — skip it
+
+                    candidate.gameObject.SetActive(true);
+                    candidate.PlaceAt(point.position, point.rotation);
+                    reused = true;
+                    return candidate;
+                }
+            }
+
+            reused = false;
+            return InstantiateVisitor(type, point);
+        }
+
+        /// <summary>Deactivates a finished visitor and returns it to its type pool for reuse.</summary>
+        private void ReleaseVisitor(NPCVisitor visitor)
+        {
+            NPCTypeSO type = visitor.Type;
+            if (type == null)
+            {
+                Destroy(visitor.gameObject);
+                return;
+            }
+
+            visitor.gameObject.SetActive(false);
+
+            if (!_pool.TryGetValue(type, out Stack<NPCVisitor> pooled))
+            {
+                pooled = new Stack<NPCVisitor>();
+                _pool[type] = pooled;
+            }
+
+            pooled.Push(visitor);
+        }
+
+        /// <summary>
+        /// Instantiates the type's prefab at the point and returns its NPCVisitor.
+        /// Returns null (and destroys the GameObject) if the prefab lacks the component.
+        /// </summary>
+        private NPCVisitor InstantiateVisitor(NPCTypeSO type, Transform point)
+        {
+            GameObject go = Instantiate(type.NpcPrefab, point.position, point.rotation);
+            NPCVisitor visitor = go.GetComponent<NPCVisitor>();
+            if (visitor == null)
+            {
+                Debug.LogError("[NPCSpawner] Prefab does not contain NPCVisitor!", go);
+                Destroy(go);
+                return null;
+            }
+
+            return visitor;
         }
 
         private void RegisterVisitor(NPCVisitor visitor)
@@ -285,6 +339,7 @@ namespace Market.NPC
             {
                 visitor.OnDespawned -= OnVisitorDespawned;
                 _spawnedVisitors.Remove(visitor);
+                ReleaseVisitor(visitor);
             }
             _activeCount = Mathf.Max(0, _activeCount - 1);
         }
@@ -297,7 +352,7 @@ namespace Market.NPC
                 if (visitor == null) continue;
 
                 visitor.OnDespawned -= OnVisitorDespawned;
-                Destroy(visitor.gameObject);
+                ReleaseVisitor(visitor);
             }
 
             _spawnedVisitors.Clear();

@@ -99,8 +99,32 @@ namespace Market.NPC
 
         private void Start()
         {
+            // Fresh spawns begin here (proven first-frame agent timing).
+            // Pooled reuse calls Begin() directly, since Unity's Start runs only once per object.
+            Begin();
+        }
+
+        /// <summary>
+        /// Begins the visitor's behaviour. Call after Initialize/RestoreStalls on pool reuse, where
+        /// Unity's Start does not run again. Fresh spawns reach this through Start.
+        /// </summary>
+        public void Begin()
+        {
             ValidateReferences();
             EnterState(_isPasserby ? State.WalkToExit : State.WalkToStall);
+        }
+
+        /// <summary>
+        /// Repositions a (possibly pooled) visitor and snaps its NavMeshAgent to the spawn point,
+        /// clearing any path left over from a previous life.
+        /// </summary>
+        public void PlaceAt(Vector3 position, Quaternion rotation)
+        {
+            transform.SetPositionAndRotation(position, rotation);
+            if (_agent == null) return;
+
+            _agent.Warp(position);
+            if (_agent.isOnNavMesh) _agent.ResetPath();
         }
 
         /// <summary>Redirect this visitor away from stalls, usually because the market was closed.</summary>
@@ -360,8 +384,13 @@ namespace Market.NPC
         private void EnterDone()
         {
             Debug.Log("[NPC] Left the market.");
-            OnDespawned?.Invoke(this);
-            Destroy(gameObject);
+
+            // The owner (NPCSpawner) decides the fate — return to pool or destroy.
+            // With no owner (e.g. spawner disabled), self-destruct as before so we never leak.
+            if (OnDespawned != null)
+                OnDespawned.Invoke(this);
+            else
+                Destroy(gameObject);
         }
 
         // ── Helpers ────────────────────────────────────────────────────

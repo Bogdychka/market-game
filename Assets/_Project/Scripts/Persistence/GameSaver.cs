@@ -413,19 +413,18 @@ namespace Market.Persistence
             if (npcSpawner      == null) Debug.LogError("[GameSaver] npcSpawner not assigned",      this);
         }
 
-        private static string LoadSummary(SaveData data)
-        {
-            int inventoryCount = data.inventory?.Count ?? 0;
-            int stallCount = data.stallSlots?.Count ?? 0;
-            return $"[GameSaver] Game loaded: v{data.version}, money={data.money:0.##}, " +
-                   $"inventory={inventoryCount}, stall={stallCount}, time=Day {data.day} {data.hour:00}:{data.minute:00}";
-        }
+        private static string LoadSummary(SaveData data) =>
+            $"[GameSaver] Game loaded: {FormatState(data)}";
 
-        private static string SaveSummary(SaveData data, string reason)
+        private static string SaveSummary(SaveData data, string reason) =>
+            $"[GameSaver] Game saved ({reason}): {FormatState(data)}";
+
+        /// <summary>Compact one-line snapshot of save contents shared by the load/save log lines.</summary>
+        private static string FormatState(SaveData data)
         {
             int inventoryCount = data.inventory?.Count ?? 0;
             int stallCount = data.stallSlots?.Count ?? 0;
-            return $"[GameSaver] Game saved ({reason}): v{data.version}, money={data.money:0.##}, " +
+            return $"v{data.version}, money={data.money:0.##}, " +
                    $"inventory={inventoryCount}, stall={stallCount}, time=Day {data.day} {data.hour:00}:{data.minute:00}";
         }
     }

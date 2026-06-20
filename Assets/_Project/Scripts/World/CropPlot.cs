@@ -26,7 +26,10 @@ namespace Market.World
 
         private TimeSystem _timeSystem;
         private SeasonManager _seasonManager;
-        private CropState _state = CropState.Empty;
+        // True while a crop occupies the plot. The fine-grained phase
+        // (Planted/Growing/Ready) is always derived from elapsed game time
+        // in CurrentState(), never stored, so it can never go stale.
+        private bool _planted;
         private float _plantedAtMinutes;
 
         public string PromptText => BuildPromptText();
@@ -43,7 +46,8 @@ namespace Market.World
 
         private void Update()
         {
-            if (growthVisual != null && _state != CropState.Empty)
+            // Drive the stub growth visual smoothly while a crop is in the ground.
+            if (growthVisual != null && _planted)
                 RefreshVisual();
         }
 
@@ -77,7 +81,7 @@ namespace Market.World
             }
 
             _plantedAtMinutes = CurrentGameMinutes();
-            _state = CropState.Planted;
+            _planted = true;
             RefreshVisual();
             Debug.Log($"[CropPlot] Planted: {crop.DisplayName}.", this);
             return true;
@@ -90,7 +94,7 @@ namespace Market.World
                 return false;
 
             inventory.Add(crop.HarvestItem, crop.YieldAmount);
-            _state = CropState.Empty;
+            _planted = false;
             RefreshVisual();
             Debug.Log($"[CropPlot] Harvested: {crop.DisplayName} x{crop.YieldAmount}.", this);
             return true;
@@ -99,13 +103,11 @@ namespace Market.World
         /// <summary>Debug helper for E1: instantly completes the active crop.</summary>
         public bool DebugGrowNow()
         {
-            if (_state == CropState.Empty)
-                return false;
-            if (crop == null)
+            if (!_planted || crop == null)
                 return false;
 
+            // Backdate planting so the time-derived progress reads as complete.
             _plantedAtMinutes = CurrentGameMinutes() - crop.GrowthHours * MinutesPerHour;
-            _state = CropState.Ready;
             RefreshVisual();
             Debug.Log($"[CropPlot] Debug grow complete: {crop.DisplayName}.", this);
             return true;
@@ -113,7 +115,7 @@ namespace Market.World
 
         private CropState CurrentState()
         {
-            if (_state == CropState.Empty)
+            if (!_planted)
                 return CropState.Empty;
 
             float progress = CalculateGrowthProgress();
@@ -125,7 +127,7 @@ namespace Market.World
 
         private float CalculateGrowthProgress()
         {
-            if (_state == CropState.Empty || crop == null)
+            if (!_planted || crop == null)
                 return 0f;
 
             float elapsed = Mathf.Max(0f, CurrentGameMinutes() - _plantedAtMinutes);
@@ -188,13 +190,17 @@ namespace Market.World
             if (growthVisual == null)
                 return;
 
-            CropState current = CurrentState();
-            bool visible = current != CropState.Empty;
-            growthVisual.gameObject.SetActive(visible);
-            if (!visible)
+            if (!_planted)
+            {
+                if (growthVisual.gameObject.activeSelf)
+                    growthVisual.gameObject.SetActive(false);
                 return;
+            }
 
-            float height = Mathf.Lerp(0.18f, 1f, GrowthProgress);
+            if (!growthVisual.gameObject.activeSelf)
+                growthVisual.gameObject.SetActive(true);
+
+            float height = Mathf.Lerp(0.18f, 1f, CalculateGrowthProgress());
             growthVisual.localScale = new Vector3(1f, height, 1f);
         }
 
