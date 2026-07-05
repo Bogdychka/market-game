@@ -40,6 +40,10 @@ their historical agent attributions (Claude / Codex / user); new entries don't n
   needed). Visual mesh/outfit variety is deferred until more humanoid assets exist. (Codex)
 
 ### Changed
+- Save data is now version 5 and persists crop plots (audit C2): each `CropPlot` has a stable
+  `plotId` and its planted flag + plant timestamp are collected/applied by `GameSaver`. Pre-v5 saves
+  (no `cropPlots` list) load unaffected — every plot restores to empty, matching prior behavior.
+  `CropE1SceneBuilder` now registers the debug plot into `GameSaver.cropPlots`. (Claude)
 - Game UI language switched from Russian to English: all player-visible strings in scripts
   (panels, buttons, HUD, settings, seasons, prompts) and serialized assets (`ItemSO.displayName`,
   `NPCTypeSO.typeName`, `CropSO`, Market scene prompts) are now ASCII English. Typographic
@@ -62,6 +66,8 @@ their historical agent attributions (Claude / Codex / user); new entries don't n
   a neutral URP/Lit material to avoid the pink built-in-shader fallback. (Codex)
 
 ### Fixed
+- Planted crops now survive save/load (audit C2): previously planting a seed then saving lost both
+  the crop and the seed because `CropPlot` state was runtime-only and never written to `SaveData`.
 - Save writes are now atomic (audit H1): `SaveSystem` serializes to `save.json.tmp` then swaps it
   into place with `File.Replace`, keeping the previous save as `save.json.bak`. `Load` falls back to
   the backup if the primary file is missing or unreadable, so a crash mid-write can no longer destroy

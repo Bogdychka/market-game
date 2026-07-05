@@ -28,6 +28,8 @@ namespace Market.Persistence
         [SerializeField] private Transform    playerTransform;
         [SerializeField] private ItemDatabase itemDatabase;
         [SerializeField] private NPCSpawner   npcSpawner;
+        [Tooltip("Optional. Crop plots in the scene whose planted state is persisted (audit C2).")]
+        [SerializeField] private CropPlot[]   cropPlots;
 
         [Header("Input")]
         [SerializeField] private Key saveKey = Key.F5;
@@ -181,6 +183,7 @@ namespace Market.Persistence
             CollectInventory(data);
             CollectStallSlots(data);
             CollectNpcVisitors(data);
+            CollectCropPlots(data);
             CollectPlayerTransform(data);
             CollectTime(data);
 
@@ -227,6 +230,23 @@ namespace Market.Persistence
             npcSpawner?.CollectActiveVisitors(data.npcVisitors);
         }
 
+        private void CollectCropPlots(SaveData data)
+        {
+            if (cropPlots == null) return;
+
+            foreach (CropPlot plot in cropPlots)
+            {
+                if (plot == null || string.IsNullOrWhiteSpace(plot.PlotId)) continue;
+
+                data.cropPlots.Add(new CropPlotData
+                {
+                    plotId           = plot.PlotId,
+                    planted          = plot.IsPlanted,
+                    plantedAtMinutes = plot.PlantedAtMinutes
+                });
+            }
+        }
+
         private void CollectTime(SaveData data)
         {
             if (_timeSystem == null) return;
@@ -252,6 +272,7 @@ namespace Market.Persistence
             ApplyStallSlots(data);
             ApplyPlayerTransform(data);
             ApplyTime(data);
+            ApplyCropPlots(data);
             ApplyNpcVisitors(data);
         }
 
@@ -313,6 +334,35 @@ namespace Market.Persistence
             playerTransform.eulerAngles = new Vector3(0f, data.playerRotationY, 0f);
 
             if (cc != null) cc.enabled = true;
+        }
+
+        private void ApplyCropPlots(SaveData data)
+        {
+            if (cropPlots == null) return;
+
+            // Empty crop state is the correct restore for pre-v5 saves (no cropPlots list):
+            // every plot resets to empty, matching the old no-persistence behavior.
+            foreach (CropPlot plot in cropPlots)
+            {
+                if (plot == null) continue;
+
+                CropPlotData saved = FindCropData(data.cropPlots, plot.PlotId);
+                if (saved != null)
+                    plot.RestoreState(saved.planted, saved.plantedAtMinutes);
+                else
+                    plot.RestoreState(false, 0f);
+            }
+        }
+
+        private static CropPlotData FindCropData(System.Collections.Generic.List<CropPlotData> saved, string plotId)
+        {
+            if (saved == null || string.IsNullOrWhiteSpace(plotId)) return null;
+
+            foreach (CropPlotData data in saved)
+                if (data != null && data.plotId == plotId)
+                    return data;
+
+            return null;
         }
 
         private void ApplyNpcVisitors(SaveData data)

@@ -1,4 +1,5 @@
 using Market.Economy;
+using Market.Persistence;
 using Market.World;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -40,7 +41,8 @@ namespace Market.DebugTools.Editor
             CropSO crop = EnsureCrop(seed, harvest);
             AddItemToDatabase(seed);
             AddSeedToSupplier(seed);
-            CreatePlot(crop);
+            CropPlot plot = CreatePlot(crop);
+            RegisterPlotInSaver(plot);
 
             AssetDatabase.SaveAssets();
             EditorSceneManager.MarkSceneDirty(scene);
@@ -133,7 +135,7 @@ namespace Market.DebugTools.Editor
             EditorUtility.SetDirty(supplier);
         }
 
-        private static void CreatePlot(CropSO crop)
+        private static CropPlot CreatePlot(CropSO crop)
         {
             GameObject existing = FindRootObject(PlotName);
             if (existing != null)
@@ -156,6 +158,7 @@ namespace Market.DebugTools.Editor
             Inventory inventory = Object.FindFirstObjectByType<Inventory>();
 
             var serialized = new SerializedObject(cropPlot);
+            serialized.FindProperty("plotId").stringValue = "CropPlot_0";
             serialized.FindProperty("crop").objectReferenceValue = crop;
             serialized.FindProperty("inventory").objectReferenceValue = inventory;
             serialized.FindProperty("growthVisual").objectReferenceValue = growth.transform;
@@ -163,6 +166,32 @@ namespace Market.DebugTools.Editor
             serialized.ApplyModifiedPropertiesWithoutUndo();
 
             Undo.RegisterCreatedObjectUndo(plot, "Create E1 crop plot");
+            return cropPlot;
+        }
+
+        /// <summary>
+        /// Registers the debug plot into GameSaver.cropPlots so its planted state persists (audit C2).
+        /// </summary>
+        private static void RegisterPlotInSaver(CropPlot plot)
+        {
+            if (plot == null)
+                return;
+
+            GameSaver saver = Object.FindFirstObjectByType<GameSaver>();
+            if (saver == null)
+            {
+                Debug.LogWarning("[CropE1SceneBuilder] No GameSaver in scene; crop plot will not be saved.");
+                return;
+            }
+
+            // This builder owns the single debug plot, and re-running it replaces the plot
+            // GameObject, so reset the list to exactly this plot rather than appending a stale ref.
+            var serialized = new SerializedObject(saver);
+            SerializedProperty plots = serialized.FindProperty("cropPlots");
+            plots.arraySize = 1;
+            plots.GetArrayElementAtIndex(0).objectReferenceValue = plot;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(saver);
         }
 
         private static bool Contains(SerializedProperty array, Object value)

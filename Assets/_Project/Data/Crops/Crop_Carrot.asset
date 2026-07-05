@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ddeddb264f1e22b48b51d255c98cec4c, type: 3}
   m_Name: Crop_Carrot
   m_EditorClassIdentifier: Market.Runtime::Market.World.CropSO
-  displayName: "Carrot"
+  displayName: Carrot
   seedItem: {fileID: 11400000, guid: 3a8f475fdb29ecf41abc6278c3fe2c97, type: 2}
   harvestItem: {fileID: 11400000, guid: 0f04c8d0e0fb44f68f5d3fc2bb629d23, type: 2}
   growthHours: 6

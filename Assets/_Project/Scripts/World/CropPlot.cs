@@ -12,6 +12,10 @@ namespace Market.World
         private const float MinutesPerHour = 60f;
         private const float MinutesPerDay = 24f * MinutesPerHour;
 
+        [Header("Identity")]
+        [Tooltip("Stable id used as the save key for this plot. Must be unique per plot in a scene.")]
+        [SerializeField] private string plotId = "CropPlot_0";
+
         [Header("Crop")]
         [SerializeField] private CropSO crop;
 
@@ -36,6 +40,13 @@ namespace Market.World
         public bool CanInteract => crop != null && inventory != null;
         public CropState State => CurrentState();
         public float GrowthProgress => CalculateGrowthProgress();
+
+        /// <summary>Stable save key for this plot.</summary>
+        public string PlotId => plotId;
+        /// <summary>True while a crop occupies the plot.</summary>
+        public bool IsPlanted => _planted;
+        /// <summary>Absolute game-minute timestamp the current crop was planted at.</summary>
+        public float PlantedAtMinutes => _plantedAtMinutes;
 
         private void Awake()
         {
@@ -98,6 +109,17 @@ namespace Market.World
             RefreshVisual();
             Debug.Log($"[CropPlot] Harvested: {crop.DisplayName} x{crop.YieldAmount}.", this);
             return true;
+        }
+
+        /// <summary>
+        /// Restores saved plant state (from SaveData). The crop type is the plot's serialized
+        /// CropSO; only the planted flag and absolute plant timestamp are restored.
+        /// </summary>
+        public void RestoreState(bool planted, float plantedAtMinutes)
+        {
+            _planted = planted && crop != null;
+            _plantedAtMinutes = plantedAtMinutes;
+            RefreshVisual();
         }
 
         /// <summary>Debug helper for E1: instantly completes the active crop.</summary>

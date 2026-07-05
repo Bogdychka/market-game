@@ -125,5 +125,39 @@ namespace Market.Tests
             Assert.AreEqual(2, data.stallSlots[0].slotIndex);
             Assert.AreEqual(18.5f, data.stallSlots[0].sellPrice);
         }
+
+        [Test]
+        public void SaveData_V4Json_HasEmptyCropPlots()
+        {
+            // Crop plots arrived in version 5: a v4 save has no cropPlots field, so the list
+            // initializer must survive (empty, not null) and every plot restores to empty.
+            const string v4Json = "{\"version\":4,\"money\":80,\"npcVisitors\":[]}";
+
+            SaveData data = JsonUtility.FromJson<SaveData>(v4Json);
+
+            Assert.AreEqual(4, data.version);
+            Assert.IsNotNull(data.cropPlots);
+            Assert.AreEqual(0, data.cropPlots.Count);
+        }
+
+        [Test]
+        public void SaveData_V5CropPlots_RoundTrip()
+        {
+            var original = new SaveData();
+            original.cropPlots.Add(new CropPlotData
+            {
+                plotId = "CropPlot_0",
+                planted = true,
+                plantedAtMinutes = 1234.5f
+            });
+
+            SaveData restored = JsonUtility.FromJson<SaveData>(JsonUtility.ToJson(original));
+
+            Assert.AreEqual(5, restored.version);
+            Assert.AreEqual(1, restored.cropPlots.Count);
+            Assert.AreEqual("CropPlot_0", restored.cropPlots[0].plotId);
+            Assert.IsTrue(restored.cropPlots[0].planted);
+            Assert.AreEqual(1234.5f, restored.cropPlots[0].plantedAtMinutes);
+        }
     }
 }
