@@ -362,19 +362,11 @@ namespace Market.NPC
         private void OnDisable()
         {
             UnwireMarketOpenEvents();
-            UnsubscribeSpawnedVisitors();
-        }
-
-        private void UnsubscribeSpawnedVisitors()
-        {
-            for (int i = _spawnedVisitors.Count - 1; i >= 0; i--)
-            {
-                var visitor = _spawnedVisitors[i];
-                if (visitor != null)
-                    visitor.OnDespawned -= OnVisitorDespawned;
-            }
-
-            _spawnedVisitors.Clear();
+            // Release tracked visitors back to the pool and reset the counter. Just clearing the
+            // list (the old behavior) left _activeCount inflated across a disable/enable cycle, so
+            // the spawner permanently under-spawned, and untracked visitors self-destroyed on Done
+            // instead of returning to the pool (audit M3).
+            ClearActiveVisitors();
         }
 
         private void RemoveMissingVisitors()

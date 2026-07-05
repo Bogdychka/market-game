@@ -66,6 +66,9 @@ their historical agent attributions (Claude / Codex / user); new entries don't n
   a neutral URP/Lit material to avoid the pink built-in-shader fallback. (Codex)
 
 ### Fixed
+- `NPCSpawner` now releases tracked visitors to the pool and resets its active counter when disabled
+  (audit M3). Previously a disable/enable cycle left `_activeCount` inflated (permanent under-spawn)
+  and stranded visitors self-destroyed instead of pooling. (Claude)
 - `EventBus.Publish` now invokes each subscriber in isolation (audit M2): a single throwing handler
   is logged but no longer prevents the remaining subscribers from receiving the event. Added
   `EventBusTests` covering delivery, isolation, and unsubscribe. (Claude)
