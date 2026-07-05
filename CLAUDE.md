@@ -6,7 +6,8 @@ Claude is the only agent on this project: it implements, verifies, and records.
 ## Sources of truth (read these, don't duplicate them)
 - **`AGENTS.md`** — coding/architecture/Unity-6/performance rules, MCP gotchas, token discipline,
   available assets. Applies to ALL C# work.
-- **`dev_plan_3.md`** — the plan and the live progress checkboxes (the only place progress lives).
+- **`dev_plan_4_1.md`** — the plan and the live progress checkboxes (the only place progress lives).
+  (The older `dev_plan_3.md` is superseded and archived under `_ArchiveAssets/docs/`.)
 - Live state: Unity Editor via MCP (port 8090), `game.log`, serialized `.unity`/`.prefab`/`.asset`
   files — the truth about Inspector wiring.
 
@@ -38,7 +39,7 @@ push** — wait for explicit instruction. If MCP can't run, state exactly what w
    everywhere (code text AND player-visible UI strings — the game UI is English), sensible code
    defaults instead of "set 5 fields in the Inspector". Include Editor setup steps — there is no
    direct Editor access, only MCP.
-3. **One plan step per request.** Don't skip ahead; tick `dev_plan_3.md` after completing a step.
+3. **One plan step per request.** Don't skip ahead; tick `dev_plan_4_1.md` after completing a step.
 4. **Diagnose from project files first**: serialized `.unity`/`.prefab`/`.asset` values and
    `game.log` (Play Mode issues; mouse is locked in the FPS controller) before guessing from C#.
 5. **Refactor as you go** to `AGENTS.md` patterns; new UI reuses `UiFactory`/`MarketPanelView`
@@ -53,5 +54,5 @@ push** — wait for explicit instruction. If MCP can't run, state exactly what w
    option for this game — don't wait to be asked. Keep it a short recommendation, not a survey.
 
 ## Current state
-See `dev_plan_3.md` for what's done and what's next. Don't track progress here.
+See `dev_plan_4_1.md` for what's done and what's next. Don't track progress here.
 Debug tooling and keybinds: `AGENTS.md` → "Debug tooling".

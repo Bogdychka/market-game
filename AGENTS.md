@@ -3,7 +3,8 @@
 Coding/architecture rules for `C:\Users\bogre\My project`. All C#/Unity work follows this file.
 Don't duplicate the other contracts here:
 - **Role, git process, versioning, response rules**: `CLAUDE.md`.
-- **Plan + live progress checkboxes**: `dev_plan_3.md` (the ONLY progress log).
+- **Plan + live progress checkboxes**: `dev_plan_4_1.md` (the ONLY progress log; the older
+  `dev_plan_3.md` is superseded and archived under `_ArchiveAssets/docs/`).
 - **Live state truth**: the open Unity Editor (MCP, port 8090), `game.log`, and serialized
   `.unity`/`.prefab`/`.asset` files.
 
@@ -16,7 +17,7 @@ Don't duplicate the other contracts here:
 
 - Read only what you will edit or must verify. Don't re-read whole files or contracts "to be sure".
   **Never re-read a file you just edited** — `Edit`/`Write` already confirm the change succeeded.
-- **`dev_plan_3.md` (36 KB): never read it whole.** Progress truth = the `## Progress` section at
+- **`dev_plan_4_1.md` (~61 KB, ~15k tokens): never read it whole.** Progress truth = the `## Progress` section at
   the bottom; task details = the section of YOUR block only. Grep by step id (`C6`, `D8`…).
 - **`CHANGELOG.md`: handoffs need only the head** — `[Unreleased]` + the latest release (first
   ~40 lines). Never read the version history. When the file exceeds ~30 KB, move entries older than
@@ -52,7 +53,7 @@ Don't duplicate the other contracts here:
 | NavMesh | AI Navigation 2.0.12 — `NavMeshSurface`; never the old Navigation-Static workflow |
 | Runtime UI | uGUI + TextMeshPro (UI Toolkit = editor tools only) |
 | Persistence | JSON in `Application.persistentDataPath` |
-| Networking | Netcode for GameObjects — Block J only |
+| Networking | Netcode for GameObjects — Block N (before specializations E-I); see `dev_plan_4_1.md` |
 
 Modern C# only where Unity's C# 9 compiles and behaves: no `record` for serialized data, no `init`
 setters in gameplay data, `var` / target-typed `new()` only when the type stays obvious. Catch
@@ -66,11 +67,12 @@ All game code/content under `Assets/_Project`; third-party packs stay where they
 restructure); archived packs live in `_ArchiveAssets/` outside `Assets`.
 
 `Scripts/<Subsystem>/` → `namespace Market.<Subsystem>`:
-**Core** (ServiceLocator, EventBus, SceneLoader, SceneNames, TimeSystem, GameBootstrap) · **Player** ·
-**Interaction** · **Economy** (MoneySystem, Inventory, ItemSO, ItemCategory, ItemDatabase,
-PriceCalculator, SupplierShop) · **Market** (MarketStall, StallSlot) · **NPC** (NPCVisitor,
-NPCSpawner, NPCTypeSO) · **World** (DaylightSystem, SeasonManager, Season, MoonVisualFactory) ·
-**UI** · **Persistence** (SaveSystem, GameSaver, SaveData) · **Debug** (`Market.DebugTools`,
+**Core** (ServiceLocator, EventBus, SceneLoader, SceneNames, TimeSystem, DayPhaseSystem,
+MarketOpenSystem, GameBootstrap) · **Player** · **Interaction** · **Economy** (MoneySystem, Inventory,
+ItemSO, ItemCategory, ItemDatabase, PriceCalculator, SupplierShop, DailySummarySystem) ·
+**Market** (MarketStall, StallSlot, MarketStallRegistry) · **NPC** (NPCVisitor, NPCSpawner, NPCTypeSO,
+NPCAnimator) · **World** (DaylightSystem, SeasonManager, Season, MoonVisualFactory, CropPlot, CropSO,
+CropState) · **UI** · **Persistence** (SaveSystem, GameSaver, SaveData) · **Debug** (`Market.DebugTools`,
 temporary) · **Progression** / **Specializations** (reserved for D9+ and Blocks E–H).
 
 **Assemblies (v1.6.1+):** `Market.Runtime` (Scripts root) · `Market.Editor` (`Scripts/Debug/Editor`,
@@ -185,9 +187,13 @@ NPC refusal reasons stay concrete: no stock · category not interesting · price
 
 `SaveSystem` = plain C# service · `GameSaver` = scene coordinator · `SaveData` = DTO only.
 Item identity restores via `ItemDatabase.Resolve(id, name)`. All file/JSON ops in try/catch.
-`Continue` uses `SaveSystem.ShouldLoadOnStart`. Preserve old-save compatibility.
+`Continue` uses `SaveSystem.ShouldLoadOnStart`. Preserve old-save compatibility. Saves are written
+atomically (temp + `File.Replace` + `.bak`); `Load` falls back to the backup.
 **At each block checkpoint D–I: bump `SaveData.version`, migrate old saves, and extend
-`SaveMigrationTests` with the migration case** (required by `dev_plan_3.md`).
+`SaveMigrationTests` with the migration case** (required by `dev_plan_4_1.md`).
+**Save guardrail:** any new system that owns state which must survive a day boundary or Continue
+ships its `Collect`/`Apply` pair, its `SaveData` field, and a `SaveMigrationTests` case **in the same
+step** — never "wire persistence later" (this rule is why crops were lost pre-v5; audit C2).
 
 ---
 
@@ -205,7 +211,10 @@ Run via MCP `run_tests`: mode `EditMode`, filter `Market.Tests`.
 
 `FileLogger` → `game.log` · `DebugTimeControl` (PgUp/PgDn speed, `H` +1h, `N` next season) ·
 `DebugSupplierBuy` (keys 1–5) · `DebugStallPlace` (F3) · `DebugMoneyInput` (F1/F2) ·
-`MarketAutoDebugger` (F9 loop, F10 one cycle) · manual save F5.
+`MarketAutoDebugger` (F9 loop, F10 one cycle) · manual save F5 · D2/D5 root debug cubes
+(Open/Close Market, Sleep Until Morning) · E1 debug crop plot.
+Editor scene/asset builders (menu `Market/Debug/…`): `CropE1SceneBuilder`, `CropMaterialUrpUpgrader`,
+`StaticPropImportFixer`.
 Remove each one once real UI covers it. Play Mode issues → check `game.log` and serialized scene
 values before guessing.
 
@@ -284,4 +293,4 @@ Helper scripts live in `.claude/tools/` (`check-mcp-unity.ps1`, `start-mcp-unity
 | UAL Standard | `Assets/Universal Animation Library[Standard]/.../Unity/` | NPC rig |
 | Mixamo | `Assets/Mixamo_animations/` | NPC animations |
 
-Per-step availability tags (`[assets: ready/stub/backlog]`) live in `dev_plan_3.md`.
+Per-step availability tags (`[assets: ready/stub/backlog]`) live in `dev_plan_4_1.md`.

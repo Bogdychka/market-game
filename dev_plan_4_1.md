@@ -6,7 +6,7 @@ checkboxes. Contracts (how to write code, how to work) live elsewhere: `AGENTS.m
 (coding/architecture rules), `CLAUDE.md` (role, git process, response rules). Don't duplicate
 progress anywhere but this file.
 
-> **Agents: don't read this file whole (36 KB ≈ 10k tokens).** Current state = the `## Progress`
+> **Agents: don't read this file whole (~61 KB ≈ 15k tokens).** Current state = the `## Progress`
 > section at the bottom; task details = the section of the block you're working on. Grep by step id.
 
 ---
@@ -172,9 +172,10 @@ signboard / cash register, chicken, cat.
 # BLOCK B — Stable market, no hidden coefficients ✅
 *Predictable, inspectable market. Liveliness comes from time/season/traffic, not multipliers.*
 
-- ✅ B1 Game time (`TimeSystem`, `OnHourChanged`/`OnDayChanged`, pause on menus) — *v4 REVISION
-  REQUIRED (N0-a): "pause on menus" is SOLO-only. In a networked session the clock is
-  host-authoritative and never stops for a client's menu. Day length target ≈13 real min (config)*
+- ✅ B1 Game time (`TimeSystem`, `OnHourChanged`/`OnDayChanged`) — *pause is currently `Time.timeScale
+  = 0` from `PauseMenuController`; the `TimeSystem.Pause/Resume` API exists but has no callers (remove
+  or wire in N0-a). v4 REVISION REQUIRED (N0-a): menu pause is SOLO-only. In a networked session the
+  clock is host-authoritative and never stops for a client's menu. Day length target ≈13 real min*
 - ✅ B2 Daylight by time (`DaylightSystem` — sun/moon, ambient, skybox exposure)
 - ✅ B3 NPC traffic by hour (density curve: morning low, midday peak, night ~0) — *v4 EXTENSION
   (N0-e): curve gains two OPEN multipliers — reputation tier (D9) and human player count (J1,
@@ -935,7 +936,7 @@ place: `VERSION` + `CHANGELOG.md` + `vX.Y.Z` tags.)
 - [x] D0 MarketStallRegistry
 - [x] D1 DayPhaseSystem *(→N0-a)*
 - [x] D2 Open/Close stall
-- [ ] D3 Evening Summary
+- [x] D3 Evening Summary
 - [ ] D4 Daily Goals v1
 - [x] D5 Sleep / Next Day *(→N0-a)*
 - [ ] D6 NPC personalities

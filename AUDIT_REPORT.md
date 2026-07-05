@@ -1,5 +1,13 @@
 # Project Audit Report — 2026-07-05
 
+> **Phase 2 status (applied on branch `claude/audit-phase2-fixes`):** Fixed and committed — H1, C2,
+> H2, M2, M3, M4, M1, H4, M9 (icon cap; atlas deferred), L1, L2, L6, L3. **Deferred with reason:**
+> M5 (money int — design-adjacent, touches save schema + price math), M6 (physics layers — needs the
+> hand-edited collision matrix + scene-wide layer pass + a Play-mode regression), L7 (frame cap → K5),
+> M9 SpriteAtlas (adds `com.unity.2d.sprite` for negligible gain now). **Corrected by verification:**
+> L4 — `wood_box.fbx` (used in Market scene) and ToonShading (ramp used by 14 crop materials) are NOT
+> unused, so they were kept. See `CHANGELOG.md [Unreleased]` for per-fix detail.
+
 Read-only audit: future-proofing (Block N / saves), performance, asset import settings, and
 agent-docs correctness. No changes made. Effort: S < 1h, M = half-day, L = day+.
 "Auto-fix safe" = no gameplay/design impact expected; save-format changes always need a
