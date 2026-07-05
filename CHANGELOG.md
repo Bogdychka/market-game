@@ -40,6 +40,9 @@ their historical agent attributions (Claude / Codex / user); new entries don't n
   needed). Visual mesh/outfit variety is deferred until more humanoid assets exist. (Codex)
 
 ### Changed
+- Cartoon_Farm_Crops materials converted from built-in Standard to URP/Lit (audit M1) so crops no
+  longer render magenta under URP; base texture/color carried over. Added a re-runnable
+  `CropMaterialUrpUpgrader` editor tool. Turned off Read/Write on the two crop FBX meshes. (Claude)
 - Save data is now version 5 and persists crop plots (audit C2): each `CropPlot` has a stable
   `plotId` and its planted flag + plant timestamp are collected/applied by `GameSaver`. Pre-v5 saves
   (no `cropPlots` list) load unaffected — every plot restores to empty, matching prior behavior.
