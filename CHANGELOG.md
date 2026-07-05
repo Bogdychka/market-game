@@ -40,6 +40,10 @@ their historical agent attributions (Claude / Codex / user); new entries don't n
   needed). Visual mesh/outfit variety is deferred until more humanoid assets exist. (Codex)
 
 ### Changed
+- Static-prop FBX packs (Kenney Food Kit, Stylized Trees, Quaternius Farm Buildings, blender box)
+  no longer import a rig or animation (audit H4): 259 models set to Rig=None / Import Animation off,
+  so static meshes stop importing an Avatar/Animator. Added a re-runnable `StaticPropImportFixer`
+  editor tool; animated packs (animals, fish, UAL, Mixamo) are deliberately excluded. (Claude)
 - Cartoon_Farm_Crops materials converted from built-in Standard to URP/Lit (audit M1) so crops no
   longer render magenta under URP; base texture/color carried over. Added a re-runnable
   `CropMaterialUrpUpgrader` editor tool. Turned off Read/Write on the two crop FBX meshes. (Claude)
