@@ -39,7 +39,10 @@ their historical agent attributions (Claude / Codex / user); new entries don't n
   `Idle_Loop` / `Walk_Loop` / `Idle_Talking_Loop` clips on the shared UAL avatar (no Mixamo retarget
   needed). Visual mesh/outfit variety is deferred until more humanoid assets exist. (Codex)
 
-### Changed
+- Kenney preview thumbnails used as item icons are capped at 256px on all platforms (audit M9),
+  cutting VRAM for UI-sized sprites (previously 2048). A SpriteAtlas over the used icons is
+  deferred: at the current item count draw-call batching gains little and it would add the
+  `com.unity.2d.sprite` dependency. (Claude)
 - Static-prop FBX packs (Kenney Food Kit, Stylized Trees, Quaternius Farm Buildings, blender box)
   no longer import a rig or animation (audit H4): 259 models set to Rig=None / Import Animation off,
   so static meshes stop importing an Avatar/Animator. Added a re-runnable `StaticPropImportFixer`
