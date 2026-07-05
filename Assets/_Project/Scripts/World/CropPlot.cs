@@ -35,6 +35,8 @@ namespace Market.World
         // in CurrentState(), never stored, so it can never go stale.
         private bool _planted;
         private float _plantedAtMinutes;
+        // Last growth progress pushed to the visual, so Update only rescales on a meaningful change.
+        private float _lastVisualProgress = -1f;
 
         public string PromptText => BuildPromptText();
         public bool CanInteract => crop != null && inventory != null;
@@ -57,9 +59,16 @@ namespace Market.World
 
         private void Update()
         {
-            // Drive the stub growth visual smoothly while a crop is in the ground.
-            if (growthVisual != null && _planted)
-                RefreshVisual();
+            // Drive the stub growth visual while a crop is in the ground, but only when the growth
+            // progress actually changed enough to matter -- not every frame (audit L2).
+            if (growthVisual == null || !_planted)
+                return;
+
+            float progress = CalculateGrowthProgress();
+            if (Mathf.Abs(progress - _lastVisualProgress) < 0.01f)
+                return;
+
+            RefreshVisual();
         }
 
         public void Interact(GameObject actor)
@@ -216,14 +225,17 @@ namespace Market.World
             {
                 if (growthVisual.gameObject.activeSelf)
                     growthVisual.gameObject.SetActive(false);
+                _lastVisualProgress = -1f;
                 return;
             }
 
             if (!growthVisual.gameObject.activeSelf)
                 growthVisual.gameObject.SetActive(true);
 
-            float height = Mathf.Lerp(0.18f, 1f, CalculateGrowthProgress());
+            float progress = CalculateGrowthProgress();
+            float height = Mathf.Lerp(0.18f, 1f, progress);
             growthVisual.localScale = new Vector3(1f, height, 1f);
+            _lastVisualProgress = progress;
         }
 
         private void ResolveServices()

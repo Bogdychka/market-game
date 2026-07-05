@@ -285,9 +285,15 @@ namespace Market.NPC
 
         private bool IsPreferredCategory(ItemCategory category)
         {
-            return _preferredCategories == null
-                   || _preferredCategories.Length == 0
-                   || Array.Exists(_preferredCategories, c => c == category);
+            if (_preferredCategories == null || _preferredCategories.Length == 0)
+                return true;
+
+            // Manual loop instead of Array.Exists to avoid a per-call closure allocation.
+            for (int i = 0; i < _preferredCategories.Length; i++)
+                if (_preferredCategories[i] == category)
+                    return true;
+
+            return false;
         }
 
         private void CompletePurchase(ItemSO item, float price)
