@@ -66,6 +66,9 @@ their historical agent attributions (Claude / Codex / user); new entries don't n
   a neutral URP/Lit material to avoid the pink built-in-shader fallback. (Codex)
 
 ### Fixed
+- NPC visitors now save by a stable `NPCTypeSO.id` instead of the asset name (audit H2), so renaming
+  an NPC type asset no longer orphans saved visitors. `Id` falls back to the asset name when unset,
+  and restore resolves id first with name/typeName fallbacks, so old saves load unchanged. (Claude)
 - Planted crops now survive save/load (audit C2): previously planting a seed then saving lost both
   the crop and the seed because `CropPlot` state was runtime-only and never written to `SaveData`.
 - Save writes are now atomic (audit H1): `SaveSystem` serializes to `save.json.tmp` then swaps it

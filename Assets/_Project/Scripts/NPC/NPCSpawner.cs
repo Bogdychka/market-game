@@ -130,7 +130,7 @@ namespace Market.NPC
 
                 NPCVisitorData data = new()
                 {
-                    npcTypeKey    = visitor.Type.name,
+                    npcTypeKey    = visitor.Type.Id,
                     targetStallId = visitor.TargetStallId
                 };
 
@@ -418,7 +418,8 @@ namespace Market.NPC
             foreach (NPCTypeSO type in npcTypes)
             {
                 if (type == null) continue;
-                if (type.name == npcTypeKey || type.TypeName == npcTypeKey)
+                // Id is the stable key; asset name / TypeName remain fallbacks for legacy saves.
+                if (type.Id == npcTypeKey || type.name == npcTypeKey || type.TypeName == npcTypeKey)
                     return type;
             }
 
