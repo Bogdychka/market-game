@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using Market.Core;
+using Market.Core.Events;
 using Market.Economy;
 using Market.Market;
 using UnityEngine;
@@ -42,6 +44,7 @@ namespace Market.NPC
         private State           _state;
         private float           _browseTimer;
         private ItemCategory[]  _preferredCategories;
+        private EventBus        _eventBus;
         private bool            _isPasserby;
         private readonly List<MarketStall> _visitedStalls = new();
 
@@ -49,6 +52,7 @@ namespace Market.NPC
         private void Awake()
         {
             _agent = GetComponent<NavMeshAgent>();
+            ServiceLocator.TryGet<EventBus>(out _eventBus);
         }
 
         /// <summary>
@@ -289,6 +293,7 @@ namespace Market.NPC
         private void CompletePurchase(ItemSO item, float price)
         {
             playerMoney.Add(price);
+            _eventBus?.Publish(new ItemSoldEvent(item, price));
             Debug.Log($"[NPC] Bought {item.DisplayName} for {price}. Player funds: {playerMoney.Amount}");
         }
 

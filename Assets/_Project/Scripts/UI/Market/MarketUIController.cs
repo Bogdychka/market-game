@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Market.Core;
+using Market.Core.Events;
 using Market.Economy;
 using Market.Market;
 using Market.World;
@@ -23,7 +24,8 @@ namespace Market.UI
             None,
             Inventory,
             Supplier,
-            Stall
+            Stall,
+            EveningSummary
         }
 
         [Header("References")]
@@ -42,8 +44,15 @@ namespace Market.UI
         private InventoryPanelRenderer _inventoryRenderer;
         private SupplierPanelRenderer _supplierRenderer;
         private StallPanelRenderer _stallRenderer;
+        private EveningSummaryPanelRenderer _eveningSummaryRenderer;
         private PanelMode _mode;
         private SeasonManager _seasonManager;
+        private EventBus _eventBus;
+        private TimeSystem _timeSystem;
+        private DailySummarySystem _dailySummarySystem;
+        private DailySummarySnapshot _activeSummary;
+        private bool _hasActiveSummary;
+        private int _lastSummaryDayShown = -1;
         private bool _seasonEventsWired;
 
         private void Awake()
@@ -56,6 +65,7 @@ namespace Market.UI
             _inventoryRenderer = new InventoryPanelRenderer(_view);
             _supplierRenderer = new SupplierPanelRenderer(_view, Refresh);
             _stallRenderer = new StallPanelRenderer(_view, gameObject.layer, Refresh);
+            _eveningSummaryRenderer = new EveningSummaryPanelRenderer(_view);
             _view.SetVisible(false);
         }
 
@@ -175,6 +185,9 @@ namespace Market.UI
                 case PanelMode.Stall:
                     _stallRenderer.Render(marketStall, inventory, MoneyText());
                     break;
+                case PanelMode.EveningSummary:
+                    _eveningSummaryRenderer.Render(CreateSummarySnapshot());
+                    break;
             }
         }
 
@@ -203,6 +216,7 @@ namespace Market.UI
             if (inventory != null) inventory.OnChanged += Refresh;
             if (moneySystem != null) moneySystem.OnChanged += RefreshMoney;
             if (uiModeService != null) uiModeService.CloseRequested += ClosePanel;
+            WireSummaryEvents();
             WireSeasonEvents();
         }
 
@@ -213,6 +227,7 @@ namespace Market.UI
             if (inventory != null) inventory.OnChanged -= Refresh;
             if (moneySystem != null) moneySystem.OnChanged -= RefreshMoney;
             if (uiModeService != null) uiModeService.CloseRequested -= ClosePanel;
+            UnwireSummaryEvents();
             UnwireSeasonEvents();
         }
 
@@ -239,6 +254,47 @@ namespace Market.UI
         private void RefreshMoney(float amount)
         {
             Refresh();
+        }
+
+        private void WireSummaryEvents()
+        {
+            ResolveSummaryServices();
+            if (_eventBus != null)
+                _eventBus.Subscribe<DailySummaryReadyEvent>(HandleDailySummaryReady);
+        }
+
+        private void UnwireSummaryEvents()
+        {
+            if (_eventBus != null)
+                _eventBus.Unsubscribe<DailySummaryReadyEvent>(HandleDailySummaryReady);
+        }
+
+        private void HandleDailySummaryReady(DailySummaryReadyEvent evt)
+        {
+            if (_lastSummaryDayShown == evt.Summary.Day)
+                return;
+
+            _activeSummary = evt.Summary;
+            _hasActiveSummary = true;
+            _lastSummaryDayShown = evt.Summary.Day;
+            OpenPanel(PanelMode.EveningSummary);
+        }
+
+        private DailySummarySnapshot CreateSummarySnapshot()
+        {
+            if (_hasActiveSummary)
+                return _activeSummary;
+
+            ResolveSummaryServices();
+            return _dailySummarySystem != null
+                ? _dailySummarySystem.CreateSnapshot(CurrentDay())
+                : new DailySummarySnapshot(CurrentDay(), 0f, 0f, 0f, 0, 0, null, 0, 0f);
+        }
+
+        private int CurrentDay()
+        {
+            ResolveSummaryServices();
+            return _timeSystem != null ? _timeSystem.Day : 1;
         }
 
         private void RefreshSeasonalSupplier(Season season)
@@ -270,6 +326,16 @@ namespace Market.UI
         {
             if (_seasonManager != null) return;
             ServiceLocator.TryGet<SeasonManager>(out _seasonManager);
+        }
+
+        private void ResolveSummaryServices()
+        {
+            if (_eventBus == null)
+                ServiceLocator.TryGet<EventBus>(out _eventBus);
+            if (_timeSystem == null)
+                ServiceLocator.TryGet<TimeSystem>(out _timeSystem);
+            if (_dailySummarySystem == null)
+                ServiceLocator.TryGet<DailySummarySystem>(out _dailySummarySystem);
         }
 
         private void ResolveUIModeService()

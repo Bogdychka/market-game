@@ -1,5 +1,6 @@
 using System;
 using Market.Core;
+using Market.Core.Events;
 using Market.World;
 using UnityEngine;
 
@@ -29,6 +30,7 @@ namespace Market.Economy
 
         private SeasonManager   _seasonManager;
         private PriceCalculator _priceCalculator;
+        private EventBus        _eventBus;
 
         // -- Lifecycle --------------------------------------------------
         private void Awake()
@@ -42,6 +44,7 @@ namespace Market.Economy
             // Services register in their own Awake -- resolve here in Start to be safe
             ServiceLocator.TryGet<SeasonManager>(out _seasonManager);
             ServiceLocator.TryGet<PriceCalculator>(out _priceCalculator);
+            ServiceLocator.TryGet<EventBus>(out _eventBus);
         }
 
         /// <summary>Stock item by index (null if index is invalid).</summary>
@@ -110,6 +113,7 @@ namespace Market.Economy
             }
 
             inventory.Add(item);
+            _eventBus?.Publish(new ItemPurchasedEvent(item, price));
             Debug.Log($"[SupplierShop] Bought: {item.DisplayName} for {price:0.##}. " +
                       $"Funds: {moneySystem.Amount}. In inventory: {inventory.GetCount(item)}");
             return true;

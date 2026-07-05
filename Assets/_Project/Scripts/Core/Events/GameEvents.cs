@@ -45,4 +45,10 @@ namespace Market.Core.Events
         public readonly bool IsOpen;
         public MarketOpenChangedEvent(bool isOpen) { IsOpen = isOpen; }
     }
+
+    public readonly struct DailySummaryReadyEvent : IGameEvent
+    {
+        public readonly DailySummarySnapshot Summary;
+        public DailySummaryReadyEvent(DailySummarySnapshot summary) { Summary = summary; }
+    }
 }

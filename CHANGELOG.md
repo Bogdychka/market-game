@@ -17,6 +17,9 @@ their historical agent attributions (Claude / Codex / user); new entries don't n
 ### Added
 - E1 farming slice: added `CropSO`, `CropPlot`, carrot seed data, a carrot crop asset, supplier
   seed stock, a debug Market-scene crop plot, and EditMode coverage for plant/grow/harvest. (Codex)
+- D3 Evening Summary: added a daily summary service that tracks revenue, expenses, profit, items
+  sold, orders completed placeholder count, and best-selling item from supplier/NPC sale events;
+  sleeping to the next day now opens an end-of-day report panel using the shared market UI chrome. (Codex)
 - D2/D5 day controls: added `MarketOpenSystem`, root-level debug cubes for Open/Close Market and
   Sleep Until Morning, and tests for explicit market state plus sleep-gated day advancement. NPCs
   now spawn as shoppers only while the market is open; when closed, traffic still appears as

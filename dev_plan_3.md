@@ -668,7 +668,7 @@ place: `VERSION` + `CHANGELOG.md` + `vX.Y.Z` tags.)
 - [x] D0 MarketStallRegistry
 - [x] D1 DayPhaseSystem
 - [x] D2 Open/Close stall
-- [ ] D3 Evening Summary
+- [x] D3 Evening Summary
 - [ ] D4 Daily Goals v1
 - [x] D5 Sleep / Next Day
 - [ ] D6 NPC personalities
