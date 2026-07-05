@@ -66,6 +66,9 @@ their historical agent attributions (Claude / Codex / user); new entries don't n
   a neutral URP/Lit material to avoid the pink built-in-shader fallback. (Codex)
 
 ### Fixed
+- The interaction prompt now re-reads the current target's text on a low-rate timer (audit M4), so a
+  target whose prompt changes over time (e.g. a crop plot reaching Ready) updates instead of showing
+  stale text; redundant label writes are skipped to avoid needless TMP rebuilds. (Claude)
 - `NPCSpawner` now releases tracked visitors to the pool and resets its active counter when disabled
   (audit M3). Previously a disable/enable cycle left `_activeCount` inflated (permanent under-spawn)
   and stranded visitors self-destroyed instead of pooling. (Claude)

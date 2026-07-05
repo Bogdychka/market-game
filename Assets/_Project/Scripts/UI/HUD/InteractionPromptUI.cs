@@ -26,11 +26,16 @@ namespace Market.UI
         [SerializeField] private string actionName = DefaultActionName;
         [SerializeField] private string fallbackKeyHint = "E";
         [SerializeField] private string fallbackText = "Interact";
+        [Tooltip("How often (seconds) to re-read the current target's prompt text, so a target whose "
+               + "PromptText changes over time (e.g. a crop growing to Ready) updates the label.")]
+        [SerializeField] private float refreshInterval = 0.25f;
 
         private CanvasGroup _group;
         private IInteractable _currentTarget;
         private PlayerInput _subscribedPlayerInput;
         private InputAction _action;
+        private float _nextRefreshTime;
+        private string _lastLabelText;
 
         private void Awake()
         {
@@ -56,9 +61,21 @@ namespace Market.UI
             UnsubscribePlayerInput();
         }
 
+        private void Update()
+        {
+            // The target can change its own prompt text over time (e.g. a crop plot going
+            // Growing -> Ready), so poll it at a low rate while a target is set.
+            if (_currentTarget == null) return;
+            if (Time.unscaledTime < _nextRefreshTime) return;
+
+            _nextRefreshTime = Time.unscaledTime + Mathf.Max(0.05f, refreshInterval);
+            Refresh();
+        }
+
         private void OnCurrentChanged(IInteractable target)
         {
             _currentTarget = target;
+            _nextRefreshTime = Time.unscaledTime + Mathf.Max(0.05f, refreshInterval);
             Refresh();
         }
 
@@ -75,12 +92,17 @@ namespace Market.UI
 
             if (_currentTarget == null)
             {
+                _lastLabelText = null;
                 SetVisible(false);
                 return;
             }
 
             string promptText = string.IsNullOrEmpty(_currentTarget.PromptText) ? fallbackText : _currentTarget.PromptText;
-            label.text = $"[{GetKeyHint()}] {promptText}";
+            string newText = $"[{GetKeyHint()}] {promptText}";
+            if (newText != _lastLabelText)
+            {
+                label.text = _lastLabelText = newText;
+            }
             SetVisible(true);
         }
 
