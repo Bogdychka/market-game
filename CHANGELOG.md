@@ -66,6 +66,9 @@ their historical agent attributions (Claude / Codex / user); new entries don't n
   a neutral URP/Lit material to avoid the pink built-in-shader fallback. (Codex)
 
 ### Fixed
+- `EventBus.Publish` now invokes each subscriber in isolation (audit M2): a single throwing handler
+  is logged but no longer prevents the remaining subscribers from receiving the event. Added
+  `EventBusTests` covering delivery, isolation, and unsubscribe. (Claude)
 - NPC visitors now save by a stable `NPCTypeSO.id` instead of the asset name (audit H2), so renaming
   an NPC type asset no longer orphans saved visitors. `Id` falls back to the asset name when unset,
   and restore resolves id first with name/typeName fallbacks, so old saves load unchanged. (Claude)
