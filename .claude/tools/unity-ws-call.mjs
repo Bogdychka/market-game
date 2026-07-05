@@ -56,7 +56,7 @@ for (let index = 2; index < process.argv.length; index += 1) {
 
 const [method, paramsJson = '{}'] = positional;
 if (!method) {
-  console.error('Usage: node .codex/tools/unity-ws-call.mjs <method> [paramsJson|-|@file] [--timeout ms]');
+  console.error('Usage: node .claude/tools/unity-ws-call.mjs <method> [paramsJson|-|@file] [--timeout ms]');
   process.exit(2);
 }
 
@@ -80,7 +80,7 @@ try {
   process.exit(2);
 }
 
-const requestId = `codex-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+const requestId = `agent-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 const ws = new WebSocket(`ws://${options.host}:${options.port}/McpUnity`, {
   headers: { 'X-Client-Name': options.client },
   handshakeTimeout: Math.min(options.timeout, 10000),

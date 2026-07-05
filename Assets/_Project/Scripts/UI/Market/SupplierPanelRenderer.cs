@@ -22,11 +22,11 @@ namespace Market.UI
         /// <summary>Render the supplier stock into the cleared panel.</summary>
         public void Render(SupplierShop shop, MoneySystem moneySystem, string subtitle)
         {
-            _view.SetHeader("Поставщик", subtitle);
+            _view.SetHeader("Supplier", subtitle);
 
             if (shop == null || shop.StockCount == 0)
             {
-                _view.CreateEmptyText("Ассортимент пуст.");
+                _view.CreateEmptyText("Nothing in stock.");
                 return;
             }
 
@@ -41,8 +41,8 @@ namespace Market.UI
                 Button button = _view.CreateActionRow(
                     item,
                     item.DisplayName,
-                    available ? $"{price:0.##} монет" : "Не сезон",
-                    "Купить",
+                    available ? $"{price:0.##} coins" : "Out of season",
+                    "Buy",
                     () =>
                     {
                         shop.Buy(index);

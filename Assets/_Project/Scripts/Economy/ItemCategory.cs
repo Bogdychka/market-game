@@ -2,8 +2,8 @@ namespace Market.Economy
 {
     /// <summary>
     /// Item category. Used for:
-    /// — inventory/stall filtering
-    /// — NPC preferences (NPCTypeSO.PreferredCategories)
+    /// -- inventory/stall filtering
+    /// -- NPC preferences (NPCTypeSO.PreferredCategories)
     /// </summary>
     public enum ItemCategory
     {

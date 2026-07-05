@@ -58,8 +58,8 @@ namespace Market.DebugTools.Editor
 
             var serialized = new SerializedObject(seed);
             serialized.FindProperty("id").stringValue = "Item_CarrotSeed";
-            serialized.FindProperty("displayName").stringValue = "Семена моркови";
-            serialized.FindProperty("description").stringValue = "Семена для первой грядки.";
+            serialized.FindProperty("displayName").stringValue = "Carrot Seeds";
+            serialized.FindProperty("description").stringValue = "Seeds for the first crop plot.";
             serialized.FindProperty("icon").objectReferenceValue = harvest.Icon;
             serialized.FindProperty("category").enumValueIndex = (int)ItemCategory.Ingredient;
             serialized.FindProperty("baseBuyPrice").floatValue = 3f;
@@ -84,7 +84,7 @@ namespace Market.DebugTools.Editor
             }
 
             var serialized = new SerializedObject(crop);
-            serialized.FindProperty("displayName").stringValue = "Морковь";
+            serialized.FindProperty("displayName").stringValue = "Carrot";
             serialized.FindProperty("seedItem").objectReferenceValue = seed;
             serialized.FindProperty("harvestItem").objectReferenceValue = harvest;
             serialized.FindProperty("growthHours").floatValue = 6f;

@@ -1,7 +1,7 @@
 namespace Market.World
 {
     /// <summary>
-    /// Season enum. Order matches the seasonal cycle: Spring → Summer → Autumn → Winter.
+    /// Season enum. Order matches the seasonal cycle: Spring -> Summer -> Autumn -> Winter.
     /// Used by SeasonManager, ItemSO (AvailableInSeasons), and SupplierShop.
     /// </summary>
     public enum Season

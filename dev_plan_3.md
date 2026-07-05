@@ -1,10 +1,10 @@
 # Dev Plan — Market Game
-**Unity 6 · URP · First Person · co-developed by Claude Code + Codex**
+**Unity 6 · URP · First Person · developed with Claude Code**
 
 This is the single source of truth for *what to build and in what order*, plus the live progress
-checkboxes. Contracts (how to write code, how the two agents collaborate) live elsewhere:
-`AGENTS.md` (coding/architecture rules, shared by both agents), `CLAUDE.md` (Claude's review/publish
-role), `COLLAB.md` (branch-per-task + PR process). Don't duplicate progress anywhere but this file.
+checkboxes. Contracts (how to write code, how to work) live elsewhere: `AGENTS.md`
+(coding/architecture rules), `CLAUDE.md` (role, git process, response rules). Don't duplicate
+progress anywhere but this file.
 
 > **Agents: don't read this file whole (36 KB ≈ 10k tokens).** Current state = the `## Progress`
 > section at the bottom; task details = the section of the block you're working on. Grep by step id.

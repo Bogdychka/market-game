@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 252e71519143c994ebe1d6f34e9a38a2, type: 3}
   m_Name: NPCType_Default
   m_EditorClassIdentifier: Assembly-CSharp::Market.NPC.NPCTypeSO
-  typeName: "\u041E\u0431\u044B\u0447\u043D\u044B\u0439 \u043F\u043E\u043A\u0443\u043F\u0430\u0442\u0435\u043B\u044C"
+  typeName: "Regular shopper"
   npcPrefab: {fileID: 9113588633007267650, guid: 321888a0e37fd7945b37d14aaf301791, type: 3}
   budget: 50
   walkSpeed: 1.4

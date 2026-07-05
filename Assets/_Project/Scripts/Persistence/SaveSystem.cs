@@ -6,7 +6,7 @@ namespace Market.Persistence
 {
     /// <summary>
     /// Stores the save file as JSON under Application.persistentDataPath.
-    /// Registered in ServiceLocator from GameBootstrap. Plain C# class — no MonoBehaviour.
+    /// Registered in ServiceLocator from GameBootstrap. Plain C# class -- no MonoBehaviour.
     /// </summary>
     public class SaveSystem
     {

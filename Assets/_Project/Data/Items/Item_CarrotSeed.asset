@@ -13,9 +13,8 @@ MonoBehaviour:
   m_Name: Item_CarrotSeed
   m_EditorClassIdentifier: Market.Runtime::Market.Economy.ItemSO
   id: Item_CarrotSeed
-  displayName: "\u0421\u0435\u043C\u0435\u043D\u0430 \u043C\u043E\u0440\u043A\u043E\u0432\u0438"
-  description: "\u0421\u0435\u043C\u0435\u043D\u0430 \u0434\u043B\u044F \u043F\u0435\u0440\u0432\u043E\u0439
-    \u0433\u0440\u044F\u0434\u043A\u0438."
+  displayName: "Carrot Seeds"
+  description: "Seeds for the first crop plot."
   icon: {fileID: 21300000, guid: eab0523b7b36dbc4c9d0be629f0a5194, type: 3}
   worldPrefab: {fileID: 0}
   category: 5

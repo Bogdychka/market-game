@@ -70,7 +70,7 @@ namespace Market.UI
             if (hasDesc) _descText.text = item.Description;
 
             _metaText.text =
-                $"Закупка: {item.BaseBuyPrice:0.##} | Продажа: {item.BaseSellPrice:0.##}";
+                $"Buy: {item.BaseBuyPrice:0.##} | Sell: {item.BaseSellPrice:0.##}";
 
             _panel.gameObject.SetActive(true);
             UpdatePosition();

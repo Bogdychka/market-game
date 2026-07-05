@@ -1,0 +1,15 @@
+# Encoding guardrails: all source is UTF-8 and (per AGENTS.md) ASCII-English only.
+root = true
+
+[*]
+charset = utf-8
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.cs]
+indent_style = space
+indent_size = 4
+
+[*.{md,json,yml,yaml,asmdef}]
+indent_style = space
+indent_size = 2

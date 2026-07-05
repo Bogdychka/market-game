@@ -8,14 +8,14 @@ namespace Market.World
     /// Realistic sun and moon movement based on game time.
     ///
     /// Uses the astronomical altitude formula:
-    ///   sin(alt) = sin(lat)·sin(decl) + cos(lat)·cos(decl)·cos(HA)
+    ///   sin(alt) = sin(lat)*sin(decl) + cos(lat)*cos(decl)*cos(HA)
     /// where HA = hour angle from solar noon.
     ///
-    /// — <see cref="solarDeclination"/> sets the season: +23.45° = summer, -23.45° = winter.
+    /// -- <see cref="solarDeclination"/> sets the season: +23.45 deg = summer, -23.45 deg = winter.
     ///   SeasonManager calls <see cref="SetSolarDeclination"/> on season change.
-    /// — Latitude 55° (temperate north): summer sunset ~20:30, winter sunset ~16:00.
-    /// — Moon is a directional light only, no visual sphere.
-    /// — Skybox exposure and ambient change with sun altitude.
+    /// -- Latitude 55 deg (temperate north): summer sunset ~20:30, winter sunset ~16:00.
+    /// -- Moon is a directional light only, no visual sphere.
+    /// -- Skybox exposure and ambient change with sun altitude.
     /// </summary>
     public class DaylightSystem : MonoBehaviour
     {
@@ -30,7 +30,7 @@ namespace Market.World
 
         [Header("Season")]
         [Range(-23.45f, 23.45f)]
-        [Tooltip("Solar declination (°). +23.45 = summer, 0 = equinox, -23.45 = winter.\n" +
+        [Tooltip("Solar declination (deg). +23.45 = summer, 0 = equinox, -23.45 = winter.\n" +
                  "SeasonManager sets this via SetSolarDeclination().")]
         [SerializeField] private float solarDeclination = 20f;
 
@@ -75,7 +75,7 @@ namespace Market.World
         private bool       _skyboxHasExposure;
         private static readonly int ExposureID = Shader.PropertyToID("_Exposure");
 
-        // ── Public API for SeasonManager ──────────────────────────────
+        // -- Public API for SeasonManager ------------------------------
         /// <summary>
         /// Sets solar declination. Called by SeasonManager on season change.
         /// </summary>
@@ -84,7 +84,7 @@ namespace Market.World
             solarDeclination = Mathf.Clamp(degrees, -23.45f, 23.45f);
         }
 
-        // ── Lifecycle ──────────────────────────────────────────────────
+        // -- Lifecycle --------------------------------------------------
         private void Awake()
         {
             ResolveTimeSystem();
@@ -111,7 +111,7 @@ namespace Market.World
             float latRad  = latitude         * Mathf.Deg2Rad;
             float declRad = solarDeclination * Mathf.Deg2Rad;
 
-            // Hour angle: 0 = solar noon, ±π = midnight
+            // Hour angle: 0 = solar noon, +/-pi = midnight
             float ha = (t - 0.5f) * Mathf.PI * 2f;
 
             Vector3 sunPos    = SkyPosition(ha, latRad, declRad);
@@ -126,10 +126,10 @@ namespace Market.World
         {
             if (ServiceLocator.TryGet<TimeSystem>(out _timeSystem)) return;
 
-            Debug.LogWarning("[DaylightSystem] TimeSystem not found — lighting will wait for the service.", this);
+            Debug.LogWarning("[DaylightSystem] TimeSystem not found -- lighting will wait for the service.", this);
         }
 
-        // ── Setup ──────────────────────────────────────────────────────
+        // -- Setup ------------------------------------------------------
         private void InstanceSkyboxMaterial()
         {
             if (!controlSkyboxExposure || RenderSettings.skybox == null) return;
@@ -139,7 +139,7 @@ namespace Market.World
             _skyboxHasExposure = _skyboxInstance.HasProperty(ExposureID);
         }
 
-        // ── Sun ────────────────────────────────────────────────────────
+        // -- Sun --------------------------------------------------------
         private void UpdateSun(Vector3 sunPos, float sunHeight)
         {
             Color color = Color.Lerp(
@@ -151,7 +151,7 @@ namespace Market.World
             ApplyLightDirection(sunLight, sunPos, color, Mathf.Clamp01(sunHeight) * maxSunIntensity);
         }
 
-        // ── Moon ───────────────────────────────────────────────────────
+        // -- Moon -------------------------------------------------------
         private float UpdateMoon(float sunHA, float latRad, float declRad)
         {
             if (moonLight == null) return 0f;
@@ -174,7 +174,7 @@ namespace Market.World
             return visibility;
         }
 
-        // ── Environment ────────────────────────────────────────────────
+        // -- Environment ------------------------------------------------
         private void UpdateEnvironment(float sunHeight, float moonVisibility)
         {
             RenderSettings.ambientLight        = CalculateAmbient(sunHeight, moonVisibility);
@@ -216,11 +216,11 @@ namespace Market.World
             return Mathf.Clamp01(Mathf.Max(daylightReflection, nightReflection));
         }
 
-        // ── Astronomical math ──────────────────────────────────────────
+        // -- Astronomical math ------------------------------------------
 
         /// <summary>
         /// Returns the celestial body direction in world space (x=east, y=up, z=north).
-        /// Uses the altitude formula: sin(alt) = sin(φ)·sin(δ) + cos(φ)·cos(δ)·cos(HA).
+        /// Uses the altitude formula: sin(alt) = sin(lat)*sin(decl) + cos(lat)*cos(decl)*cos(HA).
         /// </summary>
         private static Vector3 SkyPosition(float hourAngle, float latRad, float declRad)
         {

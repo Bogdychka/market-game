@@ -36,7 +36,7 @@ namespace Market.NPC
 
         [Tooltip("Spawn interval at density = 1 (peak hour).")]
         [SerializeField] private float peakSpawnInterval    = 4f;
-        [Tooltip("Spawn interval at density → 0 (deep night).")]
+        [Tooltip("Spawn interval at density -> 0 (deep night).")]
         [SerializeField] private float offPeakSpawnInterval = 30f;
         [Tooltip("Threshold: spawn stops when density falls below this value.")]
         [Range(0f, 0.2f)]
@@ -64,14 +64,14 @@ namespace Market.NPC
         /// <summary>Current traffic density [0..1] based on game time.</summary>
         public float CurrentDensity => GetCurrentDensity();
 
-        // ── Lifecycle ──────────────────────────────────────────────────
+        // -- Lifecycle --------------------------------------------------
         private void Awake()
         {
             ResolveStallRegistry();
             ValidateReferences();
 
             if (!ServiceLocator.TryGet<TimeSystem>(out _timeSystem))
-                Debug.LogWarning("[NPCSpawner] TimeSystem not found — density will be constant.", this);
+                Debug.LogWarning("[NPCSpawner] TimeSystem not found -- density will be constant.", this);
 
             ResolveMarketOpenSystem();
         }
@@ -97,7 +97,7 @@ namespace Market.NPC
             float effectiveInterval = ComputeInterval(density);
             _spawnTimer = effectiveInterval;
 
-            if (density < minDensityToSpawn) return;   // night — no spawning
+            if (density < minDensityToSpawn) return;   // night -- no spawning
 
             int effectiveMax = EffectiveMaxNPCs(density);
             if (_activeCount >= effectiveMax) return;
@@ -159,7 +159,7 @@ namespace Market.NPC
             Debug.Log($"[NPCSpawner] Restored NPCs from save: {_activeCount}");
         }
 
-        // ── Spawn ──────────────────────────────────────────────────────
+        // -- Spawn ------------------------------------------------------
         private bool TrySpawn()
         {
             if (npcTypes == null    || npcTypes.Length == 0)    return false;
@@ -239,7 +239,7 @@ namespace Market.NPC
             }
 
             // Schedule-style restore: re-spawn at an entrance (always a valid navmesh spot) and let the
-            // visitor walk in toward its saved target stall — no mid-stride position to teleport into.
+            // visitor walk in toward its saved target stall -- no mid-stride position to teleport into.
             Transform point = PickSpawnPoint();
             if (point == null)
             {
@@ -274,7 +274,7 @@ namespace Market.NPC
                 while (pooled.Count > 0)
                 {
                     NPCVisitor candidate = pooled.Pop();
-                    if (candidate == null) continue; // destroyed by a scene change — skip it
+                    if (candidate == null) continue; // destroyed by a scene change -- skip it
 
                     candidate.gameObject.SetActive(true);
                     candidate.PlaceAt(point.position, point.rotation);
@@ -388,7 +388,7 @@ namespace Market.NPC
             }
         }
 
-        // ── Density helpers ────────────────────────────────────────────
+        // -- Density helpers --------------------------------------------
 
         /// <summary>Current traffic density [0..1] based on the game hour.</summary>
         private float GetCurrentDensity()
@@ -425,7 +425,7 @@ namespace Market.NPC
             return null;
         }
 
-        // ── Validation ─────────────────────────────────────────────────
+        // -- Validation -------------------------------------------------
         private bool HasAvailableStall()
         {
             ResolveStallRegistry();
@@ -488,7 +488,7 @@ namespace Market.NPC
                 Debug.LogError("[NPCSpawner] playerMoney not assigned!", this);
         }
 
-        // ── Gizmos ─────────────────────────────────────────────────────
+        // -- Gizmos -----------------------------------------------------
         private void OnDrawGizmosSelected()
         {
             if (spawnPoints == null) return;

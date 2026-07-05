@@ -61,14 +61,14 @@ namespace Market.DebugTools.Editor
 
             if (kept.Count == 0)
             {
-                Debug.LogError("[NpcAnimationLoopFixer] No clips matched the controller fileIDs — aborted.");
+                Debug.LogError("[NpcAnimationLoopFixer] No clips matched the controller fileIDs -- aborted.");
                 return;
             }
 
             importer.clipAnimations = kept.ToArray();
             EditorUtility.SetDirty(importer);
             importer.SaveAndReimport();
-            Debug.Log($"[NpcAnimationLoopFixer] Done — {kept.Count} clip(s) set to loop and re-imported.");
+            Debug.Log($"[NpcAnimationLoopFixer] Done -- {kept.Count} clip(s) set to loop and re-imported.");
         }
     }
 }

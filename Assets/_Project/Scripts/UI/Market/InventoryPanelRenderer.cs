@@ -18,11 +18,11 @@ namespace Market.UI
         /// <summary>Render the inventory contents into the cleared panel.</summary>
         public void Render(Inventory inventory, string subtitle)
         {
-            _view.SetHeader("Инвентарь", subtitle);
+            _view.SetHeader("Inventory", subtitle);
 
             if (inventory == null || inventory.Items.Count == 0)
             {
-                _view.CreateEmptyText("Инвентарь пуст.");
+                _view.CreateEmptyText("Inventory is empty.");
                 return;
             }
 

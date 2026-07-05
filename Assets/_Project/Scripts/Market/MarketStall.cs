@@ -14,7 +14,7 @@ namespace Market.Market
         [Header("Config")]
         [Tooltip("Stable save key. Falls back to the GameObject name when empty.")]
         [SerializeField] private string stallId;
-        [SerializeField] private string prompt = "Управлять прилавком";
+        [SerializeField] private string prompt = "Manage stall";
 
         [Header("Slots")]
         [SerializeField] private StallSlot[] slots;
@@ -23,7 +23,7 @@ namespace Market.Market
         [SerializeField] private Inventory playerInventory;
 
         [Header("Debug Starting Stock")]
-        [Tooltip("Enable placing debug stock on start. Off by default — otherwise New Game starts with items on the stall.")]
+        [Tooltip("Enable placing debug stock on start. Off by default -- otherwise New Game starts with items on the stall.")]
         [SerializeField] private bool     enableDebugStartStock = false;
         [Tooltip("Items automatically placed on the stall at scene start. For testing only.")]
         [SerializeField] private ItemSO[] debugStartItems;
@@ -50,7 +50,7 @@ namespace Market.Market
             }
         }
 
-        // ── Lifecycle ──────────────────────────────────────────────────
+        // -- Lifecycle --------------------------------------------------
         private void Start()
         {
             ServiceLocator.TryGet<PriceCalculator>(out _priceCalculator);
@@ -69,7 +69,7 @@ namespace Market.Market
                 : item.BaseSellPrice;
         }
 
-        // ── IInteractable ──────────────────────────────────────────────
+        // -- IInteractable ----------------------------------------------
         public void Interact(GameObject actor)
         {
             if (OpenRequested != null)
@@ -81,7 +81,7 @@ namespace Market.Market
             PrintCurrentState();
         }
 
-        // ── Public API ─────────────────────────────────────────────────
+        // -- Public API -------------------------------------------------
         /// <summary>
         /// Place an item from the player inventory into a slot at the suggested price.
         /// </summary>
@@ -140,7 +140,7 @@ namespace Market.Market
             return true;
         }
 
-        // ── Internals ──────────────────────────────────────────────────
+        // -- Internals --------------------------------------------------
         private bool IsValidSlotIndex(int i) => i >= 0 && i < slots.Length;
 
         private void PrepopulateDebugStock()
@@ -162,7 +162,7 @@ namespace Market.Market
             {
                 var s = slots[i];
                 Debug.Log(s.IsOccupied
-                    ? $"[{i}] {s.Item.DisplayName} — price {s.SellPrice}"
+                    ? $"[{i}] {s.Item.DisplayName} -- price {s.SellPrice}"
                     : $"[{i}] empty");
             }
             Debug.Log($"Inventory: {InventoryContents()}");

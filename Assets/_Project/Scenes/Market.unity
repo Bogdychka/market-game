@@ -437,7 +437,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Market.UI.MoneyHUD
   moneySystem: {fileID: 1853453546}
   label: {fileID: 65653179}
-  format: "{0} \u043C\u043E\u043D\u0435\u0442"
+  format: "{0} coins"
 --- !u!114 &65653179
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1599,7 +1599,7 @@ MonoBehaviour:
   playerInput: {fileID: 0}
   actionName: Interact
   fallbackKeyHint: E
-  fallbackText: "\u0412\u0437\u0430\u0438\u043C\u043E\u0434\u0435\u0439\u0441\u0442\u0432\u043E\u0432\u0430\u0442\u044C"
+  fallbackText: "Interact"
 --- !u!225 &724621058
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -1632,7 +1632,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "[E] - \u043F\u043E\u0434\u0441\u043A\u0430\u0437\u043A\u0430"
+  m_text: "[E] - interact"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 451909275}
@@ -2072,6 +2072,32 @@ Material:
     - _UnderlayColor: {r: 0, g: 0, b: 0, a: 0.5}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
+--- !u!1 &877961077 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: d51854ba1e0e8c343be9c992fdfb3d98, type: 3}
+  m_PrefabInstance: {fileID: 1436375469}
+  m_PrefabAsset: {fileID: 0}
+--- !u!65 &877961081
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 877961077}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.022151377, y: 0.30401966, z: 0.05143762}
+  m_Center: {x: -0.00000088103116, y: 0.14200984, z: -0.013381599}
 --- !u!1 &964822270
 GameObject:
   m_ObjectHideFlags: 0
@@ -2187,7 +2213,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Market.Market.MarketStall
   stallId: stall_2
-  prompt: "\u0423\u043F\u0440\u0430\u0432\u043B\u044F\u0442\u044C \u043F\u0440\u0438\u043B\u0430\u0432\u043A\u043E\u043C"
+  prompt: "Manage stall"
   slots:
   - {fileID: 809191472}
   - {fileID: 964822272}
@@ -2446,7 +2472,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Market.Market.MarketStall
   stallId: stall_1
-  prompt: "\u0423\u043F\u0440\u0430\u0432\u043B\u044F\u0442\u044C \u043F\u0440\u0438\u043B\u0430\u0432\u043A\u043E\u043C"
+  prompt: "Manage stall"
   slots:
   - {fileID: 1276807709}
   - {fileID: 1022605272}
@@ -2652,6 +2678,66 @@ MonoBehaviour:
   settingsSO: {fileID: 11400000, guid: 628b5f18e817e7743aba5b87093fbdbb, type: 2}
   playerController: {fileID: 8671063287909985202, guid: 74bb60615cbcab74f9bdc5cebf256e7a, type: 3}
   playerInput: {fileID: 8262038029800629798, guid: 74bb60615cbcab74f9bdc5cebf256e7a, type: 3}
+--- !u!1001 &1436375469
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: -8679921383154817045, guid: d51854ba1e0e8c343be9c992fdfb3d98, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 1.454553
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: d51854ba1e0e8c343be9c992fdfb3d98, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: d51854ba1e0e8c343be9c992fdfb3d98, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -6.8628106
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: d51854ba1e0e8c343be9c992fdfb3d98, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.7071067
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: d51854ba1e0e8c343be9c992fdfb3d98, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: d51854ba1e0e8c343be9c992fdfb3d98, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: d51854ba1e0e8c343be9c992fdfb3d98, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: d51854ba1e0e8c343be9c992fdfb3d98, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: d51854ba1e0e8c343be9c992fdfb3d98, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: d51854ba1e0e8c343be9c992fdfb3d98, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: d51854ba1e0e8c343be9c992fdfb3d98, type: 3}
+      propertyPath: m_Name
+      value: wood_box
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: d51854ba1e0e8c343be9c992fdfb3d98, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 877961081}
+  m_SourcePrefab: {fileID: 100100000, guid: d51854ba1e0e8c343be9c992fdfb3d98, type: 3}
 --- !u!1 &1637158109
 GameObject:
   m_ObjectHideFlags: 0
@@ -2703,7 +2789,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c000a3a209f3ce945bf78a2c807ee38c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Market.Economy.SupplierShop
-  prompt: "\u041E\u0442\u043A\u0440\u044B\u0442\u044C \u043C\u0430\u0433\u0430\u0437\u0438\u043D"
+  prompt: "Open shop"
   stock:
   - {fileID: 11400000, guid: c447e4739ecb9ca4ea46c7f79a04aca4, type: 2}
   - {fileID: 11400000, guid: 0f04c8d0e0fb44f68f5d3fc2bb629d23, type: 2}
@@ -3432,3 +3518,4 @@ SceneRoots:
   - {fileID: 708587958}
   - {fileID: 546128119}
   - {fileID: 29275023}
+  - {fileID: 1436375469}

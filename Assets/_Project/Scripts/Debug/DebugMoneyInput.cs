@@ -6,7 +6,7 @@ namespace Market.DebugTools
 {
     /// <summary>
     /// Debug money control.
-    /// Default: F1 — add money, F2 — spend money.
+    /// Default: F1 -- add money, F2 -- spend money.
     /// </summary>
     public class DebugMoneyInput : MonoBehaviour
     {

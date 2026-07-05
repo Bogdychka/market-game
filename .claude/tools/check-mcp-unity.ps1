@@ -2,7 +2,7 @@ $ErrorActionPreference = "Stop"
 
 $projectRoot = Resolve-Path (Join-Path $PSScriptRoot "..\..")
 $serverPath = Join-Path $projectRoot "Packages\com.gamelovers.mcp-unity\Server~\build\index.js"
-$callScript = Join-Path $projectRoot ".codex\tools\unity-ws-call.mjs"
+$callScript = Join-Path $projectRoot ".claude\tools\unity-ws-call.mjs"
 
 Write-Host "Project: $projectRoot"
 

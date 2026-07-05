@@ -5,7 +5,7 @@ using UnityEngine;
 namespace Market.Economy
 {
     /// <summary>
-    /// Player inventory. Stores a Dictionary of ItemSO → count. Fires OnChanged on every change.
+    /// Player inventory. Stores a Dictionary of ItemSO -> count. Fires OnChanged on every change.
     /// </summary>
     public class Inventory : MonoBehaviour
     {

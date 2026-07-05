@@ -46,7 +46,7 @@ namespace Market.Player
 
             if (cameraPivot == null)
             {
-                Debug.LogError($"{nameof(FirstPersonController)}: cameraPivot not assigned — component disabled.", this);
+                Debug.LogError($"{nameof(FirstPersonController)}: cameraPivot not assigned -- component disabled.", this);
                 enabled = false;
                 return;
             }

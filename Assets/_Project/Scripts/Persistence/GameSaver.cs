@@ -13,8 +13,8 @@ namespace Market.Persistence
 {
     /// <summary>
     /// Save/load coordinator in the Market scene.
-    /// — F5 saves manually.
-    /// — Load is automatic if SaveSystem.ShouldLoadOnStart was set by the main menu.
+    /// -- F5 saves manually.
+    /// -- Load is automatic if SaveSystem.ShouldLoadOnStart was set by the main menu.
     /// </summary>
     [DefaultExecutionOrder(-900)]
     public class GameSaver : MonoBehaviour
@@ -48,7 +48,7 @@ namespace Market.Persistence
         private bool          _startedInPlayMode;
         private bool          _hasAutoSavedOnExit;
 
-        // ── Lifecycle ──────────────────────────────────────────────────
+        // -- Lifecycle --------------------------------------------------
         private void Awake()
         {
             _startedInPlayMode = Application.isPlaying;
@@ -130,7 +130,7 @@ namespace Market.Persistence
                 Save();
         }
 
-        // ── Public ─────────────────────────────────────────────────────
+        // -- Public -----------------------------------------------------
         public void Save()
         {
             Save($"manual {saveKey}");
@@ -155,7 +155,7 @@ namespace Market.Persistence
             Debug.Log(LoadSummary(data));
         }
 
-        // ── Save: collect ──────────────────────────────────────────────
+        // -- Save: collect ----------------------------------------------
         private SaveData CollectSaveData()
         {
             var data = new SaveData
@@ -229,7 +229,7 @@ namespace Market.Persistence
             data.playerRotationY = playerTransform.eulerAngles.y;
         }
 
-        // ── Load: apply ────────────────────────────────────────────────
+        // -- Load: apply ------------------------------------------------
         private void ApplySaveData(SaveData data)
         {
             moneySystem.SetAmount(data.money);
@@ -284,7 +284,7 @@ namespace Market.Persistence
             if (_timeSystem == null) return;
             _timeSystem.SetTime(data.day, data.hour, data.minute);
 
-            // Season is derived from day — refresh after setting time
+            // Season is derived from day -- refresh after setting time
             _seasonManager?.RefreshSeason();
         }
 
@@ -336,12 +336,12 @@ namespace Market.Persistence
             return canSave;
         }
 
-        // ── Setup ──────────────────────────────────────────────────────
+        // -- Setup ------------------------------------------------------
         private void ResolveSaveSystem()
         {
             if (ServiceLocator.TryGet<SaveSystem>(out _saveSystem)) return;
 
-            // Direct Market scene startup — create a local instance
+            // Direct Market scene startup -- create a local instance
             _saveSystem = new SaveSystem();
             ServiceLocator.Register(_saveSystem);
             Debug.LogWarning("[GameSaver] SaveSystem not found in ServiceLocator. " +

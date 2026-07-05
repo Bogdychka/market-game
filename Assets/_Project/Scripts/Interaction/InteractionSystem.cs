@@ -45,7 +45,7 @@ namespace Market.Interaction
 
             if (playerInput == null)
             {
-                Debug.LogError("[InteractionSystem] PlayerInput not found — component disabled.", this);
+                Debug.LogError("[InteractionSystem] PlayerInput not found -- component disabled.", this);
                 enabled = false;
                 return;
             }
@@ -85,7 +85,7 @@ namespace Market.Interaction
                 return null;
             }
 
-            // Same collider as last frame — use cache, skip GetComponentInParent
+            // Same collider as last frame -- use cache, skip GetComponentInParent
             if (info.collider != _cachedCollider)
             {
                 _cachedCollider     = info.collider;

@@ -25,7 +25,7 @@ namespace Market.UI
         [Tooltip("Input action shown in the prompt. Defaults to Interact when empty.")]
         [SerializeField] private string actionName = DefaultActionName;
         [SerializeField] private string fallbackKeyHint = "E";
-        [SerializeField] private string fallbackText = "\u0412\u0437\u0430\u0438\u043C\u043E\u0434\u0435\u0439\u0441\u0442\u0432\u043E\u0432\u0430\u0442\u044C";
+        [SerializeField] private string fallbackText = "Interact";
 
         private CanvasGroup _group;
         private IInteractable _currentTarget;

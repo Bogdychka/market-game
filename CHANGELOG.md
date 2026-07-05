@@ -4,9 +4,9 @@ All notable changes to the Market Game project. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning follows
 [Semantic Versioning](https://semver.org/) — each released version is tagged in git as `vX.Y.Z`.
 
-Entries note the authoring agent (Claude / Codex / user). This file also doubles as the **shared worklog**:
-the `[Unreleased]` section is where in-flight work is recorded (especially by Codex) **before** Claude
-reviews it, verifies via Unity MCP, bumps the version, tags it, and pushes. See `COLLAB.md`.
+This file doubles as the **worklog**: the `[Unreleased]` section is where in-flight work is
+recorded before it is verified via Unity MCP, versioned, tagged, and pushed. Old entries keep
+their historical agent attributions (Claude / Codex / user); new entries don't need one.
 
 > **Agents: read only the head of this file** (`[Unreleased]` + the latest release, ~40 lines) —
 > never the full history. When the file exceeds ~30 KB, move entries older than the last 5 releases
@@ -37,6 +37,16 @@ reviews it, verifies via Unity MCP, bumps the version, tags it, and pushes. See 
   needed). Visual mesh/outfit variety is deferred until more humanoid assets exist. (Codex)
 
 ### Changed
+- Game UI language switched from Russian to English: all player-visible strings in scripts
+  (panels, buttons, HUD, settings, seasons, prompts) and serialized assets (`ItemSO.displayName`,
+  `NPCTypeSO.typeName`, `CropSO`, Market scene prompts) are now ASCII English. Typographic
+  characters in comments normalized to ASCII. This ends the recurring encoding-corruption issues;
+  `.editorconfig` added as a guardrail. (Claude)
+- Docs consolidated for single-agent development: `COLLAB.md` and `.codex/` removed (Codex no
+  longer works on the project), git process folded into `CLAUDE.md`, `AGENTS.md` rewritten
+  without two-agent references; MCP helper tools moved to `.claude/tools/`. (Claude)
+- `MarketUIController` input polling is split into small helpers while preserving Escape, inventory,
+  and tooltip update behavior. (Codex)
 - Time now stops at 00:00 and waits for the player to sleep before advancing to the next day, so
   day/season rollover is player-driven instead of automatic. (Codex)
 - Save data is now version 4 and records `stallId` for stall slots, while old saves without

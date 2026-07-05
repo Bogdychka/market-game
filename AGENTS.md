@@ -1,15 +1,14 @@
-# Market Game — Shared Agent Contract (Codex + Claude)
+# Market Game — Agent Contract
 
-Coding/architecture rules for `C:\Users\bogre\My project`. Both agents follow this file for all
-C#/Unity work. Don't duplicate the other contracts here:
-- **Process** (roles, branch-per-task + PR, versioning): `COLLAB.md`.
+Coding/architecture rules for `C:\Users\bogre\My project`. All C#/Unity work follows this file.
+Don't duplicate the other contracts here:
+- **Role, git process, versioning, response rules**: `CLAUDE.md`.
 - **Plan + live progress checkboxes**: `dev_plan_3.md` (the ONLY progress log).
-- **Claude's review/publish gate**: `CLAUDE.md`.
 - **Live state truth**: the open Unity Editor (MCP, port 8090), `game.log`, and serialized
   `.unity`/`.prefab`/`.asset` files.
 
-> Every session: `git pull origin main` first. One plan step per task. Codex implements and records
-> in `CHANGELOG.md [Unreleased]`, opens a PR; Claude reviews, verifies via MCP, versions, merges, tags.
+> One plan step per task. Record what changed in `CHANGELOG.md [Unreleased]`, verify via MCP,
+> report green/red. Commit/merge/tag/push only on explicit user instruction.
 
 ---
 
@@ -117,10 +116,11 @@ helpers into a controller, never hand-roll rects.
 - `OnGUI` for runtime UI. Hidden gameplay math the player can't inspect or reason about.
 - Heavy `Update()` logic without cached refs and clear justification.
 - Unrelated refactors while implementing a requested step.
-- **Non-ASCII text in code**: `///` docs, `[Tooltip]`, `//` comments, and `Debug.Log/Warning/Error`
-  strings are ASCII English only (Russian text broke targeted patching; 42-file cleanup in v1.3.2).
-  The ONLY allowed Russian: player-visible UI strings (panel titles, buttons, `ItemSO.displayName` /
-  `NPCTypeSO.typeName` defaults, season display names).
+- **Non-ASCII text ANYWHERE in code and content** — `///` docs, `[Tooltip]`, `//` comments,
+  `Debug.Log/*` strings, AND player-visible UI strings / SO defaults (`ItemSO.displayName`,
+  `NPCTypeSO.typeName`, season names): all ASCII English. The game UI is English. Russian text
+  repeatedly caused encoding corruption (42-file cleanup in v1.3.2; UI strings converted 2026-07);
+  localization, if ever needed, will be a dedicated system — never inline non-ASCII literals.
 
 ### Performance
 - Zero managed allocations per frame in hot paths: no per-frame List/array/string/delegate/closure/
@@ -176,7 +176,8 @@ NPC refusal reasons stay concrete: no stock · category not interesting · price
 | `ItemSO` | id (stable save key), displayName, category, base prices, icon, worldPrefab, seasons |
 | `ItemDatabase` | save lookup: `Resolve(id, name)` — id primary, name = legacy fallback |
 | `NPCTypeSO` | budget, speed, browse time, preferences, prefab |
-| Planned | `OrderSO` / `NPCPersonalitySO` / `StaffSO` / `AttractionObjectSO` (D), `CropSO` (E), `RecipeSO` (H) — data-only, same pattern |
+| `CropSO` | crop growth data (E block) |
+| Planned | `OrderSO` / `NPCPersonalitySO` / `StaffSO` / `AttractionObjectSO` (D), `RecipeSO` (H) — data-only, same pattern |
 
 ---
 
@@ -216,6 +217,7 @@ Unity behavior often lives in Inspector values, prefab overrides, and SO assets 
 Before blaming code: `rg "ScriptName|fieldName|guid:" Assets/_Project -g "*.unity" -g "*.prefab"
 -g "*.asset" -g "*.meta"`, map the script GUID from its `.cs.meta`, compare serialized values to
 code defaults, and fix the wiring when that is the truth. Logs: `Get-Content .\game.log -Tail 200`.
+Note: Unity escapes non-ASCII in YAML as `\uXXXX` — grep for `\\u04` to find any stray Cyrillic.
 
 ---
 
@@ -231,10 +233,12 @@ WS fallback if MCP transport is closed (from project root; same pattern for any 
 ```powershell
 @'
 {"returnWithLogs":true,"logsLimit":120}
-'@ | node .codex/tools/unity-ws-call.mjs recompile_scripts - --timeout 120000
+'@ | node .claude/tools/unity-ws-call.mjs recompile_scripts - --timeout 120000
 ```
 
 `ECONNREFUSED 127.0.0.1:8090` → Unity is closed or the MCP server window is offline.
+Helper scripts live in `.claude/tools/` (`check-mcp-unity.ps1`, `start-mcp-unity.ps1`,
+`unity-ws-call.mjs`).
 
 ### Gotchas (hard-won; numbers are stable ids — keep them)
 
@@ -253,7 +257,7 @@ WS fallback if MCP transport is closed (from project root; same pattern for any 
 6. A new `[SerializeField]` field does NOT backfill into already-serialized scenes — set it
    explicitly (`update_component` / `save_scene`) or it silently stays `null`/`false`.
 7. A new `.cs` under `Packages/…` needs its `.meta` + `AssetDatabase.Refresh` before the class exists.
-8. ASCII English everywhere in code text (see Never). Russian only in player-visible UI strings.
+8. ASCII English everywhere — code text AND UI strings/SO defaults (see Never). No exceptions.
 9. Never `UnityEngine.Input.*` — disabled legacy Input compiles, then throws at runtime
    (5000+ exceptions/session for a per-frame call; bit v1.4.0's tooltip).
 10. Rect clipping = `RectMask2D`, never legacy `Mask` with an alpha-0 graphic: the culled graphic
@@ -272,6 +276,7 @@ WS fallback if MCP transport is closed (from project root; same pattern for any 
 | Pack | Path | Use |
 |---|---|---|
 | Kenney Food Kit | `Assets/kenney_food-kit/Models/FBX format/` | ~200 item models |
+| Cartoon Farm Crops | `Assets/Cartoon_Farm_Crops/Prefabs/` | Crop growth stages + Dirt_Pile (convert materials to URP/Lit) |
 | Quaternius Farm Animals | `Assets/Farm Animals Animated by Quaternius/FBX/` | Livestock |
 | Quaternius Farm Buildings | `Assets/Farm Buildings by Quaternius/FBX/` | Farm structures |
 | Quaternius Fish Pack | `Assets/Fish Pack Animated by Quaternius/FBX/` | Fish items |
@@ -280,11 +285,3 @@ WS fallback if MCP transport is closed (from project root; same pattern for any 
 | Mixamo | `Assets/Mixamo_animations/` | NPC animations |
 
 Per-step availability tags (`[assets: ready/stub/backlog]`) live in `dev_plan_3.md`.
-
----
-
-## Codex skills
-
-Short checklists in `C:\Users\bogre\.codex\skills` (architecture, coding standards, MCP loop,
-serialized-scene debugging, build errors, game.log, economy safety, NavMesh, save/load, uGUI/TMP).
-This file remains the full contract.

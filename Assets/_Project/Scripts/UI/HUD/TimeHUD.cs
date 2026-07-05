@@ -31,7 +31,7 @@ namespace Market.UI
 
         private void Start()
         {
-            // SeasonManager is optional — may not exist
+            // SeasonManager is optional -- may not exist
             ServiceLocator.TryGet<SeasonManager>(out _seasonManager);
             ServiceLocator.TryGet<DayPhaseSystem>(out _dayPhaseSystem);
             Refresh();
@@ -78,7 +78,7 @@ namespace Market.UI
         {
             if (ServiceLocator.TryGet<TimeSystem>(out _timeSystem)) return;
 
-            Debug.LogWarning("[TimeHUD] TimeSystem not found — time HUD will be blank.", this);
+            Debug.LogWarning("[TimeHUD] TimeSystem not found -- time HUD will be blank.", this);
         }
 
         private void ValidateReferences()
