@@ -43,15 +43,15 @@ namespace Market.UI
             _activeRebind = null;
         }
 
-        // ── Build ──────────────────────────────────────────────────────────
+        // -- Build ----------------------------------------------------------
 
         private void Build()
         {
-            AddSectionHeader("Управление");
+            AddSectionHeader("Controls");
 
             TMP_Text sensValueLabel = null;
             Slider sensSlider = AddSliderRow(
-                "Чувствительность мыши",
+                "Mouse sensitivity",
                 _defaults.mouseSensitivityMin,
                 _defaults.mouseSensitivityMax,
                 _service.MouseSensitivity,
@@ -62,12 +62,12 @@ namespace Market.UI
                 if (sensValueLabel != null) sensValueLabel.text = v.ToString("F2");
             });
 
-            AddToggleRow("Инверсия Y", _service.InvertY, v => _service.SetInvertY(v));
+            AddToggleRow("Invert Y", _service.InvertY, v => _service.SetInvertY(v));
 
-            AddSectionHeader("Звук");
+            AddSectionHeader("Audio");
 
             TMP_Text masterLabel = null;
-            Slider masterSlider = AddSliderRow("Мастер", 0f, 1f, _service.MasterVolume, ref masterLabel);
+            Slider masterSlider = AddSliderRow("Master", 0f, 1f, _service.MasterVolume, ref masterLabel);
             masterSlider.onValueChanged.AddListener(v =>
             {
                 _service.SetMasterVolume(v);
@@ -75,7 +75,7 @@ namespace Market.UI
             });
 
             TMP_Text musicLabel = null;
-            Slider musicSlider = AddSliderRow("Музыка", 0f, 1f, _service.MusicVolume, ref musicLabel);
+            Slider musicSlider = AddSliderRow("Music", 0f, 1f, _service.MusicVolume, ref musicLabel);
             musicSlider.onValueChanged.AddListener(v =>
             {
                 _service.SetMusicVolume(v);
@@ -83,7 +83,7 @@ namespace Market.UI
             });
 
             TMP_Text sfxLabel = null;
-            Slider sfxSlider = AddSliderRow("Эффекты", 0f, 1f, _service.SfxVolume, ref sfxLabel);
+            Slider sfxSlider = AddSliderRow("SFX", 0f, 1f, _service.SfxVolume, ref sfxLabel);
             sfxSlider.onValueChanged.AddListener(v =>
             {
                 _service.SetSfxVolume(v);
@@ -92,14 +92,14 @@ namespace Market.UI
 
             if (_playerInput != null)
             {
-                AddSectionHeader("Клавиши");
-                TryAddRebindRow("Взаимодействие", "Interact");
-                TryAddRebindRow("Прыжок",         "Jump");
-                TryAddRebindRow("Бег",            "Sprint");
+                AddSectionHeader("Key bindings");
+                TryAddRebindRow("Interact", "Interact");
+                TryAddRebindRow("Jump",     "Jump");
+                TryAddRebindRow("Sprint",   "Sprint");
             }
         }
 
-        // ── Row builders ───────────────────────────────────────────────────
+        // -- Row builders ---------------------------------------------------
 
         private void AddSectionHeader(string text)
         {
@@ -156,7 +156,7 @@ namespace Market.UI
 
             bool state = initialValue;
             Button btn = UiFactory.CreateButton("ToggleBtn", row, _layer,
-                state ? "Вкл" : "Выкл", null, 15f);
+                state ? "On" : "Off", null, 15f);
             LayoutElement btnLayout = btn.gameObject.AddComponent<LayoutElement>();
             btnLayout.minWidth = 80f;
             btnLayout.preferredWidth = 80f;
@@ -164,7 +164,7 @@ namespace Market.UI
             btn.onClick.AddListener(() =>
             {
                 state = !state;
-                btn.GetComponentInChildren<TMP_Text>().text = state ? "Вкл" : "Выкл";
+                btn.GetComponentInChildren<TMP_Text>().text = state ? "On" : "Off";
                 onChange(state);
             });
 
@@ -201,7 +201,7 @@ namespace Market.UI
             UiFactory.AddLayoutHeight(row.gameObject, 36f);
         }
 
-        // ── Rebinding ──────────────────────────────────────────────────────
+        // -- Rebinding ------------------------------------------------------
 
         private void StartRebind(InputAction action, int bindingIdx, Button btn, TMP_Text label)
         {
@@ -232,7 +232,7 @@ namespace Market.UI
                 .Start();
         }
 
-        // ── uGUI helpers ───────────────────────────────────────────────────
+        // -- uGUI helpers ---------------------------------------------------
 
         private RectTransform CreateRow(string name)
         {

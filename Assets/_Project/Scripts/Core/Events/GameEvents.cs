@@ -4,7 +4,7 @@ using Market.World;
 
 namespace Market.Core.Events
 {
-    // Shared game events — add new ones as the project grows.
+    // Shared game events -- add new ones as the project grows.
     // Each is a struct for cheap allocations.
 
     public readonly struct MoneyChangedEvent : IGameEvent

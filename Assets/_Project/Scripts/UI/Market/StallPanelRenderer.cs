@@ -36,12 +36,12 @@ namespace Market.UI
         /// <summary>Render stall slots and placeable inventory into the cleared panel.</summary>
         public void Render(MarketStall stall, Inventory inventory, string subtitle)
         {
-            _view.SetHeader("Прилавок", subtitle);
+            _view.SetHeader("Stall", subtitle);
 
-            _view.CreateSectionLabel("Слоты");
+            _view.CreateSectionLabel("Slots");
             if (stall == null || stall.Slots == null || stall.Slots.Length == 0)
             {
-                _view.CreateEmptyText("Слоты не настроены.");
+                _view.CreateEmptyText("No slots configured.");
                 return;
             }
 
@@ -54,8 +54,8 @@ namespace Market.UI
                     _view.CreateActionRow(
                         slot.Item,
                         slot.Item.DisplayName,
-                        $"{slot.SellPrice:0.##} монет",
-                        "Снять",
+                        $"{slot.SellPrice:0.##} coins",
+                        "Remove",
                         () =>
                         {
                             stall.RemoveItem(slotIndex);
@@ -64,13 +64,13 @@ namespace Market.UI
                     continue;
                 }
 
-                _view.CreateInfoRow(null, "Пусто", $"Слот {i + 1}", string.Empty);
+                _view.CreateInfoRow(null, "Empty", $"Slot {i + 1}", string.Empty);
             }
 
-            _view.CreateSectionLabel("Выложить товар");
+            _view.CreateSectionLabel("Place goods");
             if (inventory == null || inventory.Items.Count == 0)
             {
-                _view.CreateEmptyText("В инвентаре нет товаров.");
+                _view.CreateEmptyText("No items in inventory.");
                 return;
             }
 
@@ -112,7 +112,7 @@ namespace Market.UI
 
             rowButton.onClick.AddListener(() => PlaceInFirstFreeSlot(stall, item, priceInput));
 
-            TMP_Text actionLabel = _view.CreateRowText("Action", row, "Выложить", 15f, TextAlignmentOptions.Right);
+            TMP_Text actionLabel = _view.CreateRowText("Action", row, "Place", 15f, TextAlignmentOptions.Right);
             actionLabel.fontStyle = FontStyles.Bold;
             actionLabel.rectTransform.offsetMin = new Vector2(0f, 0f);
             actionLabel.rectTransform.offsetMax = new Vector2(-14f, 0f);
@@ -176,7 +176,7 @@ namespace Market.UI
             text.rectTransform.offsetMax = new Vector2(-6f, 0f);
 
             TMP_Text placeholder = UiFactory.CreateText("Placeholder", viewport, _layer, 14f, FontStyles.Normal, TextAlignmentOptions.Center);
-            placeholder.text = "Цена";
+            placeholder.text = "Price";
             placeholder.color = new Color(0.45f, 0.50f, 0.54f);
             UiFactory.StretchToParent(placeholder.rectTransform);
             placeholder.rectTransform.offsetMin = new Vector2(6f, 0f);
@@ -191,7 +191,7 @@ namespace Market.UI
         private TMP_Text CreatePriceWarning(RectTransform parent)
         {
             TMP_Text warning = UiFactory.CreateText("PriceWarning", parent, _layer, 11f, FontStyles.Bold, TextAlignmentOptions.Center);
-            warning.text = "< закупочной";
+            warning.text = "< buy price";
             warning.richText = false;
             warning.color = PriceInputWarningColor;
             warning.textWrappingMode = TextWrappingModes.NoWrap;

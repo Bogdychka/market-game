@@ -11,7 +11,7 @@ namespace Market.NPC
     public class NPCTypeSO : ScriptableObject
     {
         [Header("Identity")]
-        [SerializeField] private string typeName = "Обычный покупатель";
+        [SerializeField] private string typeName = "Regular shopper";
         [Tooltip("NPC prefab. Must contain NavMeshAgent + NPCVisitor components.")]
         [SerializeField] private GameObject npcPrefab;
 

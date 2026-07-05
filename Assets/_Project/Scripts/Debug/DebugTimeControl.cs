@@ -7,10 +7,10 @@ namespace Market.DebugTools
 {
     /// <summary>
     /// Debug time control.
-    /// Page Up   — speed up time (×2)
-    /// Page Down — slow down time (÷2)
-    /// H         — skip 1 hour
-    /// N         — skip to next season
+    /// Page Up   -- speed up time (x2)
+    /// Page Down -- slow down time (/2)
+    /// H         -- skip 1 hour
+    /// N         -- skip to next season
     /// </summary>
     public class DebugTimeControl : MonoBehaviour
     {
@@ -65,7 +65,7 @@ namespace Market.DebugTools
 
             if (_seasonManager == null)
             {
-                Debug.LogWarning("[Time] SeasonManager not found — cannot skip season.", this);
+                Debug.LogWarning("[Time] SeasonManager not found -- cannot skip season.", this);
                 return;
             }
 

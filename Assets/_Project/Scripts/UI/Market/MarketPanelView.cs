@@ -272,7 +272,7 @@ namespace Market.UI
                 return;
             }
 
-            // No sprite assigned — fall back to the first letter over the category color.
+            // No sprite assigned -- fall back to the first letter over the category color.
             TMP_Text fallback = UiFactory.CreateText("Letter", icon, _layer, 15f, FontStyles.Bold, TextAlignmentOptions.Center);
             fallback.text = IconLetter(item);
             fallback.color = new Color(1f, 1f, 1f, 0.82f);

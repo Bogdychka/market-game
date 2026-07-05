@@ -81,20 +81,11 @@ namespace Market.UI
             Keyboard keyboard = Keyboard.current;
             if (keyboard == null) return;
 
-            if (_mode != PanelMode.None && keyboard.escapeKey.wasPressedThisFrame)
-            {
-                if (uiModeService != null && uiModeService.TryConsumeCloseRequest())
-                    return;
-
-                ClosePanel();
+            if (HandleCloseInput(keyboard))
                 return;
-            }
 
-            if (keyboard[inventoryKey].wasPressedThisFrame)
-                ToggleInventory();
-
-            if (_view != null && _view.Tooltip.IsVisible)
-                _view.Tooltip.UpdatePosition();
+            HandleInventoryInput(keyboard);
+            UpdateTooltipPosition();
         }
 
         /// <summary>Opens the inventory panel.</summary>
@@ -112,6 +103,30 @@ namespace Market.UI
             }
 
             ShowInventory();
+        }
+
+        private bool HandleCloseInput(Keyboard keyboard)
+        {
+            if (_mode == PanelMode.None || !keyboard.escapeKey.wasPressedThisFrame)
+                return false;
+
+            if (uiModeService != null && uiModeService.TryConsumeCloseRequest())
+                return true;
+
+            ClosePanel();
+            return true;
+        }
+
+        private void HandleInventoryInput(Keyboard keyboard)
+        {
+            if (keyboard[inventoryKey].wasPressedThisFrame)
+                ToggleInventory();
+        }
+
+        private void UpdateTooltipPosition()
+        {
+            if (_view != null && _view.Tooltip.IsVisible)
+                _view.Tooltip.UpdatePosition();
         }
 
         private void ShowSupplier(SupplierShop shop, GameObject actor)
@@ -165,7 +180,7 @@ namespace Market.UI
 
         private string MoneyText()
         {
-            return moneySystem != null ? $"{Mathf.FloorToInt(moneySystem.Amount)} монет" : string.Empty;
+            return moneySystem != null ? $"{Mathf.FloorToInt(moneySystem.Amount)} coins" : string.Empty;
         }
 
         private string SupplierSubtitle()

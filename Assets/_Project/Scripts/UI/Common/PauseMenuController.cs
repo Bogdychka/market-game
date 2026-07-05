@@ -111,12 +111,12 @@ namespace Market.UI
             if (gameSaver == null)
             {
                 Debug.LogError("[PauseMenuController] gameSaver not assigned.", this);
-                SetStatus("Сохранение недоступно");
+                SetStatus("Saving unavailable");
                 return;
             }
 
             gameSaver.Save();
-            SetStatus("Сохранено");
+            SetStatus("Saved");
         }
 
         private void OnSettings()
@@ -160,13 +160,13 @@ namespace Market.UI
 
             _mainPanel = CreatePanel("PausePanel");
             TMP_Text title = CreateText("Title", _mainPanel, 30f, FontStyles.Bold, TextAlignmentOptions.Center);
-            title.text = "Пауза";
+            title.text = "Paused";
             UiFactory.AddLayoutHeight(title.gameObject, 52f);
 
-            CreateButton("ResumeButton", _mainPanel, "Продолжить", Resume);
-            CreateButton("SaveButton", _mainPanel, "Сохранить", OnSave);
-            CreateButton("SettingsButton", _mainPanel, "Настройки", OnSettings);
-            CreateButton("MainMenuButton", _mainPanel, "В главное меню", OnMainMenu);
+            CreateButton("ResumeButton", _mainPanel, "Resume", Resume);
+            CreateButton("SaveButton", _mainPanel, "Save", OnSave);
+            CreateButton("SettingsButton", _mainPanel, "Settings", OnSettings);
+            CreateButton("MainMenuButton", _mainPanel, "Main Menu", OnMainMenu);
 
             _statusLabel = CreateText("Status", _mainPanel, 15f, FontStyles.Normal, TextAlignmentOptions.Center);
             _statusLabel.color = UiFactory.MutedText;
@@ -174,14 +174,14 @@ namespace Market.UI
 
             _settingsPanel = CreatePanel("PauseSettingsPanel");
             TMP_Text settingsTitle = CreateText("Title", _settingsPanel, 26f, FontStyles.Bold, TextAlignmentOptions.Center);
-            settingsTitle.text = "Настройки";
+            settingsTitle.text = "Settings";
             UiFactory.AddLayoutHeight(settingsTitle.gameObject, 48f);
 
             if (_settingsService != null && settingsSO != null)
                 _settingsPanelRenderer = new SettingsPanelRenderer(
                     _settingsPanel, gameObject.layer, _settingsService, settingsSO, playerInput);
 
-            CreateButton("BackButton", _settingsPanel, "Назад", OnBackToMain);
+            CreateButton("BackButton", _settingsPanel, "Back", OnBackToMain);
             _settingsPanel.gameObject.SetActive(false);
         }
 

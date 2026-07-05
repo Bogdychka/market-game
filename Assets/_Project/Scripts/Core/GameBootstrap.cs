@@ -12,7 +12,7 @@ namespace Market.Core
     /// <summary>
     /// Game entry point. Lives in the Bootstrap scene.
     /// Brings up core services (EventBus, SceneLoader, SaveSystem, TimeSystem) and loads the first scene.
-    /// Marked DontDestroyOnLoad — persists for the entire session.
+    /// Marked DontDestroyOnLoad -- persists for the entire session.
     /// </summary>
     [DefaultExecutionOrder(-1000)]
     public class GameBootstrap : MonoBehaviour
@@ -41,7 +41,7 @@ namespace Market.Core
         private MarketOpenSystem _marketOpenSystem;
         private float _ignoreEscapeUntil;
 
-        // ── Lifecycle ──────────────────────────────────────────────────
+        // -- Lifecycle --------------------------------------------------
         private void Awake()
         {
             if (_initialized)
@@ -80,7 +80,7 @@ namespace Market.Core
             _isPrimaryInstance = false;
         }
 
-        // ── Setup ──────────────────────────────────────────────────────
+        // -- Setup ------------------------------------------------------
         private void InitializeServices()
         {
             ServiceLocator.Clear();
@@ -120,7 +120,7 @@ namespace Market.Core
             ServiceLocator.Get<SceneLoader>().Load(target);
         }
 
-        // ── Per-frame ──────────────────────────────────────────────────
+        // -- Per-frame --------------------------------------------------
         private void TickTime()
         {
             _timeSystem?.Tick(Time.deltaTime);

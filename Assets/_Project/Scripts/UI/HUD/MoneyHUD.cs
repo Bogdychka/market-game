@@ -11,7 +11,7 @@ namespace Market.UI
     {
         [SerializeField] private MoneySystem moneySystem;
         [SerializeField] private TMP_Text label;
-        [SerializeField] private string format = "{0} монет";
+        [SerializeField] private string format = "{0} coins";
 
         private void Awake()
         {
@@ -19,7 +19,7 @@ namespace Market.UI
             if (label       == null) Debug.LogError("[MoneyHUD] label not assigned",       this);
         }
 
-        // Initial refresh in Start — after MoneySystem.Awake initialises _amount.
+        // Initial refresh in Start -- after MoneySystem.Awake initialises _amount.
         private void Start()
         {
             if (moneySystem != null) Refresh(moneySystem.Amount);

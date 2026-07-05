@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 637d7028e9fb3464786e39712df348ec, type: 3}
+  m_Name: Item_CarrotSeed
+  m_EditorClassIdentifier: Market.Runtime::Market.Economy.ItemSO
+  id: Item_CarrotSeed
+  displayName: "Carrot Seeds"
+  description: "Seeds for the first crop plot."
+  icon: {fileID: 21300000, guid: eab0523b7b36dbc4c9d0be629f0a5194, type: 3}
+  worldPrefab: {fileID: 0}
+  category: 5
+  baseBuyPrice: 3
+  baseSellPrice: 1
+  availableInSeasons: 00000000

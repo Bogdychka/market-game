@@ -18,7 +18,7 @@ namespace Market.World
             sphere.name = "MoonVisual (Auto)";
             sphere.transform.localScale = Vector3.one * size;
 
-            // Collider not needed — this is a decoration only
+            // Collider not needed -- this is a decoration only
             if (sphere.TryGetComponent<Collider>(out var col))
                 Object.Destroy(col);
 
@@ -37,7 +37,7 @@ namespace Market.World
         }
 
         /// <summary>
-        /// Material with strong emission — moon stays visible regardless of lighting and tone-mapping.
+        /// Material with strong emission -- moon stays visible regardless of lighting and tone-mapping.
         /// </summary>
         private static Material CreateMoonMaterial()
         {
@@ -62,7 +62,7 @@ namespace Market.World
             if (mat.HasProperty("_Color"))     mat.SetColor("_Color",     baseColor);
             mat.color = baseColor;
 
-            // URP Lit multiplies _BaseColor by _BaseMap — without a texture the result is black
+            // URP Lit multiplies _BaseColor by _BaseMap -- without a texture the result is black
             if (mat.HasProperty("_BaseMap")) mat.SetTexture("_BaseMap", Texture2D.whiteTexture);
             if (mat.HasProperty("_MainTex")) mat.SetTexture("_MainTex", Texture2D.whiteTexture);
 

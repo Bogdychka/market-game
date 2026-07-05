@@ -10,7 +10,7 @@ namespace Market.DebugTools
 {
     /// <summary>
     /// Automated debug runner for a short market loop:
-    /// buy from supplier → place on stall → spawn NPC → log snapshot.
+    /// buy from supplier -> place on stall -> spawn NPC -> log snapshot.
     /// </summary>
     public class MarketAutoDebugger : MonoBehaviour
     {
@@ -147,7 +147,7 @@ namespace Market.DebugTools
             {
                 if (supplierShop == null)
                 {
-                    Debug.LogWarning("[AutoDebug] supplierShop not assigned — auto-buy impossible.", this);
+                    Debug.LogWarning("[AutoDebug] supplierShop not assigned -- auto-buy impossible.", this);
                     return;
                 }
 
@@ -172,7 +172,7 @@ namespace Market.DebugTools
         {
             if (npcSpawner == null)
             {
-                Debug.LogWarning("[AutoDebug] npcSpawner not assigned — auto-spawn impossible.", this);
+                Debug.LogWarning("[AutoDebug] npcSpawner not assigned -- auto-spawn impossible.", this);
                 return;
             }
 

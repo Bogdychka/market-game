@@ -5,7 +5,7 @@ namespace Market.Core
 {
     /// <summary>
     /// Game clock. Registered in ServiceLocator, ticked from GameBootstrap.Update().
-    /// 1 real second = minutesPerRealSecond game minutes (default 2 ≈ 12 min/day).
+    /// 1 real second = minutesPerRealSecond game minutes (default 2 ~ 12 min/day).
     /// </summary>
     public class TimeSystem
     {
@@ -101,7 +101,7 @@ namespace Market.Core
                 AdvanceHour();
         }
 
-        public string FormatTime() => $"День {Day}  {Hour:00}:{Minute:00}";
+        public string FormatTime() => $"Day {Day}  {Hour:00}:{Minute:00}";
 
         private void AdvanceHour()
         {

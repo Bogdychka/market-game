@@ -13,7 +13,7 @@ namespace Market.World
     public struct SeasonConfig
     {
         [Range(-23.45f, 23.45f)]
-        [Tooltip("Solar declination (°): +23.45 = summer, 0 = equinox, -23.45 = winter.")]
+        [Tooltip("Solar declination (deg): +23.45 = summer, 0 = equinox, -23.45 = winter.")]
         public float solarDeclination;
 
         [Tooltip("Sky tint (_SkyTint in Procedural Skybox). Affects atmosphere colour.")]
@@ -22,10 +22,10 @@ namespace Market.World
 
     /// <summary>
     /// Manages season transitions.
-    /// — Each season lasts <see cref="daysPerSeason"/> game days.
-    /// — On season change: updates <see cref="DaylightSystem.SetSolarDeclination"/>,
+    /// -- Each season lasts <see cref="daysPerSeason"/> game days.
+    /// -- On season change: updates <see cref="DaylightSystem.SetSolarDeclination"/>,
     ///   skybox tint, and publishes <see cref="SeasonChangedEvent"/>.
-    /// — Registered in ServiceLocator — accessible from SupplierShop, TimeHUD, etc.
+    /// -- Registered in ServiceLocator -- accessible from SupplierShop, TimeHUD, etc.
     /// </summary>
     public class SeasonManager : MonoBehaviour
     {
@@ -71,7 +71,7 @@ namespace Market.World
         private Material   _skyboxMaterial;
         private static readonly int SkyTintID = Shader.PropertyToID("_SkyTint");
 
-        // ── Lifecycle ──────────────────────────────────────────────────
+        // -- Lifecycle --------------------------------------------------
         private void Awake()
         {
             ServiceLocator.Register(this);
@@ -82,12 +82,12 @@ namespace Market.World
             ServiceLocator.TryGet<EventBus>(out _eventBus);
 
             if (daylightSystem == null)
-                Debug.LogWarning("[SeasonManager] daylightSystem not assigned — declination will not change.", this);
+                Debug.LogWarning("[SeasonManager] daylightSystem not assigned -- declination will not change.", this);
         }
 
         private void Start()
         {
-            // DaylightSystem.Awake already created the runtime skybox instance — grab it here
+            // DaylightSystem.Awake already created the runtime skybox instance -- grab it here
             _skyboxMaterial = RenderSettings.skybox;
 
             // Apply starting season without firing an event
@@ -119,7 +119,7 @@ namespace Market.World
             ApplySeason(s, fireEvent: s != CurrentSeason);
         }
 
-        // ── Season logic ───────────────────────────────────────────────
+        // -- Season logic -----------------------------------------------
         private void HandleDayChanged(int day)
         {
             Season newSeason = ComputeSeason(day);
@@ -139,14 +139,14 @@ namespace Market.World
                 _skyboxMaterial.SetColor(SkyTintID, cfg.skyTint);
 
             Debug.Log($"[SeasonManager] {GetName(season)} " +
-                      $"(declination: {cfg.solarDeclination:+0.0;-0.0}°, day {DayInCurrentSeason}/{daysPerSeason})");
+                      $"(declination: {cfg.solarDeclination:+0.0;-0.0} deg, day {DayInCurrentSeason}/{daysPerSeason})");
 
             if (!fireEvent) return;
             OnSeasonChanged?.Invoke(season);
             _eventBus?.Publish(new SeasonChangedEvent(season));
         }
 
-        // ── Helpers ────────────────────────────────────────────────────
+        // -- Helpers ----------------------------------------------------
         private Season ComputeSeason(int day)
         {
             int cycleLength = daysPerSeason * 4;
@@ -163,10 +163,10 @@ namespace Market.World
         /// <summary>Localised season name (player-facing).</summary>
         public static string GetName(Season s) => s switch
         {
-            Season.Spring => "Весна",
-            Season.Summer => "Лето",
-            Season.Autumn => "Осень",
-            Season.Winter => "Зима",
+            Season.Spring => "Spring",
+            Season.Summer => "Summer",
+            Season.Autumn => "Autumn",
+            Season.Winter => "Winter",
             _             => s.ToString()
         };
     }

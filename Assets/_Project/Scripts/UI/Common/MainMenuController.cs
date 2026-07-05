@@ -53,7 +53,7 @@ namespace Market.UI
             ShowMainPanel();
         }
 
-        // ── Button handlers ────────────────────────────────────────────
+        // -- Button handlers --------------------------------------------
         private void OnNewGame()
         {
             Debug.Log("[MainMenu] New Game");
@@ -84,7 +84,7 @@ namespace Market.UI
 #endif
         }
 
-        // ── Setup ──────────────────────────────────────────────────────
+        // -- Setup ------------------------------------------------------
         private void WireButtons()
         {
             UnwireButtons();
@@ -128,7 +128,7 @@ namespace Market.UI
 
             if (_sceneLoader == null)
             {
-                Debug.LogError("[MainMenu] SceneLoader unavailable — cannot load Market.", this);
+                Debug.LogError("[MainMenu] SceneLoader unavailable -- cannot load Market.", this);
                 return;
             }
 

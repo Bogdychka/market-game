@@ -12,7 +12,7 @@ namespace Market.Economy
     public class SupplierShop : MonoBehaviour, IInteractable
     {
         [Header("Config")]
-        [SerializeField] private string prompt = "Открыть магазин";
+        [SerializeField] private string prompt = "Open shop";
 
         [Header("Stock")]
         [SerializeField] private ItemSO[] stock;
@@ -30,7 +30,7 @@ namespace Market.Economy
         private SeasonManager   _seasonManager;
         private PriceCalculator _priceCalculator;
 
-        // ── Lifecycle ──────────────────────────────────────────────────
+        // -- Lifecycle --------------------------------------------------
         private void Awake()
         {
             if (moneySystem == null) Debug.LogError("[SupplierShop] moneySystem not assigned", this);
@@ -39,7 +39,7 @@ namespace Market.Economy
 
         private void Start()
         {
-            // Services register in their own Awake — resolve here in Start to be safe
+            // Services register in their own Awake -- resolve here in Start to be safe
             ServiceLocator.TryGet<SeasonManager>(out _seasonManager);
             ServiceLocator.TryGet<PriceCalculator>(out _priceCalculator);
         }
@@ -77,7 +77,7 @@ namespace Market.Economy
             PrintStock();
         }
 
-        // ── Public API ─────────────────────────────────────────────────
+        // -- Public API -------------------------------------------------
 
         /// <summary>
         /// Buy by stock array index. Returns false if the item is out of season or funds are insufficient.
@@ -86,7 +86,7 @@ namespace Market.Economy
         {
             if (moneySystem == null || inventory == null)
             {
-                Debug.LogError("[SupplierShop] moneySystem/inventory not assigned — purchase impossible.", this);
+                Debug.LogError("[SupplierShop] moneySystem/inventory not assigned -- purchase impossible.", this);
                 return false;
             }
             if (!IsValidIndex(index)) return false;
@@ -115,7 +115,7 @@ namespace Market.Economy
             return true;
         }
 
-        // ── Helpers ────────────────────────────────────────────────────
+        // -- Helpers ----------------------------------------------------
         private bool IsValidIndex(int index)
         {
             if (stock == null || index < 0 || index >= stock.Length || stock[index] == null)
@@ -128,7 +128,7 @@ namespace Market.Economy
 
         private bool IsInSeason(ItemSO item)
         {
-            if (_seasonManager == null) return true; // no SeasonManager — all available
+            if (_seasonManager == null) return true; // no SeasonManager -- all available
             return item.IsAvailableIn(_seasonManager.CurrentSeason);
         }
 
@@ -151,7 +151,7 @@ namespace Market.Economy
                 if (stock[i] == null) continue;
 
                 string available = IsInSeason(stock[i]) ? "" : " [out of season]";
-                Debug.Log($"[{i}] {stock[i].DisplayName} — {GetBuyPrice(stock[i]):0.##} coins{available}");
+                Debug.Log($"[{i}] {stock[i].DisplayName} -- {GetBuyPrice(stock[i]):0.##} coins{available}");
             }
 
             Debug.Log("Buy: DebugSupplierBuy -> keys 1-5");

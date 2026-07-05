@@ -7,7 +7,7 @@ namespace Market.Core
 {
     /// <summary>
     /// Scene loading service. Registered in ServiceLocator from Bootstrap.
-    /// Not a MonoBehaviour — uses a coroutine runner provided at construction.
+    /// Not a MonoBehaviour -- uses a coroutine runner provided at construction.
     /// </summary>
     public class SceneLoader
     {
@@ -29,7 +29,7 @@ namespace Market.Core
         {
             if (string.IsNullOrWhiteSpace(sceneName))
             {
-                Debug.LogError("[SceneLoader] Scene name is empty — load cancelled.");
+                Debug.LogError("[SceneLoader] Scene name is empty -- load cancelled.");
                 return;
             }
 
@@ -41,7 +41,7 @@ namespace Market.Core
 
             if (_isLoading)
             {
-                Debug.LogWarning($"[SceneLoader] Load already in progress — request '{sceneName}' ignored.");
+                Debug.LogWarning($"[SceneLoader] Load already in progress -- request '{sceneName}' ignored.");
                 return;
             }
 

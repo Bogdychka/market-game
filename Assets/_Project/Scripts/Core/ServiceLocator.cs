@@ -6,7 +6,7 @@ namespace Market.Core
 {
     /// <summary>
     /// Lightweight service registry. Registered from Bootstrap, accessible anywhere.
-    /// Do not treat as a god-object — use only for game-wide systems
+    /// Do not treat as a god-object -- use only for game-wide systems
     /// (Money, Inventory, Time, EventBus, SceneLoader, etc.).
     /// </summary>
     public static class ServiceLocator

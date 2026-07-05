@@ -8,7 +8,7 @@ using UnityEngine.AI;
 namespace Market.NPC
 {
     /// <summary>
-    /// Market visitor NPC. States: WalkToStall → Browsing → WalkToExit → Done.
+    /// Market visitor NPC. States: WalkToStall -> Browsing -> WalkToExit -> Done.
     /// Buys the first item at an acceptable price, preferring PreferredCategories.
     /// </summary>
     [RequireComponent(typeof(NavMeshAgent))]
@@ -45,7 +45,7 @@ namespace Market.NPC
         private bool            _isPasserby;
         private readonly List<MarketStall> _visitedStalls = new();
 
-        // ── Lifecycle ──────────────────────────────────────────────────
+        // -- Lifecycle --------------------------------------------------
         private void Awake()
         {
             _agent = GetComponent<NavMeshAgent>();
@@ -99,8 +99,32 @@ namespace Market.NPC
 
         private void Start()
         {
+            // Fresh spawns begin here (proven first-frame agent timing).
+            // Pooled reuse calls Begin() directly, since Unity's Start runs only once per object.
+            Begin();
+        }
+
+        /// <summary>
+        /// Begins the visitor's behaviour. Call after Initialize/RestoreStalls on pool reuse, where
+        /// Unity's Start does not run again. Fresh spawns reach this through Start.
+        /// </summary>
+        public void Begin()
+        {
             ValidateReferences();
             EnterState(_isPasserby ? State.WalkToExit : State.WalkToStall);
+        }
+
+        /// <summary>
+        /// Repositions a (possibly pooled) visitor and snaps its NavMeshAgent to the spawn point,
+        /// clearing any path left over from a previous life.
+        /// </summary>
+        public void PlaceAt(Vector3 position, Quaternion rotation)
+        {
+            transform.SetPositionAndRotation(position, rotation);
+            if (_agent == null) return;
+
+            _agent.Warp(position);
+            if (_agent.isOnNavMesh) _agent.ResetPath();
         }
 
         /// <summary>Redirect this visitor away from stalls, usually because the market was closed.</summary>
@@ -146,7 +170,7 @@ namespace Market.NPC
             }
         }
 
-        // ── State machine: dispatcher ──────────────────────────────────
+        // -- State machine: dispatcher ----------------------------------
         private void EnterState(State next)
         {
             _state = next;
@@ -159,7 +183,7 @@ namespace Market.NPC
             }
         }
 
-        // ── State: WalkToStall ─────────────────────────────────────────
+        // -- State: WalkToStall -----------------------------------------
         private void EnterWalkToStall()
         {
             if (targetStall == null)
@@ -177,7 +201,7 @@ namespace Market.NPC
             if (HasArrived()) EnterState(State.Browsing);
         }
 
-        // ── State: Browsing ────────────────────────────────────────────
+        // -- State: Browsing --------------------------------------------
         private void EnterBrowsing()
         {
             _agent.ResetPath();
@@ -345,7 +369,7 @@ namespace Market.NPC
             return stall != null ? stall.StallId : "missing stall";
         }
 
-        // ── State: WalkToExit ──────────────────────────────────────────
+        // -- State: WalkToExit ------------------------------------------
         private void EnterWalkToExit()
         {
             _agent.SetDestination(SnapToNavMesh(exitPoint.position));
@@ -356,15 +380,20 @@ namespace Market.NPC
             if (HasArrived()) EnterState(State.Done);
         }
 
-        // ── State: Done ────────────────────────────────────────────────
+        // -- State: Done ------------------------------------------------
         private void EnterDone()
         {
             Debug.Log("[NPC] Left the market.");
-            OnDespawned?.Invoke(this);
-            Destroy(gameObject);
+
+            // The owner (NPCSpawner) decides the fate -- return to pool or destroy.
+            // With no owner (e.g. spawner disabled), self-destruct as before so we never leak.
+            if (OnDespawned != null)
+                OnDespawned.Invoke(this);
+            else
+                Destroy(gameObject);
         }
 
-        // ── Helpers ────────────────────────────────────────────────────
+        // -- Helpers ----------------------------------------------------
         private bool HasArrived()
         {
             if (_agent.pathPending) return false;
@@ -380,7 +409,7 @@ namespace Market.NPC
             if (TrySampleNavMesh(worldPos, out Vector3 navPos))
                 return navPos;
 
-            Debug.LogWarning($"[NPCVisitor] Point {worldPos} is not on the NavMesh — NPC may not reach it!");
+            Debug.LogWarning($"[NPCVisitor] Point {worldPos} is not on the NavMesh -- NPC may not reach it!");
             return navPos;
         }
 

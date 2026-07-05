@@ -24,11 +24,11 @@ namespace Market.UI
         [Header("Settings")]
         [SerializeField] private SettingsSO settingsSO;
 
-        [Header("Player (optional — leave null in MainMenu)")]
+        [Header("Player (optional -- leave null in MainMenu)")]
         [SerializeField] private FirstPersonController playerController;
         [SerializeField] private PlayerInput           playerInput;
 
-        [Header("Back callback (optional — wire in Inspector or leave null to omit the button)")]
+        [Header("Back callback (optional -- wire in Inspector or leave null to omit the button)")]
         [SerializeField] private UnityEvent onBack;
 
         private SettingsPanelRenderer _renderer;
@@ -57,7 +57,7 @@ namespace Market.UI
             _renderer?.CancelActiveRebind();
         }
 
-        // ── Construction ───────────────────────────────────────────────────
+        // -- Construction ---------------------------------------------------
 
         private void AddBackdrop()
         {
@@ -97,18 +97,18 @@ namespace Market.UI
         {
             TMP_Text title = UiFactory.CreateText("Title", parent, gameObject.layer,
                 26f, FontStyles.Bold, TextAlignmentOptions.Center);
-            title.text = "Настройки";
+            title.text = "Settings";
             UiFactory.AddLayoutHeight(title.gameObject, 48f);
         }
 
         private void AddBackButton(RectTransform parent)
         {
             Button btn = UiFactory.CreateButton("BackButton", parent, gameObject.layer,
-                "Назад", () => onBack.Invoke(), 17f);
+                "Back", () => onBack.Invoke(), 17f);
             UiFactory.AddLayoutHeight(btn.gameObject, ButtonHeight);
         }
 
-        // ── Service ────────────────────────────────────────────────────────
+        // -- Service --------------------------------------------------------
 
         private SettingsService ResolveSettingsService()
         {

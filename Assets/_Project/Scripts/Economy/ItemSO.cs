@@ -4,7 +4,7 @@ using UnityEngine;
 namespace Market.Economy
 {
     /// <summary>
-    /// Item descriptor. Data separated from logic — ScriptableObject only.
+    /// Item descriptor. Data separated from logic -- ScriptableObject only.
     /// </summary>
     [CreateAssetMenu(menuName = "Market/Item", fileName = "Item_New")]
     public class ItemSO : ScriptableObject
@@ -15,7 +15,7 @@ namespace Market.Economy
         [SerializeField] private string id;
 
         [Header("Info")]
-        [SerializeField] private string      displayName  = "Товар";
+        [SerializeField] private string      displayName  = "Item";
         [TextArea]
         [SerializeField] private string      description;
         [SerializeField] private Sprite      icon;
@@ -30,7 +30,7 @@ namespace Market.Economy
         [Tooltip("Available from the supplier in these seasons. Empty list = year-round.")]
         [SerializeField] private Season[] availableInSeasons = new Season[0];
 
-        // ── Properties ─────────────────────────────────────────────────
+        // -- Properties -------------------------------------------------
         /// <summary>Stable save ID. Falls back to asset name if the field is empty.</summary>
         public string      Id           => string.IsNullOrEmpty(id) ? name : id;
         public string      DisplayName  => displayName;
