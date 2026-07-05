@@ -75,6 +75,10 @@ their historical agent attributions (Claude / Codex / user); new entries don't n
   now builds a Humanoid avatar so the prefab's avatar reference resolves at runtime, and the NPC uses
   a neutral URP/Lit material to avoid the pink built-in-shader fallback. (Codex)
 
+- Archived the unused `Mixamo_animations` pack to `_ArchiveAssets/` (audit L3); C8 uses the UAL rig's
+  own clips, so nothing referenced it. `blender/wood_box.fbx` and the Standard Assets ToonShading
+  textures (audit L4) were kept after verification found them still referenced (wood_box in the Market
+  scene; the toon ramp by 14 crop materials) - the audit's "unused" assumption was wrong. (Claude)
 - Micro-perf pass (audit L1/L2/L6): `NPCVisitor` category check uses a manual loop instead of an
   `Array.Exists` closure; `CropPlot` only rescales its growth visual when progress changes instead of
   every frame; `FileLogger` no longer flushes to disk on every routine Log line (severe messages and
