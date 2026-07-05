@@ -62,6 +62,10 @@ their historical agent attributions (Claude / Codex / user); new entries don't n
   a neutral URP/Lit material to avoid the pink built-in-shader fallback. (Codex)
 
 ### Fixed
+- Save writes are now atomic (audit H1): `SaveSystem` serializes to `save.json.tmp` then swaps it
+  into place with `File.Replace`, keeping the previous save as `save.json.bak`. `Load` falls back to
+  the backup if the primary file is missing or unreadable, so a crash mid-write can no longer destroy
+  the only save. (Claude)
 - NPC visitors now keep browsing other registered stalls after an empty, uninteresting, or over-budget
   stall instead of leaving after the first failed purchase attempt. (Codex)
 - Reworked NPC save/load to a schedule-style, intent-only model (like Stardew/Animal Crossing) so
