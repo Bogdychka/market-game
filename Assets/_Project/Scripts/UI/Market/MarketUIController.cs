@@ -193,7 +193,7 @@ namespace Market.UI
 
         private string MoneyText()
         {
-            return moneySystem != null ? $"{Mathf.FloorToInt(moneySystem.Amount)} coins" : string.Empty;
+            return moneySystem != null ? $"{moneySystem.Amount} coins" : string.Empty;
         }
 
         private string SupplierSubtitle()
@@ -251,7 +251,7 @@ namespace Market.UI
             }
         }
 
-        private void RefreshMoney(float amount)
+        private void RefreshMoney(int amount)
         {
             Refresh();
         }

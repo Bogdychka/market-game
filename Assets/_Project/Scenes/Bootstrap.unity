@@ -162,12 +162,12 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0d7b9450681491348998a67987eef5ee, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Market.Core.GameBootstrap
+  m_EditorClassIdentifier: Market.Runtime::Market.Core.GameBootstrap
   firstScene: MainMenu
   skipMenuInEditor: 0
+  settingsSO: {fileID: 11400000, guid: 628b5f18e817e7743aba5b87093fbdbb, type: 2}
   minutesPerRealSecond: 2
   escapeSceneLoadCooldown: 1.5
-  settingsSO: {fileID: 11400000, guid: 628b5f18e817e7743aba5b87093fbdbb, type: 2}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

@@ -129,7 +129,7 @@ GameObject:
   m_Component:
   - component: {fileID: 39901836}
   - component: {fileID: 39901835}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Slot_2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -147,7 +147,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 88e7153f62468e144810be996ee7b092, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Market.Market.StallSlot
+  m_EditorClassIdentifier: Market.Runtime::Market.Market.StallSlot
 --- !u!4 &39901836
 Transform:
   m_ObjectHideFlags: 0
@@ -304,7 +304,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2dea56ae7437988449e456bbabd67f59, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Market.UI.MoneyHUD
+  m_EditorClassIdentifier: Market.Runtime::Market.UI.MoneyHUD
   moneySystem: {fileID: 1853453546}
   label: {fileID: 65653179}
   format: '{0} coins'
@@ -454,7 +454,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8bcdef092b2d3f347a75daf582ffaa2e, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Market.World.SeasonManager
+  m_EditorClassIdentifier: Market.Runtime::Market.World.SeasonManager
   daysPerSeason: 30
   seasons:
   - solarDeclination: 13
@@ -477,7 +477,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 960604db6d75524439f5c98668baa579, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Market.World.DaylightSystem
+  m_EditorClassIdentifier: Market.Runtime::Market.World.DaylightSystem
   sunLight: {fileID: 550640112}
   moonLight: {fileID: 612407359}
   latitude: 55
@@ -795,7 +795,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0bb0565bf0065a34586f3309679b4d15, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Market.Persistence.GameSaver
+  m_EditorClassIdentifier: Market.Runtime::Market.Persistence.GameSaver
   moneySystem: {fileID: 1853453546}
   inventory: {fileID: 1791167355}
   stallRegistry: {fileID: 0}
@@ -834,7 +834,7 @@ GameObject:
   - component: {fileID: 546128117}
   - component: {fileID: 546128116}
   - component: {fileID: 546128115}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Debug_SleepNextDay_Cube
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1213,7 +1213,7 @@ GameObject:
   - component: {fileID: 708587956}
   - component: {fileID: 708587955}
   - component: {fileID: 708587954}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Debug_OpenCloseMarket_Cube
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1375,13 +1375,14 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0986d34e913d41943a999f15229a61a4, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Market.UI.InteractionPromptUI
+  m_EditorClassIdentifier: Market.Runtime::Market.UI.InteractionPromptUI
   source: {fileID: 1791167354}
   label: {fileID: 724621059}
   playerInput: {fileID: 0}
   actionName: Interact
   fallbackKeyHint: E
   fallbackText: Interact
+  refreshInterval: 0.25
 --- !u!225 &724621058
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -1524,7 +1525,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c578da69161a85a42bf9123c369a336f, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Market.NPC.NPCSpawner
+  m_EditorClassIdentifier: Market.Runtime::Market.NPC.NPCSpawner
   npcTypes:
   - {fileID: 11400000, guid: 12499fe65063de945a2f376934fb5501, type: 2}
   spawnPoints:
@@ -1641,7 +1642,7 @@ GameObject:
   - component: {fileID: 800386622}
   - component: {fileID: 800386621}
   - component: {fileID: 800386620}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Capsule
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1753,7 +1754,7 @@ GameObject:
   m_Component:
   - component: {fileID: 809191471}
   - component: {fileID: 809191472}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Slot_0
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1786,7 +1787,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 88e7153f62468e144810be996ee7b092, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Market.Market.StallSlot
+  m_EditorClassIdentifier: Market.Runtime::Market.Market.StallSlot
 --- !u!21 &817718719
 Material:
   serializedVersion: 8
@@ -1890,7 +1891,7 @@ GameObject:
   m_Component:
   - component: {fileID: 964822271}
   - component: {fileID: 964822272}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Slot_1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1923,7 +1924,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 88e7153f62468e144810be996ee7b092, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Market.Market.StallSlot
+  m_EditorClassIdentifier: Market.Runtime::Market.Market.StallSlot
 --- !u!1 &979329624
 GameObject:
   m_ObjectHideFlags: 0
@@ -1935,7 +1936,7 @@ GameObject:
   - component: {fileID: 979329625}
   - component: {fileID: 979329627}
   - component: {fileID: 979329626}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: MarketStall_2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1993,7 +1994,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 39f0fe2820ce9cf48b34c000a2326ccf, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Market.Market.MarketStall
+  m_EditorClassIdentifier: Market.Runtime::Market.Market.MarketStall
   stallId: stall_2
   prompt: Manage stall
   slots:
@@ -2015,7 +2016,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1022605273}
   - component: {fileID: 1022605272}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Slot_1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2033,7 +2034,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 88e7153f62468e144810be996ee7b092, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Market.Market.StallSlot
+  m_EditorClassIdentifier: Market.Runtime::Market.Market.StallSlot
 --- !u!4 &1022605273
 Transform:
   m_ObjectHideFlags: 0
@@ -2126,7 +2127,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1127232956}
   - component: {fileID: 1127232957}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Slot_2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2159,7 +2160,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 88e7153f62468e144810be996ee7b092, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Market.Market.StallSlot
+  m_EditorClassIdentifier: Market.Runtime::Market.Market.StallSlot
 --- !u!1 &1166428763
 GameObject:
   m_ObjectHideFlags: 0
@@ -2173,7 +2174,7 @@ GameObject:
   - component: {fileID: 1166428766}
   - component: {fileID: 1166428765}
   - component: {fileID: 1166428764}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Debug_CropPlot_Carrot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2196,7 +2197,7 @@ MonoBehaviour:
   crop: {fileID: 11400000, guid: 8a4b74a1df1fe7241a34668362fa8992, type: 2}
   inventory: {fileID: 1791167355}
   growthVisual: {fileID: 1273207128}
-  debugInstantGrowOnInteract: 1
+  debugInstantGrowOnInteract: 0
 --- !u!23 &1166428765
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -2302,7 +2303,7 @@ GameObject:
   - component: {fileID: 1273207128}
   - component: {fileID: 1273207130}
   - component: {fileID: 1273207129}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: GrowthStub
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2391,7 +2392,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1276807710}
   - component: {fileID: 1276807709}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Slot_0
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2409,7 +2410,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 88e7153f62468e144810be996ee7b092, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Market.Market.StallSlot
+  m_EditorClassIdentifier: Market.Runtime::Market.Market.StallSlot
 --- !u!4 &1276807710
 Transform:
   m_ObjectHideFlags: 0
@@ -2436,7 +2437,7 @@ GameObject:
   - component: {fileID: 1392319609}
   - component: {fileID: 1392319610}
   - component: {fileID: 1392319611}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: MarketStall_1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2473,7 +2474,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 39f0fe2820ce9cf48b34c000a2326ccf, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Market.Market.MarketStall
+  m_EditorClassIdentifier: Market.Runtime::Market.Market.MarketStall
   stallId: stall_1
   prompt: Manage stall
   slots:
@@ -2626,7 +2627,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ce7fb96b3a9dc664697d53bec7da5e09, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Market.UI.TimeHUD
+  m_EditorClassIdentifier: Market.Runtime::Market.UI.TimeHUD
   timeLabel: {fileID: 177622040}
 --- !u!114 &1426621192
 MonoBehaviour:
@@ -2639,7 +2640,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 49e0f3801ed6a1f49ae9b2aea59083b1, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Market.UI.MarketUIController
+  m_EditorClassIdentifier: Market.Runtime::Market.UI.MarketUIController
   inventory: {fileID: 1791167355}
   moneySystem: {fileID: 1853453546}
   supplierShop: {fileID: 1637158111}
@@ -2658,7 +2659,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2e22510cb2d0455aaeb30d65b78e9a72, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Market.UI.UIModeService
+  m_EditorClassIdentifier: Market.Runtime::Market.UI.UIModeService
   playerController: {fileID: 8326992209333257469}
   interactionSystem: {fileID: 1791167354}
   startInMenuMode: 0
@@ -2675,7 +2676,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8f703780a761479cb5985ba4d0beb035, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Market.UI.PauseMenuController
+  m_EditorClassIdentifier: Market.Runtime::Market.UI.PauseMenuController
   gameSaver: {fileID: 522774163}
   uiModeService: {fileID: 1426621193}
   settingsSO: {fileID: 11400000, guid: 628b5f18e817e7743aba5b87093fbdbb, type: 2}
@@ -2752,7 +2753,7 @@ GameObject:
   - component: {fileID: 1637158112}
   - component: {fileID: 1637158111}
   - component: {fileID: 1637158110}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Supplier
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2791,7 +2792,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c000a3a209f3ce945bf78a2c807ee38c, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Market.Economy.SupplierShop
+  m_EditorClassIdentifier: Market.Runtime::Market.Economy.SupplierShop
   prompt: Open shop
   stock:
   - {fileID: 11400000, guid: c447e4739ecb9ca4ea46c7f79a04aca4, type: 2}
@@ -2979,7 +2980,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 480d04700a537414ea4ad92ba5321a17, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Market.Interaction.InteractionSystem
+  m_EditorClassIdentifier: Market.Runtime::Market.Interaction.InteractionSystem
 --- !u!114 &1791167355 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 6830405779936573403, guid: 74bb60615cbcab74f9bdc5cebf256e7a, type: 3}
@@ -2990,7 +2991,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e448682d39b2baf429feb1ce420c53e5, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Market.Economy.Inventory
+  m_EditorClassIdentifier: Market.Runtime::Market.Economy.Inventory
 --- !u!208 &1791167356
 NavMeshObstacle:
   m_ObjectHideFlags: 0
@@ -3022,11 +3023,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1853453547}
   - component: {fileID: 1853453546}
-  - component: {fileID: 1853453545}
-  - component: {fileID: 1853453548}
-  - component: {fileID: 1853453549}
-  - component: {fileID: 1853453550}
-  - component: {fileID: 1853453551}
   m_Layer: 0
   m_Name: GameSystems
   m_TagString: Untagged
@@ -3034,22 +3030,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1853453545
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1853453544}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 016ed4723a7fd9243aa077cb187b0bb6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Market.DebugTools.DebugMoneyInput
-  moneySystem: {fileID: 1853453546}
-  amount: 100
-  addKey: 94
-  spendKey: 95
 --- !u!114 &1853453546
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3061,8 +3041,8 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 51e7f7f2ca42c8e42a6c95f242e15a54, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Market.Economy.MoneySystem
-  startAmount: 200
+  m_EditorClassIdentifier: Market.Runtime::Market.Economy.MoneySystem
+  startCoins: 200
 --- !u!4 &1853453547
 Transform:
   m_ObjectHideFlags: 0
@@ -3078,78 +3058,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1853453548
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1853453544}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6f85775c13c26a5419292bc55ef589df, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Market.DebugTools.DebugSupplierBuy
-  shop: {fileID: 1637158111}
-  maxIndex: 6
---- !u!114 &1853453549
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1853453544}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: edde2a61c9c09a34e95dd6c1523c9386, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Market.DebugTools.DebugStallPlace
-  stall: {fileID: 1392319610}
-  inventory: {fileID: 1791167355}
-  debugSellPrice: 20
-  placeKey: 96
---- !u!114 &1853453550
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1853453544}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 44b495f5dc4bfbd4e80b812886ac962b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Market.DebugTools.DebugTimeControl
---- !u!114 &1853453551
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1853453544}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9c4d2e7a8b6f4b52a1d0e3c9f8b7a641, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Market.DebugTools.MarketAutoDebugger
-  supplierShop: {fileID: 1637158111}
-  inventory: {fileID: 1791167355}
-  marketStall: {fileID: 1392319610}
-  npcSpawner: {fileID: 779235703}
-  moneySystem: {fileID: 1853453546}
-  runOnStart: 0
-  toggleKey: 102
-  singleStepKey: 103
-  stepInterval: 6
-  supplierStockIndex: 0
-  useCalculatedSellPrice: 1
-  debugSellPrice: 20
-  autoBuyIfNeeded: 1
-  autoPlaceOnStall: 1
-  autoSpawnNpc: 1
-  maxForcedNpcCount: 3
-  logSnapshots: 1
-  snapshotInterval: 5
 --- !u!1 &1882658967
 GameObject:
   m_ObjectHideFlags: 0
@@ -3209,7 +3117,7 @@ GameObject:
   - component: {fileID: 2021661986}
   - component: {fileID: 2021661985}
   - component: {fileID: 2021661984}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Cube
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -3321,7 +3229,7 @@ GameObject:
   - component: {fileID: 2119627153}
   - component: {fileID: 2119627152}
   - component: {fileID: 2119627151}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Cube
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -3473,6 +3381,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 7505738646445961488, guid: 74bb60615cbcab74f9bdc5cebf256e7a, type: 3}
+      propertyPath: layerMask.m_Bits
+      value: 64
+      objectReference: {fileID: 0}
     - target: {fileID: 8527300036338462490, guid: 74bb60615cbcab74f9bdc5cebf256e7a, type: 3}
       propertyPath: m_Name
       value: Player
@@ -3499,7 +3411,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 19583cb474ae45049aefc0da6f8d9517, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Market.Player.FirstPersonController
+  m_EditorClassIdentifier: Market.Runtime::Market.Player.FirstPersonController
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

@@ -77,6 +77,7 @@ namespace Market.Tests
         {
             var original = new SaveData
             {
+                moneyCoins = 333,
                 money = 333.25f,
                 day = 12,
                 hour = 19,
@@ -97,6 +98,7 @@ namespace Market.Tests
             SaveData restored = JsonUtility.FromJson<SaveData>(JsonUtility.ToJson(original));
 
             Assert.AreEqual(original.version, restored.version);
+            Assert.AreEqual(333, restored.moneyCoins);
             Assert.AreEqual(333.25f, restored.money);
             Assert.AreEqual(12, restored.day);
             Assert.AreEqual(19, restored.hour);
@@ -153,11 +155,25 @@ namespace Market.Tests
 
             SaveData restored = JsonUtility.FromJson<SaveData>(JsonUtility.ToJson(original));
 
-            Assert.AreEqual(5, restored.version);
+            Assert.AreEqual(6, restored.version);
             Assert.AreEqual(1, restored.cropPlots.Count);
             Assert.AreEqual("CropPlot_0", restored.cropPlots[0].plotId);
             Assert.IsTrue(restored.cropPlots[0].planted);
             Assert.AreEqual(1234.5f, restored.cropPlots[0].plantedAtMinutes);
+        }
+
+        [Test]
+        public void SaveData_V5Json_LegacyMoneyRoundsToCoins()
+        {
+            const string v5Json = "{\"version\":5,\"money\":120.5,\"cropPlots\":[]}";
+
+            SaveData data = JsonUtility.FromJson<SaveData>(v5Json);
+
+            Assert.AreEqual(5, data.version);
+            Assert.AreEqual(0, data.moneyCoins);
+            Assert.AreEqual(120.5f, data.money);
+            Assert.AreEqual(120, MoneySystem.ToCoins(120.49f));
+            Assert.AreEqual(121, MoneySystem.ToCoins(data.money));
         }
     }
 }

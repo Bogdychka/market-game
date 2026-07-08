@@ -9,9 +9,9 @@ namespace Market.Core.Events
 
     public readonly struct MoneyChangedEvent : IGameEvent
     {
-        public readonly float Amount;
-        public readonly float Delta;
-        public MoneyChangedEvent(float amount, float delta) { Amount = amount; Delta = delta; }
+        public readonly int Amount;
+        public readonly int Delta;
+        public MoneyChangedEvent(int amount, int delta) { Amount = amount; Delta = delta; }
     }
 
     public readonly struct ItemPurchasedEvent : IGameEvent

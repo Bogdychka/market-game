@@ -6,7 +6,9 @@ namespace Market.Persistence
     [Serializable]
     public class SaveData
     {
-        public int version = 5;
+        public int version = 6;
+        public int moneyCoins;
+        // Legacy balance field (version 5 and earlier). Kept for old-save compatibility.
         public float money;
         public List<InventoryItemData> inventory = new();
         public List<StallSlotData> stallSlots    = new();

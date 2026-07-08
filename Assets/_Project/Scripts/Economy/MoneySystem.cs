@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Market.Economy
 {
@@ -8,39 +9,56 @@ namespace Market.Economy
     /// </summary>
     public class MoneySystem : MonoBehaviour
     {
-        [SerializeField] private float startAmount = 200f;
+        [FormerlySerializedAs("startAmount")]
+        [SerializeField] private int startCoins = 200;
 
-        public event Action<float> OnChanged;
+        public event Action<int> OnChanged;
 
-        private float _amount;
-        public float Amount => _amount;
+        private int _coins;
+        public int Amount => _coins;
+        public int Coins => _coins;
 
-        private void Awake() => _amount = startAmount;
+        private void Awake() => _coins = Mathf.Max(0, startCoins);
 
         /// <summary>Add money. Ignores non-positive values.</summary>
-        public void Add(float value)
+        public void Add(int coins)
         {
-            if (value <= 0f) return;
-            _amount += value;
-            OnChanged?.Invoke(_amount);
+            if (coins <= 0) return;
+            _coins += coins;
+            OnChanged?.Invoke(_coins);
         }
 
+        /// <summary>Add money from a legacy/price value, rounded to whole coins.</summary>
+        public void Add(float value) => Add(ToCoins(value));
+
         /// <summary>Attempt to spend money. Returns false if insufficient funds.</summary>
-        public bool TrySpend(float value)
+        public bool TrySpend(int coins)
         {
-            if (value <= 0f || _amount < value) return false;
-            _amount -= value;
-            OnChanged?.Invoke(_amount);
+            if (coins <= 0 || _coins < coins) return false;
+            _coins -= coins;
+            OnChanged?.Invoke(_coins);
             return true;
         }
 
-        public bool CanAfford(float value) => _amount >= value;
+        /// <summary>Attempt to spend a legacy/price value, rounded to whole coins.</summary>
+        public bool TrySpend(float value) => TrySpend(ToCoins(value));
+
+        public bool CanAfford(int coins) => _coins >= coins;
+        public bool CanAfford(float value) => CanAfford(ToCoins(value));
 
         /// <summary>Set amount directly (SaveSystem only). Clamped to >= 0.</summary>
-        public void SetAmount(float value)
+        public void SetAmount(int coins)
         {
-            _amount = Mathf.Max(0f, value);
-            OnChanged?.Invoke(_amount);
+            _coins = Mathf.Max(0, coins);
+            OnChanged?.Invoke(_coins);
+        }
+
+        /// <summary>Set amount from a legacy save value, rounded to whole coins.</summary>
+        public void SetAmount(float value) => SetAmount(ToCoins(value));
+
+        public static int ToCoins(float value)
+        {
+            return value > 0f ? Mathf.FloorToInt(value + 0.5f) : 0;
         }
     }
 }

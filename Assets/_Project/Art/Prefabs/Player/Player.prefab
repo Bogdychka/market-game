@@ -44,7 +44,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 99855d0e91a57d2409cd87f90fc7ba14, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Market.Player.HeadBob
+  m_EditorClassIdentifier: Market.Runtime::Market.Player.HeadBob
   controller: {fileID: 8671063287909985202}
   cameraTransform: {fileID: 8339504574774726922}
   walkFrequency: 8
@@ -52,6 +52,8 @@ MonoBehaviour:
   walkAmplitudeX: 0.025
   sprintMultiplier: 1.4
   resetSpeed: 6
+  baseSpeed: 4
+  sprintThreshold: 5
 --- !u!1 &8206362355933043061
 GameObject:
   m_ObjectHideFlags: 0
@@ -292,7 +294,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 19583cb474ae45049aefc0da6f8d9517, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Market.Player.FirstPersonController
+  m_EditorClassIdentifier: Market.Runtime::Market.Player.FirstPersonController
   walkSpeed: 4
   sprintSpeed: 7
   gravity: -20
@@ -314,13 +316,13 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 480d04700a537414ea4ad92ba5321a17, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Market.Interaction.InteractionSystem
+  m_EditorClassIdentifier: Market.Runtime::Market.Interaction.InteractionSystem
   cam: {fileID: 138490818157885587}
   playerInput: {fileID: 8262038029800629798}
   maxDistance: 2.5
   layerMask:
     serializedVersion: 2
-    m_Bits: 4294967295
+    m_Bits: 64
   triggerInteraction: 2
 --- !u!114 &6830405779936573403
 MonoBehaviour:
@@ -333,4 +335,4 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e448682d39b2baf429feb1ce420c53e5, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Market.Economy.Inventory
+  m_EditorClassIdentifier: Market.Runtime::Market.Economy.Inventory

@@ -19,7 +19,7 @@ namespace Market.UI
             if (label       == null) Debug.LogError("[MoneyHUD] label not assigned",       this);
         }
 
-        // Initial refresh in Start -- after MoneySystem.Awake initialises _amount.
+        // Initial refresh in Start -- after MoneySystem.Awake initialises coins.
         private void Start()
         {
             if (moneySystem != null) Refresh(moneySystem.Amount);
@@ -35,10 +35,10 @@ namespace Market.UI
             if (moneySystem != null) moneySystem.OnChanged -= Refresh;
         }
 
-        private void Refresh(float amount)
+        private void Refresh(int amount)
         {
             if (label == null) return;
-            label.text = string.Format(format, Mathf.FloorToInt(amount));
+            label.text = string.Format(format, amount);
         }
     }
 }

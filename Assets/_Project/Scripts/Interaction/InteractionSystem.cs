@@ -11,13 +11,15 @@ namespace Market.Interaction
     /// </summary>
     public class InteractionSystem : MonoBehaviour
     {
+        private const string InteractableLayerName = "Interactable";
+
         [Header("References")]
         [SerializeField] private Camera cam;
         [SerializeField] private PlayerInput playerInput;
 
         [Header("Raycast")]
         [SerializeField] private float maxDistance = 2.5f;
-        [SerializeField] private LayerMask layerMask = ~0;
+        [SerializeField] private LayerMask layerMask;
         [SerializeField] private QueryTriggerInteraction triggerInteraction = QueryTriggerInteraction.Collide;
 
         public event Action<IInteractable> CurrentChanged;
@@ -37,6 +39,8 @@ namespace Market.Interaction
 
         private void Awake()
         {
+            EnsureLayerMask();
+
             if (cam == null)         cam = Camera.main;
             if (playerInput == null) playerInput = GetComponentInParent<PlayerInput>();
 
@@ -51,6 +55,17 @@ namespace Market.Interaction
             }
 
             _interactAction = playerInput.actions["Interact"];
+        }
+
+        private void Reset()
+        {
+            layerMask = GetDefaultLayerMask();
+        }
+
+        private void OnValidate()
+        {
+            if (layerMask.value == 0)
+                layerMask = GetDefaultLayerMask();
         }
 
         private void OnEnable()
@@ -112,6 +127,20 @@ namespace Market.Interaction
         {
             if (_current != null && _current.CanInteract)
                 _current.Interact(transform.root.gameObject);
+        }
+
+        private void EnsureLayerMask()
+        {
+            if (layerMask.value != 0 && layerMask.value != ~0)
+                return;
+
+            layerMask = GetDefaultLayerMask();
+        }
+
+        private static LayerMask GetDefaultLayerMask()
+        {
+            int mask = LayerMask.GetMask(InteractableLayerName);
+            return mask != 0 ? mask : ~0;
         }
 
         private void OnDrawGizmosSelected()

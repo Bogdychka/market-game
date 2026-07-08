@@ -69,15 +69,15 @@ namespace Market.Tests
             try
             {
                 var money = go.AddComponent<MoneySystem>();
-                money.SetAmount(100f);
+                money.SetAmount(100);
 
-                Assert.IsTrue(money.TrySpend(40f));
-                Assert.AreEqual(60f, money.Amount);
+                Assert.IsTrue(money.TrySpend(40));
+                Assert.AreEqual(60, money.Amount);
 
-                Assert.IsFalse(money.TrySpend(100f), "Spending above balance must fail.");
-                Assert.IsFalse(money.TrySpend(0f), "Zero spend must be rejected.");
-                Assert.IsFalse(money.TrySpend(-5f), "Negative spend must be rejected.");
-                Assert.AreEqual(60f, money.Amount, "Failed spends must not change the balance.");
+                Assert.IsFalse(money.TrySpend(100), "Spending above balance must fail.");
+                Assert.IsFalse(money.TrySpend(0), "Zero spend must be rejected.");
+                Assert.IsFalse(money.TrySpend(-5), "Negative spend must be rejected.");
+                Assert.AreEqual(60, money.Amount, "Failed spends must not change the balance.");
             }
             finally
             {
@@ -92,8 +92,31 @@ namespace Market.Tests
             try
             {
                 var money = go.AddComponent<MoneySystem>();
-                money.SetAmount(-50f);
-                Assert.AreEqual(0f, money.Amount);
+                money.SetAmount(-50);
+                Assert.AreEqual(0, money.Amount);
+            }
+            finally
+            {
+                Object.DestroyImmediate(go);
+            }
+        }
+
+        [Test]
+        public void MoneySystem_FloatInputs_RoundToWholeCoins()
+        {
+            var go = new GameObject("MoneySystem");
+            try
+            {
+                var money = go.AddComponent<MoneySystem>();
+                money.SetAmount(100.4f);
+
+                Assert.AreEqual(100, money.Amount);
+
+                money.Add(10.6f);
+                Assert.AreEqual(111, money.Amount);
+
+                Assert.IsTrue(money.TrySpend(20.5f));
+                Assert.AreEqual(90, money.Amount);
             }
             finally
             {

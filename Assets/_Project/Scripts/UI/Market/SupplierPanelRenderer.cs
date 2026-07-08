@@ -52,7 +52,7 @@ namespace Market.UI
 
                 button.interactable = available;
                 if (moneySystem != null)
-                    button.interactable = button.interactable && moneySystem.Amount >= price;
+                    button.interactable = button.interactable && moneySystem.CanAfford(price);
             }
         }
     }
