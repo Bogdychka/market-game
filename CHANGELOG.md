@@ -14,6 +14,8 @@ their historical agent attributions (Claude / Codex / user); new entries don't n
 
 ## [Unreleased]
 
+## [1.8.0] - 2026-07-27
+
 ### Added
 - Skybox lab: `Market/Debug/Build Skybox Lab` (`SkyboxLabSceneBuilder`) builds
   `Assets/_Project/Scenes/SkyboxLab.unity` - a copy of the WaterShaderLab water setup (same
