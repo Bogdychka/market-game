@@ -82,7 +82,8 @@ namespace Market.Persistence
                 {
                     plotId = plot.PlotId,
                     planted = plot.IsPlanted,
-                    plantedAtMinutes = plot.PlantedAtMinutes
+                    plantedAtMinutes = plot.PlantedAtMinutes,
+                    soilState = (int)plot.SoilState
                 });
             }
         }
@@ -202,9 +203,9 @@ namespace Market.Persistence
 
                 CropPlotData saved = FindCropData(data.cropPlots, plot.PlotId);
                 if (saved != null)
-                    plot.RestoreState(saved.planted, saved.plantedAtMinutes);
+                    plot.RestoreState(saved.planted, saved.plantedAtMinutes, (CropSoilState)saved.soilState);
                 else
-                    plot.RestoreState(false, 0f);
+                    plot.RestoreState(false, 0f, CropSoilState.Untilled);
             }
         }
 

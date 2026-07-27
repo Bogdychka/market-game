@@ -4,6 +4,7 @@ using Market.Core;
 using Market.Core.Events;
 using Market.Economy;
 using Market.Market;
+using Market.World;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -32,6 +33,7 @@ namespace Market.NPC
         [Header("Tuning")]
         [Tooltip("NavMesh sample radius for snapping target positions (in case targetStall/exitPoint are slightly off the baked mesh).")]
         [SerializeField] private float navMeshSampleRadius = 5f;
+        [SerializeField] private float grassTrampleRadius = 0.5f;
 
         public event Action<NPCVisitor> OnDespawned;
         public State CurrentState => _state;
@@ -54,6 +56,10 @@ namespace Market.NPC
             _agent = GetComponent<NavMeshAgent>();
             ServiceLocator.TryGet<EventBus>(out _eventBus);
         }
+
+        private void OnEnable() => GrassTrample.Register(transform, grassTrampleRadius);
+
+        private void OnDisable() => GrassTrample.Unregister(transform);
 
         /// <summary>
         /// Configure from NPCSpawner. Call after Instantiate, before Start.

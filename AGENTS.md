@@ -47,10 +47,10 @@ Don't duplicate the other contracts here:
 
 | Area | Rule |
 |---|---|
-| Unity | `6000.4.8f1` (Unity 6.4), C# 9.0 language level |
-| Rendering | URP 17.4.0, **Deferred** (`PC_Renderer.asset`) |
+| Unity | `6000.5.3f1` (Unity 6.5), C# 9.0 language level |
+| Rendering | URP 17.5.0, **Deferred** (`PC_Renderer.asset`) |
 | Input | New Input System 1.19.0; legacy Input **disabled** (`activeInputHandler = 1`) |
-| NavMesh | AI Navigation 2.0.12 - `NavMeshSurface`; never the old Navigation-Static workflow |
+| NavMesh | AI Navigation 2.0.13 - `NavMeshSurface`; never the old Navigation-Static workflow |
 | Runtime UI | uGUI + TextMeshPro (UI Toolkit = editor tools only) |
 | Persistence | JSON in `Application.persistentDataPath` |
 | Networking | Netcode for GameObjects - Block N (before specializations E-I); see `dev_plan_4_1.md` |
@@ -130,6 +130,20 @@ helpers into a controller, never hand-roll rects.
 - Update UI text only when data changes; `StringBuilder` for large/looped text.
 - Logs are event-based or throttled, never per-frame. Cache shader property IDs in hot code.
 - Profile before broad optimization - optimize measured hot paths only.
+- Outdoor scenes target 60 FPS with CPU and GPU each below 16 ms in a representative Game view.
+  Record a baseline before visual expansion; repeat the same camera/resolution after the change.
+  Use `Market/Debug/Benchmark Island Camera Turn` for the repeatable Island 360-degree turn case;
+  p95 must stay below 16.67 ms and the maximum must not show visible rotation spikes.
+- Terrain defaults are not accepted blindly: enable instanced drawing, never use two-sided Terrain
+  shadows, start `heightmapPixelError` at 15, and keep detail/tree/basemap distances bounded by the
+  actual playable sightline. Raise quality only after a profiler capture proves headroom.
+  For one compact Terrain, disable heightmap LOD frustum culling when the Scene View turn benchmark
+  shows patch-entry spikes; large tiled worlds must compare both modes before choosing.
+- Screen-sized transparent water renders front faces only and does not use motion vectors or probes.
+  Do not sample `_CameraOpaqueTexture` or enable the global URP Opaque Texture for one effect without
+  a before/after GPU measurement; prefer depth-only shoreline foam and normal alpha blending.
+- Scene builders must serialize their performance settings explicitly. Outdoor scene changes must
+  pass the Project Health performance checks so regenerated scenes cannot restore expensive defaults.
 
 ---
 
@@ -214,7 +228,19 @@ Run via MCP `run_tests`: mode `EditMode`, filter `Market.Tests`.
 `MarketAutoDebugger` (F9 loop, F10 one cycle) - manual save F5 - D2/D5 root debug cubes
 (Open/Close Market, Sleep Until Morning) - E1 debug crop plot.
 Editor scene/asset builders (menu `Market/Debug/...`): `CropE1SceneBuilder`, `CropMaterialUrpUpgrader`,
-`StaticPropImportFixer`.
+`StaticPropImportFixer`, `StylizedWaterIslandSceneBuilder`.
+Rendering: `Market/Debug/Rendering/Setup Post Processing In Open Scene` ensures the project volume
+profile (`Art/PostProcessing/MarketPostFX.asset`) and a global Volume in the open scene. Every
+playable scene needs one - the camera renders post processing, but with no Volume in range nothing
+is tonemapped. Post-processing AA is **SMAA**: the PC renderer is Deferred, where MSAA does nothing.
+Sky look tuning: `Market/Debug/Build Skybox Lab` builds `Scenes/SkyboxLab.unity` (WaterShaderLab
+water + BOXOPHOBIC `Skybox/Cubemap Blend` sky); the in-game panel on **F8**
+(`SkyboxRuntimeTuner`) tunes `Art/Materials/Skybox/M_SkyboxLab.mat` - cubemap slots, day/night
+blend, exposure, tint, rotation, sky fog, sun and ambient.
+Water look tuning: `Market/Debug/Water/Stylized Water Tuner` (editor window) and the in-game panel
+on **F7** (`StylizedWaterRuntimeTuner`) - same labelled sliders and the same JSON presets under
+`Art/Materials/Water/Presets`; the property table lives once in `StylizedWaterShaderCatalog`.
+Tune a project copy of the material, never the imported package material.
 Remove each one once real UI covers it. Play Mode issues -> check `game.log` and serialized scene
 values before guessing.
 
@@ -259,7 +285,7 @@ Helper scripts live in `.claude/tools/` (`check-mcp-unity.ps1`, `start-mcp-unity
 
 ### Gotchas (hard-won; numbers are stable ids - keep them)
 
-1. `run_tests` fills the console with *expected* `McpUnity.Tests` negative-case logs; a post-test
+1. `run_tests` fills the console with expected `McpUnity.Tests` negative-case logs; a post-test
    `attention` health caused only by those is NOT a project error. Never write an Editor script to
    "clean" the console.
 2. Don't over-verify - see Token discipline. Recompile + health is enough for a normal change.
@@ -284,7 +310,7 @@ Helper scripts live in `.claude/tools/` (`check-mcp-unity.ps1`, `start-mcp-unity
     = zero-size rect that never renders (hid the price input; fixed v1.5.6).
     `UiFactory.StretchToParent` does it right.
 12. MCP `recompile_scripts` does NOT import brand-new files (no `.meta` yet). CS0246 against your own
-    new class -> run `execute_menu_item` `Assets/Refresh` first, then recompile (bit v1.6.1).
+    new class -> run `execute_menu_item` `Assets/Refresh` first, then recompile.
 
 ---
 

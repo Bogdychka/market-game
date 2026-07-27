@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEditor;
 using McpUnity.Unity;
 
 namespace McpUnity.Utils
@@ -19,7 +18,7 @@ namespace McpUnity.Utils
         {
             if (McpUnitySettings.Instance.EnableInfoLogs)
             {
-                Debug.Log($"{LogPrefix}{message}");
+                Debug.LogFormat(LogType.Log, LogOption.NoStacktrace, null, "{0}{1}", LogPrefix, message);
             }
         }
         
@@ -39,50 +38,6 @@ namespace McpUnity.Utils
         public static void LogError(string message)
         {
             Debug.LogError($"{LogPrefix}{message}");
-        }
-    }
-
-    /// <summary>
-    /// Compatibility helpers for Unity 6 EntityId APIs while preserving the package's existing instanceId JSON field.
-    /// </summary>
-    public static class ObjectIdUtils
-    {
-        /// <summary>
-        /// Resolve the legacy integer instance ID used by the MCP schema to a Unity object.
-        /// </summary>
-        public static Object ObjectFromLegacyInstanceId(int instanceId)
-        {
-#pragma warning disable CS0618
-            return EditorUtility.EntityIdToObject(instanceId);
-#pragma warning restore CS0618
-        }
-
-        /// <summary>
-        /// Return the legacy integer instance ID used by the MCP schema.
-        /// </summary>
-        public static int GetLegacyInstanceId(Object unityObject)
-        {
-            if (unityObject == null)
-            {
-                return 0;
-            }
-
-#pragma warning disable CS0618
-            return unityObject.GetEntityId();
-#pragma warning restore CS0618
-        }
-
-        /// <summary>
-        /// Return the raw Unity 6 EntityId value for future non-32-bit-safe consumers.
-        /// </summary>
-        public static ulong GetEntityIdValue(Object unityObject)
-        {
-            if (unityObject == null)
-            {
-                return 0UL;
-            }
-
-            return EntityId.ToULong(unityObject.GetEntityId());
         }
     }
 }

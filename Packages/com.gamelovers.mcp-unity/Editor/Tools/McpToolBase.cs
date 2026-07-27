@@ -7,6 +7,14 @@ using Newtonsoft.Json.Linq;
 namespace McpUnity.Tools
 {
     /// <summary>
+    /// Marks a parameterless tool in another Editor assembly for automatic MCP registration.
+    /// </summary>
+    [AttributeUsage(AttributeTargets.Class, Inherited = false)]
+    public sealed class McpProjectToolAttribute : Attribute
+    {
+    }
+
+    /// <summary>
     /// Base class for MCP Unity tools that interact with the Unity Editor
     /// </summary>
     public abstract class McpToolBase

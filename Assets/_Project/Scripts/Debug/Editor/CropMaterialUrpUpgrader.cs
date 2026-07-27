@@ -11,20 +11,35 @@ namespace Market.DebugTools.Editor
     /// </summary>
     public static class CropMaterialUrpUpgrader
     {
-        private const string MaterialsFolder = "Assets/Cartoon_Farm_Crops/Materials";
+        private const string CropMaterialsFolder = "Assets/Cartoon_Farm_Crops/Materials";
+        private const string NatureMaterialsFolder = "Assets/SimpleNaturePack/Materials";
         private const string UrpLitShaderName = "Universal Render Pipeline/Lit";
 
         [MenuItem("Market/Debug/Convert Crop Materials to URP")]
         public static void ConvertCropMaterials()
         {
+            ConvertMaterialsInFolder(CropMaterialsFolder, "CropMaterialUrpUpgrader");
+        }
+
+        /// <summary>
+        /// Converts the imported Simple Nature Pack materials to URP/Lit.
+        /// </summary>
+        [MenuItem("Market/Debug/Convert Simple Nature Materials to URP")]
+        public static void ConvertSimpleNatureMaterials()
+        {
+            ConvertMaterialsInFolder(NatureMaterialsFolder, "NatureMaterialUrpUpgrader");
+        }
+
+        private static void ConvertMaterialsInFolder(string materialsFolder, string logSource)
+        {
             Shader urpLit = Shader.Find(UrpLitShaderName);
             if (urpLit == null)
             {
-                Debug.LogError($"[CropMaterialUrpUpgrader] Shader not found: {UrpLitShaderName}. Is URP installed?");
+                Debug.LogError($"[{logSource}] Shader not found: {UrpLitShaderName}. Is URP installed?");
                 return;
             }
 
-            string[] guids = AssetDatabase.FindAssets("t:Material", new[] { MaterialsFolder });
+            string[] guids = AssetDatabase.FindAssets("t:Material", new[] { materialsFolder });
             int converted = 0;
 
             foreach (string guid in guids)
@@ -44,13 +59,13 @@ namespace Market.DebugTools.Editor
 
                 EditorUtility.SetDirty(material);
                 converted++;
-                Debug.Log($"[CropMaterialUrpUpgrader] Converted to URP/Lit: {Path.GetFileName(path)}");
+                Debug.Log($"[{logSource}] Converted to URP/Lit: {Path.GetFileName(path)}");
             }
 
             if (converted > 0)
                 AssetDatabase.SaveAssets();
 
-            Debug.Log($"[CropMaterialUrpUpgrader] Done. Converted {converted} material(s).");
+            Debug.Log($"[{logSource}] Done. Converted {converted} material(s).");
         }
     }
 }

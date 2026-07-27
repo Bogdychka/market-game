@@ -24,9 +24,21 @@ namespace Market.World
         [Tooltip("Optional stub visual scaled by growth progress.")]
         [SerializeField] private Transform growthVisual;
 
+        [Header("Visual Stages")]
+        [Tooltip("Visible while the crop has just been planted.")]
+        [SerializeField] private Transform sproutVisual;
+        [Tooltip("Visible when the crop is ready to harvest.")]
+        [SerializeField] private Transform readyVisual;
+
+        [Header("Soil Visuals")]
+        [Tooltip("Furrowed soil visual, enabled after tilling.")]
+        [SerializeField] private GameObject tilledVisual;
+        [Tooltip("Renderers tinted darker after watering. Leave empty when no soil tint is needed.")]
+        [SerializeField] private Renderer[] tilledRenderers;
+
         [Header("Debug")]
         [Tooltip("When enabled, interacting with a growing plot instantly marks it ready.")]
-        [SerializeField] private bool debugInstantGrowOnInteract = true;
+        [SerializeField] private bool debugInstantGrowOnInteract;
 
         private TimeSystem _timeSystem;
         private SeasonManager _seasonManager;
@@ -35,8 +47,11 @@ namespace Market.World
         // in CurrentState(), never stored, so it can never go stale.
         private bool _planted;
         private float _plantedAtMinutes;
+        private CropSoilState _soilState;
         // Last growth progress pushed to the visual, so Update only rescales on a meaningful change.
         private float _lastVisualProgress = -1f;
+        private int _lastVisualStage = -1;
+        private MaterialPropertyBlock _soilPropertyBlock;
 
         public string PromptText => BuildPromptText();
         public bool CanInteract => crop != null && inventory != null;
@@ -49,11 +64,14 @@ namespace Market.World
         public bool IsPlanted => _planted;
         /// <summary>Absolute game-minute timestamp the current crop was planted at.</summary>
         public float PlantedAtMinutes => _plantedAtMinutes;
+        /// <summary>Current tilling and watering state of this plot's soil.</summary>
+        public CropSoilState SoilState => _soilState;
 
         private void Awake()
         {
             ResolveServices();
             ValidateReferences();
+            RefreshSoilVisual();
             RefreshVisual();
         }
 
@@ -61,7 +79,7 @@ namespace Market.World
         {
             // Drive the stub growth visual while a crop is in the ground, but only when the growth
             // progress actually changed enough to matter -- not every frame (audit L2).
-            if (growthVisual == null || !_planted)
+            if ((growthVisual == null && !HasStageVisuals()) || !_planted)
                 return;
 
             float progress = CalculateGrowthProgress();
@@ -73,6 +91,19 @@ namespace Market.World
 
         public void Interact(GameObject actor)
         {
+            if (!_planted)
+            {
+                switch (_soilState)
+                {
+                    case CropSoilState.Untilled:
+                        TryTill();
+                        return;
+                    case CropSoilState.Tilled:
+                        TryWater();
+                        return;
+                }
+            }
+
             switch (CurrentState())
             {
                 case CropState.Empty:
@@ -86,6 +117,30 @@ namespace Market.World
                     TryHarvest();
                     break;
             }
+        }
+
+        /// <summary>Tills empty, untouched soil so it can be watered.</summary>
+        public bool TryTill()
+        {
+            if (_planted || _soilState != CropSoilState.Untilled)
+                return false;
+
+            _soilState = CropSoilState.Tilled;
+            RefreshSoilVisual();
+            Debug.Log("[CropPlot] Soil tilled.", this);
+            return true;
+        }
+
+        /// <summary>Waters tilled, empty soil so it can receive one seed.</summary>
+        public bool TryWater()
+        {
+            if (_planted || _soilState != CropSoilState.Tilled)
+                return false;
+
+            _soilState = CropSoilState.Watered;
+            RefreshSoilVisual();
+            Debug.Log("[CropPlot] Soil watered.", this);
+            return true;
         }
 
         /// <summary>Consumes one seed and starts growth if the plot is empty.</summary>
@@ -115,6 +170,8 @@ namespace Market.World
 
             inventory.Add(crop.HarvestItem, crop.YieldAmount);
             _planted = false;
+            _soilState = CropSoilState.Tilled;
+            RefreshSoilVisual();
             RefreshVisual();
             Debug.Log($"[CropPlot] Harvested: {crop.DisplayName} x{crop.YieldAmount}.", this);
             return true;
@@ -124,10 +181,14 @@ namespace Market.World
         /// Restores saved plant state (from SaveData). The crop type is the plot's serialized
         /// CropSO; only the planted flag and absolute plant timestamp are restored.
         /// </summary>
-        public void RestoreState(bool planted, float plantedAtMinutes)
+        public void RestoreState(bool planted, float plantedAtMinutes, CropSoilState soilState)
         {
             _planted = planted && crop != null;
             _plantedAtMinutes = plantedAtMinutes;
+            _soilState = _planted && soilState == CropSoilState.Untilled
+                ? CropSoilState.Watered
+                : soilState;
+            RefreshSoilVisual();
             RefreshVisual();
         }
 
@@ -173,7 +234,8 @@ namespace Market.World
             if (!inventory.Has(crop.SeedItem))
                 return false;
 
-            return _seasonManager == null || crop.CanPlantIn(_seasonManager.CurrentSeason);
+            return _soilState == CropSoilState.Watered
+                   && (_seasonManager == null || crop.CanPlantIn(_seasonManager.CurrentSeason));
         }
 
         private void TryDebugGrow()
@@ -190,18 +252,31 @@ namespace Market.World
             switch (CurrentState())
             {
                 case CropState.Empty:
-                    if (crop.SeedItem == null)
-                        return "Missing seed";
-
-                    return CanPlant()
-                        ? $"Plant {crop.DisplayName}"
-                        : $"Need {crop.SeedItem.DisplayName}";
+                    return BuildEmptyPrompt();
                 case CropState.Ready:
                     return $"Harvest {crop.DisplayName}";
                 default:
                     return debugInstantGrowOnInteract
                         ? $"Instant grow {crop.DisplayName}"
                         : $"{crop.DisplayName} growing";
+            }
+        }
+
+        private string BuildEmptyPrompt()
+        {
+            switch (_soilState)
+            {
+                case CropSoilState.Untilled:
+                    return "Till soil";
+                case CropSoilState.Tilled:
+                    return "Water soil";
+                default:
+                    if (crop.SeedItem == null)
+                        return "Missing seed";
+
+                    return CanPlant()
+                        ? $"Plant {crop.DisplayName}"
+                        : $"Need {crop.SeedItem.DisplayName}";
             }
         }
 
@@ -218,6 +293,12 @@ namespace Market.World
 
         private void RefreshVisual()
         {
+            if (HasStageVisuals())
+            {
+                RefreshStageVisuals();
+                return;
+            }
+
             if (growthVisual == null)
                 return;
 
@@ -236,6 +317,72 @@ namespace Market.World
             float height = Mathf.Lerp(0.18f, 1f, progress);
             growthVisual.localScale = new Vector3(1f, height, 1f);
             _lastVisualProgress = progress;
+        }
+
+        private bool HasStageVisuals()
+        {
+            return sproutVisual != null && readyVisual != null;
+        }
+
+        private void RefreshStageVisuals()
+        {
+            int stage = _planted ? GetVisualStage(CalculateGrowthProgress()) : -1;
+            if (stage == _lastVisualStage)
+                return;
+
+            SetStageActive(sproutVisual, stage == 0);
+            SetStageActive(readyVisual, stage == 1);
+            _lastVisualStage = stage;
+            _lastVisualProgress = _planted ? CalculateGrowthProgress() : -1f;
+        }
+
+        private static int GetVisualStage(float progress)
+        {
+            return progress >= 1f ? 1 : 0;
+        }
+
+        private static void SetStageActive(Transform stageVisual, bool active)
+        {
+            if (stageVisual != null && stageVisual.gameObject.activeSelf != active)
+                stageVisual.gameObject.SetActive(active);
+        }
+
+        private void RefreshSoilVisual()
+        {
+            if (tilledVisual == null)
+                return;
+
+            bool showTilled = _soilState != CropSoilState.Untilled;
+            if (tilledVisual.activeSelf != showTilled)
+                tilledVisual.SetActive(showTilled);
+
+            if (!showTilled || tilledRenderers == null)
+                return;
+
+            Color tint = _soilState == CropSoilState.Watered
+                ? new Color(0.38f, 0.24f, 0.12f)
+                : Color.white;
+            _soilPropertyBlock ??= new MaterialPropertyBlock();
+
+            foreach (Renderer soilRenderer in tilledRenderers)
+                ApplySoilTint(soilRenderer, tint);
+        }
+
+        private void ApplySoilTint(Renderer soilRenderer, Color tint)
+        {
+            if (soilRenderer == null || soilRenderer.sharedMaterial == null)
+                return;
+
+            _soilPropertyBlock.Clear();
+            Material material = soilRenderer.sharedMaterial;
+            if (material.HasProperty("_BaseColor"))
+                _soilPropertyBlock.SetColor("_BaseColor", tint);
+            else if (material.HasProperty("_Color"))
+                _soilPropertyBlock.SetColor("_Color", tint);
+            else
+                return;
+
+            soilRenderer.SetPropertyBlock(_soilPropertyBlock);
         }
 
         private void ResolveServices()

@@ -125,8 +125,19 @@ namespace Market.Interaction
 
         private void OnInteractStarted(InputAction.CallbackContext _)
         {
+            TryInteract();
+        }
+
+        /// <summary>Attempts the same interaction used by the player's Interact input action.</summary>
+        public bool TryInteract()
+        {
             if (_current != null && _current.CanInteract)
+            {
                 _current.Interact(transform.root.gameObject);
+                return true;
+            }
+
+            return false;
         }
 
         private void EnsureLayerMask()

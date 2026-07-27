@@ -3,7 +3,9 @@
     "rootNamespace": "Market",
     "references": [
         "Market.Runtime",
-        "McpUnity.Editor"
+        "McpUnity.Editor",
+        "Unity.RenderPipelines.Core.Runtime",
+        "Unity.RenderPipelines.Universal.Runtime"
     ],
     "includePlatforms": [
         "Editor"

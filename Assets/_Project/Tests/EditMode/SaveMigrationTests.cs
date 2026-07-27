@@ -143,23 +143,36 @@ namespace Market.Tests
         }
 
         [Test]
-        public void SaveData_V5CropPlots_RoundTrip()
+        public void SaveData_V7CropPlots_RoundTrip()
         {
             var original = new SaveData();
             original.cropPlots.Add(new CropPlotData
             {
                 plotId = "CropPlot_0",
                 planted = true,
-                plantedAtMinutes = 1234.5f
+                plantedAtMinutes = 1234.5f,
+                soilState = 2
             });
 
             SaveData restored = JsonUtility.FromJson<SaveData>(JsonUtility.ToJson(original));
 
-            Assert.AreEqual(6, restored.version);
+            Assert.AreEqual(7, restored.version);
             Assert.AreEqual(1, restored.cropPlots.Count);
             Assert.AreEqual("CropPlot_0", restored.cropPlots[0].plotId);
             Assert.IsTrue(restored.cropPlots[0].planted);
             Assert.AreEqual(1234.5f, restored.cropPlots[0].plantedAtMinutes);
+            Assert.AreEqual(2, restored.cropPlots[0].soilState);
+        }
+
+        [Test]
+        public void SaveData_V6CropPlotDefaultsToUntilledSoil()
+        {
+            const string v6Json = "{\"version\":6,\"cropPlots\":[{\"plotId\":\"CropPlot_0\",\"planted\":false,\"plantedAtMinutes\":0}]}";
+
+            SaveData data = JsonUtility.FromJson<SaveData>(v6Json);
+
+            Assert.AreEqual(6, data.version);
+            Assert.AreEqual(0, data.cropPlots[0].soilState);
         }
 
         [Test]

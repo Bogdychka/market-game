@@ -850,6 +850,30 @@ mono-farmer feels the first ceiling ~mid-season-2 (not earlier, not later).
 **Do:** NPC pooling, LOD, crowd profiling, GPU instancing for repeated meshes. Target stable 60 FPS.
 **Check:** profiler shows < 16 ms/frame at peak.
 
+#### K5a. Island render hot-path guardrails `[assets: ready]`
+**Do:** remove the ocean opaque-color copy and double-sided pass; bound camera/Terrain/shadow cost;
+serialize the optimized defaults in the builder; add read-only Project Health regression checks.
+**Check:** Island uses instanced Terrain with one-sided shadows, depth-only front-face water, no
+global URP opaque texture, and Unity compile/health plus focused EditMode tests pass.
+
+#### K5b. Ambient occlusion pass (URP SSAO) `[assets: ready]`
+**Context:** the SSAO renderer feature is already active on `PC_Renderer.asset` (Blue Noise,
+Intensity 0.4, Radius 0.5, Samples Low, Bilateral blur, Source Depth) but its values were never
+settled or recorded, and `Mobile_Renderer.asset` has no AO at all.
+**Do:** finish the AO decision instead of leaving it half-tuned. Settle the PC values against the
+stylized look (contact shadow under stall crates, crop plots, building bases - no dark halos around
+NPCs against the sky, no self-shadow acne on Food-Kit props); pick Source Depth vs DepthNormals
+deliberately (Depth avoids the DepthNormals prepass but reconstructs normals - check crop plot
+edges); either add SSAO to `Mobile_Renderer` at Downsample+Low or record why mobile ships without
+it; serialize the chosen values and note them in `CHANGELOG.md`.
+**Decision (recorded here so it isn't re-litigated):** no third-party AO asset (Amplify Occlusion
+et al.). URP 17.5 SSAO covers a stylized market/farm scene; URP has no GTAO, but the extra fidelity
+a third-party pass buys is invisible on low-detail cartoon meshes. Revisit only if a profiler
+capture shows built-in SSAO is the bottleneck *and* the look demonstrably suffers.
+**Check:** AO visibly grounds props in the market and on the Island; no halos/acne at the K5a
+guardrail settings; frame cost measured and stated (target <= ~0.5 ms at 1080p); `verify-unity.ps1`
+health `ok`.
+
 ### K6. UX pass `[assets: ready]`
 **Do:** review all screens - consistent style/fonts/contrast, minimal localization (RU/EN via
 `LocalizationSO`).
@@ -865,6 +889,22 @@ place: `VERSION` + `CHANGELOG.md` + `vX.Y.Z` tags.)
 **Check:** critical bugs fixed; patch shipped.
 
 > **Checkpoint K:** the game is released.
+
+---
+
+## Project tooling
+
+### T1. Walkable asset museum `[assets: ready]`
+**Do:** Build a standalone development scene that presents imported art packs in labeled thematic
+zones, keeps source assets unchanged, and supports direct first-person inspection.
+**Check:** the scene opens directly, contains every supported model once, and runs with no console
+errors.
+
+### T2. MCP player agent `[assets: ready]`
+**Do:** Add an MCP tool that drives the live first-person controller through collision-aware movement,
+look, jump, and interaction commands, then returns a Game View PNG plus compact player telemetry.
+**Check:** an unfocused Unity Editor can capture the HUD, execute movement and rotation in Play Mode,
+and report the changed player pose with no console errors.
 
 ---
 
@@ -974,7 +1014,7 @@ place: `VERSION` + `CHANGELOG.md` + `vX.Y.Z` tags.)
 
 ### Block E - Farm
 - [x] E1 CropPlot + CropSO *(state machine will grow: E4/E10/N4)*
-- [ ] E2 Visual stages
+- [x] E2 Visual stages
 - [ ] E3 Seasonality
 - [ ] E4 Quality (stars, care)
 - [ ] E5 Cost of production & crop roles
@@ -1032,6 +1072,24 @@ place: `VERSION` + `CHANGELOG.md` + `vX.Y.Z` tags.)
 - [ ] K3 Tutorial
 - [ ] K4 Balance
 - [ ] K5 Performance
+- [x] K5a Island render hot-path guardrails
+- [ ] K5b Ambient occlusion (URP SSAO) *(no third-party AO asset - decided)*
 - [ ] K6 UX pass
 - [ ] K7 Build pipeline
 - [ ] K8 Playtest & patch
+
+### Project tooling
+- [x] T1 Walkable asset museum
+- [x] T2 MCP player agent
+- [x] T3 Read-only project health scanner
+- [x] T4 Local verification gate with compact MCP output
+- [x] T5 Selected-model asset pipeline assistant
+- [x] T6 Compact asset pipeline MCP output
+- [x] T7 Stylized water prototype scene and legacy water cleanup
+- [x] T8 Replace Island ocean with switchable Bitgem water
+- [x] T9 Apply full Bitgem environment preset to Island
+- [x] T10 Realistic water R5 local reflection and refraction integration
+- [x] T11 Realistic water R6 temporal whitecaps and shoreline foam
+- [x] T12 Realistic water R7 world-space caustic projection
+- [x] T13 Realistic water R8 underwater surface and volume transition
+- [x] T14 Realistic water R9 quality tiers, optimization, and promotion gate

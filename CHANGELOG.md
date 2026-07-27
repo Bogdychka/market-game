@@ -14,7 +14,647 @@ their historical agent attributions (Claude / Codex / user); new entries don't n
 
 ## [Unreleased]
 
+### Added
+- Skybox lab: `Market/Debug/Build Skybox Lab` (`SkyboxLabSceneBuilder`) builds
+  `Assets/_Project/Scenes/SkyboxLab.unity` - a copy of the WaterShaderLab water setup (same
+  `M_RealisticWaterLab` material, so both labs stay in sync) under the newly imported BOXOPHOBIC
+  "Skybox Cubemap Extended" pack. The sky uses the pack's `Skybox/Cubemap Blend` shader through a
+  project-owned material `Art/Materials/Skybox/M_SkyboxLab.mat` (Sky A = Blue Sky, Sky B = Night
+  Sky), with ambient and reflections sourced from the skybox; the imported demo materials are left
+  untouched. Post processing is set up in the scene by the existing rendering tool.
+  Why the blend shader instead of `Skybox/Cubemap Extended`: it gives a single day -> night
+  transition slider, which is how sky/time-of-day iteration is usually driven in games
+  (Enviro/Azure-style two-cubemap crossfade) and it directly feeds a future day-night cycle.
+  *Verify:* run the menu item, enter Play in `SkyboxLab` - sky renders, panel opens.
+- Tuned the lab look and kept the untouched baseline next to it as
+  `Art/Materials/Skybox/M_SkyboxLab_AuthorDefaults.mat`: exposure `1.1 -> 0.95` (the bright horizon
+  band clipped under Neutral tonemapping), a slight warm tint `0.53/0.51/0.47` (0.5 is neutral for
+  this `[Gamma]` property), sky rotation 35 with drift `0.4 -> 0.12` (sparse stylized clouds read
+  as a spinning sky at 0.4), sky height fog on (intensity 0.85, height 0.22, smoothness 0.4, fill
+  0.3) against fog colour `0.66/0.72/0.78` so the cubemap's hard horizon line dissolves where it
+  meets the water plane, and a low sun at pitch 22 / yaw 150 with intensity `1.3 -> 1.15` - the
+  specular path now runs from the sun towards the player start, and skybox ambient carries the fill
+  the flat ambient used to add. Ambient intensity 0.85: a bright stylized sky at full skybox
+  ambient flattened the beach and the wave shading. Scene fog stays off: `UnderwaterFogController` owns
+  `RenderSettings` fog while submerged. Two menu items manage this:
+  `Market/Debug/Rendering/Reset Skybox Lab Material` (back to the tuned values) and
+  `Market/Debug/Rendering/Restore Skybox Lab Author Material` (back to the backup asset).
+  *Verify:* the two menu items flip the sky between the tuned and the as-imported look.
+- In-game sky panel `SkyboxRuntimeTuner` (F8, same UiFactory/UIModeService pattern as the F7 water
+  tuner): cubemap slot cycling across the three cubemaps in the pack, day->night blend, exposure,
+  tint RGB, rotation angle/speed with the rotation keyword, the sky height fog block with the
+  `RenderSettings` fog colour, plus sun yaw/pitch/intensity and ambient/reflection intensity.
+  Values are written to the shared sky material, so tweaks survive leaving play mode in the Editor;
+  environment lighting is refreshed at most 4x/s instead of every slider frame.
+  *Verify:* Play `SkyboxLab`, F8 opens/closes the panel, dragging "Sky A -> Sky B blend" fades the
+  sky to night and the water reflection follows.
+- Post processing actually runs now. The game camera had `Post Processing` and `Anti-aliasing`
+  switched off in `Player.prefab`, and `Market.unity` contained no Volume at all - so the project
+  rendered HDR and clipped it with no tonemapping. The camera now renders post processing with
+  SMAA (High) and dithering (MSAA is not an option: the PC renderer is Deferred), and
+  `Market/Debug/Rendering/Setup Post Processing In Open Scene` creates the project profile
+  `Art/PostProcessing/MarketPostFX.asset` plus a global Volume in the open scene. Applied to
+  `Market.unity` and `Island.unity`.
+  Profile targets the cozy look: Neutral tonemapping (ACES desaturates a cartoon palette),
+  Bloom threshold 1.1 / intensity 0.35, Color Adjustments +8 contrast and saturation, warm White
+  Balance, light Vignette. The Volume sits at priority 1 so it wins over the Bitgem demo Volume
+  still present in `Island.unity`.
+  *Verify:* enter Play in Market - the image is tonemapped, edges are antialiased.
+
 ### Changed
+- PC render pipeline settings tuned for image quality: Color Grading `LDR -> HDR` with LUT 32 -> 33
+  (LDR grading clamped the frame before tonemapping, wasting the whole HDR path), Opaque
+  Downsampling `2x Bilinear -> None` (water refraction was reading a half-resolution opaque
+  texture), HDR Color Buffer `32 -> 64 bits`, Shadow Distance `50 -> 100`, Light Probe System
+  `Light Probe Groups -> Adaptive Probe Volumes` (no legacy probe groups existed in any scene, so
+  nothing regressed). SSAO now takes normals from the G-buffer instead of reconstructing them from
+  depth (`Source: Depth -> Depth Normals`), with radius `0.3 -> 0.5` and `Samples: Medium -> High`.
+
+### Fixed
+- Realistic water: the planar reflection no longer swims when the viewpoint changes. Scene view,
+  preview, and probe cameras skip the reflection pass, but `_PlanarReflectionAvailable` was left at
+  1, so the water sampled the texture rendered for the *game* camera using its own screen UVs - the
+  reflection stayed glued to the game viewpoint. Non-rendering cameras now clear the flag and fall
+  back to the probe/sky reflection.
+  *Verify:* fly the scene view - the reflection no longer slides across the surface.
+- Realistic water: the planar reflection was vertically mirrored. `_PlanarReflectionFlipY` came from
+  `SystemInfo.graphicsUVStartsAtTop`, which is true on D3D - but URP 17 already normalises
+  render-texture orientation, so the extra flip made far water reflect the seabed hemisphere as a
+  brown band running up to the horizon while the sky above it was clear blue. R5 introduced the
+  assumption and no stage report ever compared it against the alternative. It is now an inspector
+  `Auto/Never/Always` toggle defaulting to `Never`, and `WaterShaderLab` is serialized with `Never`.
+  *Verify:* capture from `(6, 1, -16)` looking down +Z - `Auto` shows the brown band across the
+  middle of the frame, `Never` shows sky-blue water to the horizon.
+- Realistic water: the lab wind now points at the beach. `WaterShaderLab` puts the beach terrace at
+  `-Z` and the deep trench at `+Z`, while `_WindDirection` was `(0.9063, 0, 0.4226)` - along `+Z`,
+  i.e. out to sea. Both `M_RealisticWaterLab.mat` and the shader default are now
+  `(0.4226, 0, -0.9063)`, so the swell rolls shoreward with a slight along-shore skew.
+- Realistic water: crests now travel *with* `_WindDirection` instead of against it. The Gerstner
+  phase used GPU Gems' printed `+ phi*t`, which sends the crest along `-direction`, while
+  `RealisticWaterTemporalFoam` advects its history along `+_WindDirection` - so the persistent
+  whitecaps smeared against the waves that spawned them. The time term is now subtracted in both
+  `RealisticWater.shader` and `RealisticWaterFoamUpdate.compute` (they must stay in lockstep), and
+  the two micro-normal layers scroll the same way.
+  *Verify:* in `WaterShaderLab`, foam streaks trail the crests instead of running ahead of them.
+- Realistic water now applies scene fog (`multi_compile_fog` + `MixFog`). The pass composites
+  opaquely, so without it the water stayed crisp against fogged terrain - visible the moment it
+  meets `Island.unity`, which has linear fog from 250 m.
+- `Island.unity` really is on the project-owned water materials now. The previous entry only wired
+  `StylizedWaterIslandSceneBuilder` (the proto scene); `IslandSceneBuilder` and the serialized
+  `Island.unity` were still bound to `Assets/Bitgem/.../example-water-01..03.mat`, so the F7 panel
+  and the tuner window kept editing the imported package assets in place. `IslandSceneBuilder` now
+  goes through the same `EnsureProjectCopy` path, and the scene's `MeshRenderer` +
+  `WaterMaterialSwitcher` point at `Art/Materials/Water/StylizedWater_01..03.mat`.
+  *Verify:* open `Island.unity`, drag an F7 slider, and only the `_Project` copy changes on disk.
+- `SHADERS.md` no longer claims `MarketWater` is the shipped island water; it runs in `Map.unity`
+  only since the island water swap.
+- The island scene now uses project-owned copies of the three package water materials
+  (`Art/Materials/Water/StylizedWater_01..03.mat`, created on first build and never overwritten
+  afterwards). Tuning through the editor window or the in-game panel writes to the shared material,
+  which previously meant the imported package materials were edited in place; the package assets are
+  now left untouched and the tuned copies survive scene rebuilds.
+  *Verify:* rebuild the island scene, drag a tuner slider, and only the `_Project` copy changes.
+- Updated the imported Bitgem water runtime for Unity 6.5: generated mesh names now use
+  `GetEntityId`, and early floater queries safely return until the water volume has built its tile
+  cache. This removes the package compile failure and the first-frame Play Mode exception.
+  *Verify:* scripts compile with zero warnings; Play Mode renders the scene without package
+  exceptions.
+
+### Removed
+- Removed the previous third-party water integration completely: package remnants, renderer
+  features, reserved layers, gizmo icons, test scene, migration/build tools, and archived backups.
+- Removed the Island scene's old `Ocean` primitive and `M_Ocean` material binding from both the
+  serialized scene and `IslandSceneBuilder`.
+
+### Added
+- Completed the R9 realistic-water production gate. `RealisticWaterQualityController` now applies
+  coherent High/Low tiers across planar reflection, temporal foam, projected caustics, and the
+  underwater surface. The material migration removes ten orphaned serialized properties, and the
+  main-light shadow keywords now use one mutually exclusive variant group instead of three
+  independent groups. A fixed 1280x720 subsystem profile measured High at 2.44 ms observed p95 and
+  0.70 ms GPU p95; the 360-degree High camera turn measured 2.15 ms p95 with no frame above
+  16.67 ms. The final DX12 Windows development build completed with zero build warnings and its
+  standalone High capture measured 1.84 ms observed p95 and 0.43 ms GPU p95, with no frame above
+  16.67 ms.
+  `MarketWater` remains 0.33 ms cheaper at GPU p95 in the same lab view and better matches a simple
+  cartoon style, so the realistic candidate remains isolated in `WaterShaderLab` pending an
+  explicit promotion decision; Island water is unchanged.
+  *Verify:* run `Capture R9 Subsystem Profile`, inspect `Artifacts/RealisticWater/R9`, build the R9
+  standalone player, and confirm the scene returns to serialized High with health `ok`.
+- Added R8 underwater surface rendering to `WaterShaderLab`. An optional front-face-culling
+  underside renderer now mirrors the four Gerstner waves and optical parameters, rebuilds the
+  inverted normal for the view from below, and blends transmission with total internal reflection
+  at grazing angles. `UnderwaterFogController` evaluates the local displaced height and shares a
+  0.4-unit crossing blend with the surface; `FrontFaceOnly` keeps the additional renderer disabled.
+  A paired fixed-camera benchmark measured the pass at +0.03 ms GPU p95 over its fallback
+  (0.43 ms versus 0.41 ms), while the standard 1280x720 harness remained at 2.97 ms observed p95
+  and 0.70 ms GPU p95.
+  *Verify:* run `Capture R8 Underwater Performance`, inspect the transition and underwater
+  diagnostics under `Artifacts/RealisticWater/R8`, then select `FrontFaceOnly` and confirm the fog
+  remains active while the underside renderer stays disabled.
+- Added R7 world-space caustics to `WaterShaderLab`. A bounded receiver-overlay path now projects
+  two animated patterns along the sun direction onto five seabed terraces and four rocks, with
+  depth, turbidity, sun-angle, normal, bounds, above-water, and main-light-shadow rejection.
+  `SurfaceFallback` disables all nine overlays and restores the previous cheap water composite.
+  The same 1280x720 harness measured 3.38 ms observed p95 and 0.69 ms GPU p95; projected caustics
+  added about 0.02 ms to GPU p95 without allocating an auxiliary render target.
+  *Verify:* open `WaterShaderLab`, inspect the receiver-only R7 capture for stable scale, deep-water
+  fade, rock shadows, and the unlit dry beach; switch the component to `SurfaceFallback` and confirm
+  the receiver root disables while caustics remain visible through the water.
+- Added R6 temporal foam to `WaterShaderLab`: a bounded 256x256 world-space compute history now
+  accumulates, wind-advects, and decays Jacobian whitecaps while a separate channel keeps broken-up
+  shoreline/obstacle foam anchored in world space. The shader exposes independent crest/shore
+  strengths and retains its instantaneous no-history fallback. The selected 100x100-unit setup
+  uses 0.563 MiB; the same 1280x720 harness measured 4.43 ms observed p95 and 0.67 ms GPU p95,
+  remaining below the 16.67 ms target.
+  *Verify:* open `WaterShaderLab`, enter Play Mode, capture the R6 buffers, suppress whitecap
+  injection, and confirm the existing red history survives the next rendered frame before
+  decaying; set quality to `NoHistory` and confirm water still renders with reactive foam.
+- Grass cards are now a set instead of a single card: `GrassCardBuilder` builds one cropped mesh,
+  material and clump prefab per painted texture (`Grass_3.1`, `Grass_4.1`, `Grass_5.1`), keeping the
+  original `GrassCard` asset names for the first one so existing scene references stay valid.
+  `Market/Debug/Grass Card/3. Scatter Patch In Scene` now mixes the variants at random, and the
+  Grass Scatter Brush palette takes any number of sources - it loads every built `*_Clump` prefab on
+  open ("Reload grass cards" refreshes it) and only forces a material override when one is set, so
+  each card keeps its own.
+  *Verify:* run grass card step 2, then step 3 on a terrain scene - the patch shows all three card
+  shapes; the brush window lists three sources.
+- Added the in-game water tuner (`StylizedWaterRuntimeTuner`, **F7** in the island scene): the same
+  labelled sliders as the editor window, but inside play mode, so the water can be tuned while
+  walking around. Two side panels leave the middle of the screen free; each row shows the value and
+  a one-line explanation, colours get one slider per channel. Presets are cycled with `<` / `>` and
+  applied with `Load`, `Overwrite` saves onto the selected one and `Save new` writes the next free
+  `water-NN` - the same JSON files the editor window uses. Opening the panel enters UI mode through
+  `UIModeService` (cursor free, player input suspended) and F7 closes it again. The property table,
+  descriptions, ranges and preset format now live once in `StylizedWaterShaderCatalog` /
+  `StylizedWaterPresets`, shared by the window and the panel. The island scene ships the service and
+  the panel wired to the player and the water.
+  *Verify:* play the island scene, press F7, drag a slider and the water changes immediately; press
+  `Save new`, change values, then `Load` restores them.
+- Added the `Market/Debug/Water/Stylized Water Tuner` window: every exposed property of the Bitgem
+  water shader (shallow/deep colour, depth blend distance and curve, depth foam, ripple normal map
+  with tiling, scroll speed, detail tiling and strength, ripple strength, refraction, wave
+  frequency/height/speed, foam width and noise, smoothness, metallic) as a labelled slider with a
+  one-line explanation of what it does. Edits apply to the selected material live in edit and play
+  mode and are undoable. Settings are saved and restored as named JSON presets under
+  `Assets/_Project/Art/Materials/Water/Presets`, and one click copies all values back from any of
+  the three package materials. Because the imported package materials are shared with the package
+  showcase scene, the window warns about them and can create a project-owned copy and assign it to
+  the water in the open scene.
+  *Verify:* open the window on the island scene water, drag any slider and the Game view updates;
+  save a preset, change values, load it back and the values return.
+- Added `StylizedWaterIsland.unity`: a compact Unity Terrain island (48x48 units) ringed by the
+  Bitgem stylized water, built by `Market/Debug/Water/Build Stylized Water Island Scene`.
+  The shared first-person `Player` prefab spawns on the island and its camera gets the same render
+  options as the showcase one; the orbit rig ships as a disabled `Showcase Camera` (enable it, and
+  disable the player, for package-style fly-around shots with its 1-3 material keys and Space
+  pause), while F6 / Shift+F6 on the water cycles the three materials during normal play.
+  The water and environment are taken from `StylizedWaterProto.unity` - same three package
+  materials, same sun/backlight rig, ambient, skybox,
+  `SampleSceneProfile` post processing, reflection probe and camera render options (solid colour
+  clear, FOV 45, depth + opaque textures, post processing on, no MSAA/AA). Fog colour and mode are
+  the proto values; only the distances are scaled (40..120 instead of 10..30) because the proto
+  range is authored for a lagoon-sized view. The water mesh is one asset built from concentric
+  zones - 0.5 unit cells (the Bitgem tile size) around the shore, coarser further out, reaching
+  220 units so its border always dies inside the fog - with red vertex colours painting the
+  package foam along the shoreline. The sea floor dives to its deepest shade before the terrain
+  rim, so the terrain square never shows through as shallow water.
+  *Verify:* open the scene and capture the Game camera - the island sits in deep blue water with a
+  foam ring, a turquoise shallow band and no visible mesh or terrain border; health stays `ok`.
+- Imported `URP Stylized Water Shader - Proto Series` under `Assets/Bitgem/StylisedWater/URP`.
+  `StylizedWaterProto.unity` is a project-local showcase with the package lagoon mesh, generated
+  water volume, URP post processing, per-camera depth/color textures, a slow orbit camera, and
+  runtime switching across the three supplied water materials with keys 1-3 (Space pauses orbit).
+  `StylizedWaterProtoSceneBuilder` rebuilds it from the untouched package example through
+  `Market/Debug/Water/Build Stylized Water Proto Scene`; it is not added to Build Settings.
+  *Verify:* the scene loads clean with nine roots; the 1280x720 Game camera capture shows animated
+  depth color, refraction, reflections, and shoreline foam with no magenta output.
+- Replaced Island water with the Bitgem shader on a project-owned 128x128-cell, 950x950-unit grid.
+  `WaterMaterialSwitcher` cycles the three supplied materials with F6 (Shift+F6 reverses), while
+  the Island cameras request the depth and opaque textures needed for foam and refraction.
+  `Market/Debug/Water/Replace Island Water` reapplies only the water integration without
+  rebuilding or losing other Island content; a full `IslandSceneBuilder` rebuild uses the same
+  setup. Water motion vectors, shadows, and probe sampling remain disabled.
+  *Verify:* Play Mode Game View renders animated blue water around the terrain; Island health is
+  `ok` with zero console errors, warnings, or dirty scenes.
+- Applied the complete Bitgem example environment preset to Island: its procedural skybox,
+  warm sun and cool backlight, flat ambient lighting, linear blue fog, shared tonemapping/Bloom/
+  Vignette profile, original realtime Lighting Settings asset, HDR camera output, and a scaled
+  realtime reflection probe. Fog distances and probe bounds are adapted to the 500-unit Island
+  instead of the package's compact demo scale.
+  `Market/Debug/Environment/Apply Bitgem Preset to Island` can reapply only this environment, and
+  `IslandSceneBuilder` now persists the same setup on a full rebuild.
+  *Verify:* scripts compile with zero warnings; Island Play Mode and project health are `ok` with
+  zero console errors, warnings, or dirty scenes.
+- `REALISTIC_WATER_IMPLEMENTATION_PLAN.md` defines the staged R0-R9 technical roadmap for the
+  experimental shader: fixed verification conditions, physical wave migration, GGX lighting,
+  spectral absorption, natural normal detail, reflection/refraction integration, temporal foam,
+  projected caustics, underwater rendering, quality tiers, performance gates, affected files, and
+  a per-stage execution template. It is explicitly a design guide rather than a second progress
+  log; live progress remains in `dev_plan_4_1.md`.
+- R0 baseline tooling for the experimental realistic-water track:
+  `Market/Debug/Water/Capture R0 Baseline` captures three fixed 1280x720 diagnostic views
+  (elevated overview, shoreline detail, and near-horizon aliasing), snapshots the live material
+  values plus shader/material dependency hashes, and runs an 8-second fixed-resolution Editor Play
+  Mode frame-time sample after a 2-second warmup. Results land under the git-ignored
+  `Artifacts/RealisticWater/R0/`; unavailable GPU timing is reported explicitly. The tool restores
+  the edit-mode camera and label after capture and makes no shader, material, or scene changes.
+  *Verify:* run the menu command from `WaterShaderLab`; confirm three PNGs plus `baseline.md`,
+  automatic return to Edit Mode, a clean scene, and Unity health `ok`.
+- Debug fly mode for the player: `FirstPersonController` gained `SetFlyMode`/`SetFlyVerticalInput`
+  plus `flySpeed`/`flySprintMultiplier`/`flyVerticalSpeed` fields, and `HandleMovement` branches to
+  fly physics (no gravity, free vertical move) when active. New `DebugFlyMode` component
+  (`Market.DebugTools`) toggles it with **F4** and reads **Space/Left Ctrl** for ascend/descend;
+  wired onto `Player.prefab` via the re-runnable `PlayerDebugToolsInstaller`
+  (menu `Market/Debug/Add Fly Mode To Player`), so it's available in every scene using that prefab.
+  *Verify:* `recompile_scripts` -> health `ok`; Play Mode, press F4, confirm free flight with no
+  gravity, then F4 again to confirm normal grounded movement resumes.
+- `WaterShaderLabSceneBuilder` (menu `Market/Debug/Build Water Shader Lab`) builds a standalone
+  `WaterShaderLab.unity` scene for iterating on the water shader without loading the full Island
+  terrain: five stepped seabed terraces (dry beach down to a deep trench) under the game's actual
+  `M_Ocean` material/`MarketWater.shader`, a few partially-submerged rocks for foam testing, sun +
+  ambient lighting, an in-scene instructions label, and the Player prefab (with fly mode) spawned on
+  the beach. Not added to Build Settings - it's an authoring tool scene, not shipped content.
+  *Verify:* `recompile_scripts` -> health `ok`; `Capture Active Scene Camera` renders the terraces
+  and water gradient correctly.
+- `RealisticWaterMeshGenerator` (menu `Market/Debug/Water/Generate Realistic Water Mesh`) bakes a
+  dense 200x200-vertex grid mesh (`Assets/_Project/Art/Meshes/Water/RealisticWaterGrid.asset`,
+  100x100 world units, 32-bit indices) for an upcoming experimental realistic (PBR, Gerstner-wave)
+  water shader - step 1 of that track. A flat primitive `Plane` (10x10 verts) has nowhere near
+  enough resolution for vertex-displaced waves. Purely a mesh asset for now; no shader/material
+  changes yet, and `MarketWater.shader`/`M_Ocean` are untouched.
+  *Verify:* `recompile_scripts` -> health `ok`; menu logs `200x200 verts (40000 total, 79202 tris)`.
+- Step 2 of the realistic-water track: `RealisticWater.shader` (`Market/World/RealisticWater`) -
+  a vertex-displaced Gerstner wave stack (4 layers: angle/wavelength/amplitude/speed/steepness,
+  analytic normals per GPU Gems 1 ch.1) plus a procedural sine-based micro-ripple normal (no
+  texture dependency), lit with a Fresnel/specular model. No reflections/refraction/foam/caustics
+  yet - later steps. `RealisticWaterMaterialInstaller` (menu `Market/Debug/Water/Create Realistic
+  Water Material`) creates `M_RealisticWaterLab.mat` at shader defaults. `WaterShaderLabSceneBuilder`
+  now also builds a second, separate zone ~110 units north of the existing terraces running this
+  material on the `RealisticWaterGrid` mesh, for direct side-by-side comparison with the cartoon
+  `M_Ocean` water (undecided whether it replaces it - see it first).
+  *Verify:* `recompile_scripts` -> health `ok`; rebuilding the lab scene renders both zones with
+  0 console errors; captured render shows layered wave motion with plausible shading/specular.
+- Step 3 of the realistic-water track: `RealisticWater.shader` switched to the Transparent queue
+  (`ZWrite Off`, no GPU blend - the shader fully replaces each pixel itself) and gained refraction
+  (distorted `_CameraOpaqueTexture` read, with a guard that falls back to the undistorted UV when
+  the distorted sample would refract into geometry sitting in front of the water), depth-based
+  color absorption (`_CameraDepthTexture` via the same `ComputeWorldSpacePosition`/`hasSurface`
+  technique already proven in `MarketWater.shader`), and reflections via URP's own
+  `GlossyEnvironmentReflection` (reflection-probe/skybox today; becomes real screen-space
+  reflections for free if the "Screen Space Reflections" renderer feature is ever added to
+  `PC_Renderer.asset` - that one step is a manual Inspector action, not done here, since it's a
+  project-wide renderer asset and the realistic-water track is still experimental/undecided).
+  `RealisticWaterPipelineSetup` (menu `Market/Debug/Water/Enable Opaque Texture (PC Pipeline)`)
+  turns on `supportsCameraOpaqueTexture` on the PC URP asset (depth texture was already on;
+  Mobile_RPAsset is untouched - this track is PC-only).
+  *Bug found and fixed during verification:* grazing-angle reflect vectors off tilted wave facets
+  were dipping into the skybox's lower "ground" hemisphere, which defaults to a brown/tan color -
+  rendered as ugly tan streaks across the whole surface. Fixed by clamping the reflect vector to
+  the upper hemisphere before sampling (water only ever mirrors the sky, never "ground"), matching
+  standard practice for water shaders. Found via `player_agent` (real Game View, not just the
+  editor capture tool) plus isolating the term by zeroing `_ReflectionStrength`/`_SpecStrength`
+  live via `modify_material` before touching any code.
+  *Verify:* `recompile_scripts` -> health `ok`; `player_agent` render over both zones shows sky-blue
+  reflections and no tan artifacts.
+- Removed the cartoon `M_Ocean` comparison water from `WaterShaderLab.unity`: `WaterShaderLabSceneBuilder`
+  now places the realistic water plane directly over the existing terraced shoreline (dry beach down
+  to deep trench) and foam-test rocks instead of a separate side-by-side zone, giving the realistic
+  shader a proper depth/shoreline test bed for the upcoming foam/caustics work. Scene simplified from
+  9 to 7 root objects.
+  *Verify:* `recompile_scripts` -> health `ok`; `player_agent` render from spawn shows the beach,
+  foam-test rock, and realistic water filling the terraces with no cartoon water present.
+- Step 4 of the realistic-water track (final step for now): `RealisticWater.shader` gained
+  Jacobian-based whitecap foam on breaking wave crests (the vertex shader now accumulates the
+  horizontal-displacement Jacobian `sumXX/sumZZ/sumXZ` alongside the existing Gerstner sums; where
+  it collapses toward zero the surface is folding/breaking), shoreline foam from the existing water-
+  column-depth calculation, a shared sine-based breakup noise so neither reads as a flat mask, and
+  procedural underwater caustics (two crossed, drifting sine grids sharpened into a bright lattice,
+  evaluated at the reconstructed seabed world position so the pattern sits on what's underneath,
+  fading out with depth/absorption). New properties: `_FoamColor`, `_FoamCrestCutoff/Softness`,
+  `_FoamShoreWidth`, `_FoamNoiseTiling/Speed`, `_CausticColor/Tiling/Speed/Intensity`.
+  *Tuning found live via `modify_material` before touching the shader:* the shader's first-guess
+  defaults were both wrong in the same direction (too generous) - `_FoamShoreWidth` 2.0 covered the
+  entire "Shallows" terrace shelf edge-to-edge (the lab's terraces are flat steps, not a smooth
+  beach slope, so a wide shore-foam threshold reads as a solid white shelf rather than a coastline);
+  `_FoamCrestCutoff` 0.55 triggered on nearly every wave facet instead of just breaking crests.
+  Isolated by zeroing each term independently before concluding "not a bug" and re-tuning: shipped
+  defaults are `_FoamShoreWidth` 1.0, `_FoamCrestCutoff` 0.15, `_FoamCrestSoftness` 0.1,
+  `_CausticIntensity` 1.8, `_CausticTiling` 0.7 (first guesses of 1.2/0.4 were barely visible).
+  *Verify:* `recompile_scripts` -> health `ok`; capture from an elevated, downward-angled view (a
+  flat grazing view reads mostly as sky reflection regardless of foam/caustic settings - not a bug,
+  correct Fresnel behavior, but a bad angle to judge them from) shows foam localized to the rocks/
+  shoreline/crests and a visible animated caustic lattice on the sand that fades with depth.
+- Step 5 (polish) of the realistic-water track: `RealisticWater.shader` now receives main-light
+  shadows (added the standard `_MAIN_LIGHT_SHADOWS`/`_MAIN_LIGHT_SHADOWS_CASCADE`/
+  `_MAIN_LIGHT_SHADOWS_SCREEN`/`_SHADOWS_SOFT` multi_compiles, `TransformWorldToShadowCoord` +
+  `GetMainLight(shadowCoord)`, `shadowAttenuation` applied to both diffuse and specular) so rocks/
+  terrain shadow the surface instead of it always reading fully lit. New `UnderwaterFogController`
+  (`Market.DebugTools`) switches `RenderSettings.fog` to a blue-green tint while the main camera
+  sits below the water surface's Y and restores the previous fog state on surfacing - needs no
+  shader changes at all, since the water mesh back-face-culls from below (invisible once
+  submerged) and the surrounding `Universal Render Pipeline/Lit` geometry already reads
+  `RenderSettings.fog` natively. Wired into `WaterShaderLabSceneBuilder` on a new
+  "Underwater Fog Controller" object referencing the water transform.
+  *Verify:* `recompile_scripts` -> health `ok`; `player_agent` with the player placed below the
+  water's Y shows the hazy blue-green underwater fog; surfacing restores the normal view.
+  *Not done yet - flagged rather than attempted quietly:* foam persistence over time (whitecaps
+  currently are fully reactive to the instantaneous wave state, with no accumulate-then-decay
+  memory). That needs a genuinely bigger piece of infrastructure - a world-space foam accumulation
+  buffer (e.g. a persistent RenderTexture updated by a decay-and-inject pass each frame, sampled by
+  the shader instead of computing foam purely from the current frame) - so it's deferred as its own
+  follow-up rather than bundled in here.
+- Correctness pass over `RealisticWater.shader` (review of the steps 1-5 work; web-checked against
+  GPU-Gems Gerstner-Jacobian foam and standard water-normal LOD practice). Six real defects fixed:
+  (1) **Jacobian whitecap foam was dead code** - the "breaking crest" foam claimed and "verified"
+  in step 4 produced zero pixels: with the gentle default waves the horizontal-displacement
+  Jacobian never drops below ~0.55, but the foam threshold was `J < 0.15`, so `crestFoam` was
+  identically 0 everywhere; every whitecap in the step-4 screenshots was actually shoreline foam +
+  Fresnel + specular. Replaced the unreachable `_FoamCrestCutoff`/`_FoamCrestSoftness` cutoff with a
+  `(1 - J - _FoamCrestBias) * _FoamCrestGain` ramp so foam scales with closeness-to-folding and is
+  actually visible on crests (confirmed in a horizon render). (2) **No distance detail-fade** on the
+  micro-ripple normal caused specular/normal aliasing (firefly speckle) on far water - a regression
+  vs `MarketWater.shader`, which fades detail with camera distance; added `_DetailFadeStart/End` and
+  fade the micro normal toward flat with distance. (3) **Specular firefly** from the same source -
+  specular is now multiplied by the distance-fade so far water stops sparkling. (4) **Back-facing
+  wave facets** (NdotV < 0) saturated Fresnel to 1 and flashed white on wave undersides - the normal
+  is now flipped to face the viewer before shading. (5) **No Fresnel base reflectance** - swapped the
+  plain `(1-cos)^p` for Schlick with an `_FresnelBase` floor (~0.02) so water still mirrors ~2% of
+  the sky head-on instead of going non-reflective. (6) **Shadow bled into transparency** - the
+  shallow-water body tint keyed on a shadowed NdotL, so a rock/cloud shadow made *more* seabed show
+  through; the body tint now uses a shadow-free NdotL while shadow still darkens the lit result and
+  glint. Orphaned `_FoamCrestCutoff`/`_FoamCrestSoftness` values remain in `M_RealisticWaterLab.mat`
+  but are ignored (harmless); the new properties fall back to shader defaults.
+  *Verify:* `recompile_scripts` -> health `ok`; elevated downward capture shows live crest foam on
+  the wave tops (previously absent) and a horizon capture shows clean far water with coherent
+  whitecaps instead of firefly speckle.
+- Added alpha-cutout card grass built from the artist's `Assets/blender/Grass_3.fbx` quad and
+  `Grass_3.1.png` (1024x1024 RGBA, hard alpha). New re-runnable builder `GrassCardBuilder`
+  (menu `Market/Debug/Grass Card/1..4`) inspects the source card, fixes the texture import
+  (coverage-preserving mips, cutoff-matched alpha reference, Clamp wrap, 512 max, aniso 4), bakes the
+  clump mesh, creates `GrassCard.mat`, saves a `GrassCard_Clump` prefab, scatters a 400-clump demo
+  patch onto the island terrain, and renders an eye-height preview to
+  `Artifacts/Capture/grass_card_patch.png`. Assets land in `Assets/_Project/Art/Nature/Grass/`.
+  *Verify:* run steps 1-4; the preview shows the patch and two consecutive captures differ by ~20%
+  of their pixels (the grass is animating).
+- `CardsPerClump` (default **1**) controls how many cards are baked into one clump mesh, spread over
+  180 deg - the shader is `Cull Off`, so a half turn already covers every orientation. Baking rather
+  than parenting keeps a multi-card clump at a single renderer. *Why 1:* a lone quad goes invisible
+  edge-on, but scatter density hides that, and every extra card is another full layer of
+  alpha-cutout overdraw - the expensive axis for this kind of grass. Raise to 2 for the usual X-cross
+  if a clump ever has to read solid on its own.
+- `GrassCardBuilder` measures the texture's alpha bounding box and crops the card **geometry** to it
+  while leaving the mesh UVs at a full 0..1, pushing the crop into `_BaseMap_ST` instead.
+  *Why:* the artwork covers only 42% of its square (bottom ~half), so an uncropped card shades 58%
+  fully transparent pixels, and a UV.y wind mask would peak over empty space while the visible
+  blades barely moved. Keeping mesh UVs at 0..1 keeps the mask running root-to-tip across the
+  actual blades. *Verify:* step 2 logs the measured UV rect and its coverage percentage.
+
+### Changed
+- R5 of the realistic-water plan hardens screen refraction and adds one bounded local planar
+  reflection to `WaterShaderLab`. Refraction distortion now fades at screen edges and in thin
+  shoreline water, clamps its lookup, and rejects foreground geometry through reversed-Z-safe
+  linear eye depth plus the existing sky/finite/below-water checks. The new
+  `RealisticWaterPlanarReflection` renders a clipped half-resolution mirrored camera only for the
+  lab surface; Sky Only is the zero-pass fallback and Full Resolution remains diagnostic. The
+  reflection pass omits post processing, opaque/depth copies, MSAA, probes, water self-rendering,
+  motion vectors, and water shadows; no Island or project-wide renderer feature was changed.
+  `RealisticWaterMaterialInstaller`, `WaterShaderLabSceneBuilder`, the baseline snapshot, and
+  `SHADERS.md` persist and document the R5 setup.
+  *Verify:* deterministic elevated/shoreline/horizon captures show reflected rock silhouettes
+  without foreground refraction, edge smear, black borders, or fallback flashes. Same-harness R4
+  sky-only -> R5 planar-half timings (avg / p95): observed `1.68 / 2.12` ->
+  `2.55 / 3.56 ms`, CPU `1.68 / 2.12` -> `2.55 / 3.58 ms`, GPU `0.47 / 0.61` ->
+  `0.52 / 0.67 ms`; p95 remains below `16.67 ms`. Evidence is under
+  `Artifacts/RealisticWater/R5/`.
+- R4 of the realistic-water plan replaces the crossed-sine micro-ripple field with two generated
+  seamless 256x256 normal maps. `RealisticWaterNormalTextureGenerator` deterministically rebuilds
+  both assets, configures them as repeat-wrapped normal maps with mipmaps, trilinear filtering,
+  compressed high-quality import, and anisotropy 4, then assigns them to the lab material. The
+  shader samples exactly two layers in mesh-anchored world space: one follows `_WindDirection`,
+  the second uses an authored wind offset, different tiling, and different speed. Reoriented
+  normal mapping combines both layers and the Gerstner derivative normal without component
+  addition. Existing distance fade is retained and a derivative-based texel-footprint fade removes
+  each layer before it becomes sub-pixel noise. `_MicroWaveStrength` remains the master amplitude;
+  `_MicroWaveTiling` and `_MicroWaveSpeed` are retired harmless material orphans, replaced by
+  `_NormalLayerATiling`, `_NormalLayerBTiling`, `_NormalLayerASpeed`, `_NormalLayerBSpeed`, and
+  `_NormalLayerBRotation`.
+  *Verify:* macro-only versus two-layer environment captures show irregular close-range breakup
+  without the previous diagonal sine grid; the detail remains attached to the displaced mesh and
+  fades cleanly toward the horizon. Same-harness R3 -> R4 timings (avg / p95): observed
+  `6.41 / 15.10` -> `1.64 / 1.92 ms`, CPU `6.41 / 15.07` -> `1.64 / 1.92 ms`, GPU
+  `0.46 / 0.60` -> `0.46 / 0.47 ms`; p95 remains below `16.67 ms`. Evidence is under
+  `Artifacts/RealisticWater/R4/`.
+- R3 of the realistic-water plan replaces scalar depth-to-`_DeepColor` fading with per-channel
+  Beer-Lambert transmittance and controlled in-scattering. The selected refracted opaque position
+  now passes explicit sky-depth, finite-position, and below-water validation; optical extinction
+  uses the actual water-to-scene view-ray distance, while shoreline foam keeps a separate vertical
+  depth. `_DepthFadeDistance` is explicitly migrated to the open-water fallback path.
+  `_AbsorptionCoefficients`, `_ScatteringColor`, and `_ScatteringStrength` are new material
+  controls. `_DeepColor` and `_ShallowColor` are retired, and their serialized values remain
+  harmless orphans. Caustics use transmittance luminance for the down-light path and are then
+  attenuated again with the refracted scene on the view path.
+  *Verify:* isolated transmission preserves shallow sand and progressively removes red before
+  green/blue; oblique rays converge smoothly to deep blue-green, sky fallback remains stable, and
+  disabling scattering makes deep water visibly darker. Restored full-composite capture is clean.
+  Same-harness R2 -> final R3 timings (avg / p95): observed `3.73 / 7.08` ->
+  `6.41 / 15.10 ms`, CPU `3.73 / 7.42` -> `6.41 / 15.07 ms`, GPU `0.45 / 0.46` ->
+  `0.46 / 0.60 ms`;
+  p95 remains below `16.67 ms`. Evidence is under `Artifacts/RealisticWater/R3/`.
+  Follow-up: optical and shoreline depth now come from the unperturbed center ray because the
+  screen-space refracted lookup is not a metric ray. This removes false green shallow-water
+  patches when the offset crosses a neighboring seabed terrace; refraction still affects scene
+  color and caustic placement. Out-of-viewport refraction also falls back to the center sample.
+  The tuned absorption `(0.22, 0.10, 0.04)` and scattering color `(0.015, 0.18, 0.32)` with
+  strength `0.4` retain blue-green deep water while keeping the shallow seabed neutral.
+  Motion review found a second shallow-water failure: displaced troughs could fall below the
+  seabed, reject valid center depth, and animate the `6 m` open-water fallback as large color
+  islands. Depth validation and Beer-Lambert distance now use the mesh's mean water level, while
+  displacement remains active for geometry, normals, reflection, and foam.
+- R2 of the realistic-water plan replaces the legacy `pow(NdotH, _SpecPower)` sun glint and
+  variable-power Fresnel blend with a Cook-Torrance GGX BRDF: Schlick Fresnel at water
+  `F0 = 0.0204`, GGX normal distribution, height-correlated Smith visibility, and a roughness floor
+  that approximates finite sun size. Environment reflection and transmission now share Fresnel
+  energy instead of a generic color lerp; only direct sun reflection receives the main-light
+  shadow. Perceptual roughness increases with the existing distance-detail fade to suppress
+  sub-pixel horizon glints. `_SpecColor`, `_SpecPower`, and `_FresnelPower` are retired (their
+  serialized material values remain harmless orphans); `_SpecStrength` is now a bounded direct
+  reflection control.
+  *Verify:* isolated transmission/environment/direct captures confirm that GGX produces sparse,
+  smooth sun highlights without fireflies; the broad white bands originate in the existing
+  procedural micro-normal/environment path and remain an R4 concern. Same-harness 1280x720 p95:
+  observed `7.31 -> 7.08 ms`, CPU `7.37 -> 7.42 ms`, GPU `0.44 -> 0.46 ms`.
+- R1 of the realistic-water plan replaces independent linear wave speeds with deep-water
+  dispersion (`omega = sqrt(g * k)`) while preserving every `_WaveNParams.w` value as a
+  dimensionless speed multiplier. New `_WindDirection` and `_WindSpread` properties compress the
+  four authored wave angles around one normalized wind direction without removing crossing-wave
+  energy. Gerstner displacement now accumulates exact X/Z surface derivatives; the macro normal
+  and horizontal Jacobian come from those same derivatives instead of separate approximations.
+  Effective steepness is bounded per wave so the combined horizontal derivative remains below the
+  normal fold limit while still allowing the Jacobian to approach zero for crest foam.
+  *Verify:* same-harness pre/post captures show coherent wind-led groups, attached crest/trough
+  normals, and no new inverted facets or horizon fireflies. Fixed 1280x720 p95 stayed effectively
+  flat: observed `7.29 -> 7.31 ms`, CPU `7.42 -> 7.37 ms`, GPU `0.43 -> 0.44 ms`.
+- `RealisticWaterBaseline` now resumes a pending measurement after Play Mode domain reload, enables
+  background ticking for the duration, requests PlayerLoop updates when MCP does not focus the Game
+  View, and exits through a five-second safety timeout if Unity still supplies no frames. This
+  prevents an R0/R1 benchmark from leaving the Editor stuck in Play Mode.
+- `GrassWind.shader` / `GrassWindCommon.hlsl`: the root-to-tip wind mask is now selectable per
+  material - `[Toggle(_WINDMASK_UV)] _WindMaskFromUV` switches it from object-space Z
+  (`_BladeTipHeight`, unchanged default for the Grass_1/Grass_2 geometry tufts) to `UV.y`.
+  Added `_VertexColorTint` (0..1) so the base tint isn't multiplied by a vertex-colour set the mesh
+  doesn't have. *Why:* `_BladeTipHeight` is 2 mm, tuned for the tufts; on a 0.4 m card it saturates
+  the mask almost at the root and the quad sways as a rigid slab. `UV.y` is scale-independent, so
+  one material drives any card size. *Verify:* `recompile_scripts` -> health `ok`; the tufts still
+  use the legacy path (keyword off).
+- Added the `Island` scene (`Assets/_Project/Scenes/Island.unity`) as the main gameplay location:
+  a cozy temperate farm/trading island (Ginger-Island-style layout reference) on a 500x500 Unity
+  Terrain, ringed by shallow cartoon water using the `M_Ocean` material. Generated by the re-runnable
+  `IslandSceneBuilder` (menu `Market/Debug/Build Island Scene`): radial island heightmap with a
+  wobbled coastline, a broad buildable interior and inland hills; three flat-colour terrain layers
+  (grass/sand/rock) splat-painted by height and slope so the ground reads as cartoon colour, not the
+  untextured grey default; a large water plane at sea level; `ZoneAnchors` empties marking homes for
+  every subsystem (market square, harbor/supplier, fishing dock, farm fields, animal pasture,
+  crafting yard, town centre, forest hill); a directional light, trilight ambient, skybox and gentle
+  linear fog; and an establishing camera. Verified via aerial, top-down and offshore renders from the
+  new capture tool; recompilation and health passed with 0 console errors, scene saved clean.
+  Generated terrain assets live under `Assets/_Project/Art/Terrain/`.
+- Added a local `.claude/tools/video-analyze.ps1` helper that reads video metadata, extracts evenly
+  spaced JPEG frames, builds a timestamped contact sheet, and reports high-motion timestamps. Its
+  OpenCV decoder is bootstrapped into a machine-local cache and generated analysis stays ignored.
+- Added an `Ocean` plane to the `Map` scene on the Water layer, with shadows and collision disabled.
+  Added the custom URP `Market/World/StylizedWater` shader and `M_Ocean` material. Reworked the shader
+  from the earlier dark near-opaque plate into a bright cartoon lake that reads as water from any
+  angle: depth-graded shallow/deep color, animated crossing-sine wave normals with a flow-map
+  break-up, a crisp toon sun glint, sky fresnel toward the horizon, gentle shallow-only refraction,
+  and a noise-broken shoreline foam ring. Wave detail (and the glint) fade with camera distance to
+  kill the far-field moire, and surface opacity was raised so the untextured lake bed no longer
+  shows through. Shader structure adapted from TinyPlay's MIT-licensed URP shader collection with its
+  license included. Verified by rendering the `Map` camera at eye level and 3/4 angles via the new
+  capture tool: clean cartoon water, live wave bands, tidy foam, no moire or pink fallback;
+  recompilation and health passed with 0 console errors. The already-dirty `Map` scene was left
+  unsaved.
+- Added `SceneCameraCapture` (menu `Market/Debug/Capture Active Scene Camera`), an Editor-only
+  debug tool that renders the active scene's camera to `Artifacts/Capture/scene_camera.png` (git
+  ignored) so an off-Editor agent can inspect a scene visually without Play Mode or the FPS
+  controller.
+- Added an isolated `Prototypes/harbor-library` Tauri 2, React, and TypeScript UI prototype for
+  the two-person Harbor Market reference workspace. It includes a responsive three-pane desktop
+  layout, searchable and filterable mock references, editable material properties, favorite and
+  delete actions, focused collaborator presence, sync status, and a project-owned six-scene concept
+  art atlas. The frontend production build passes; native Tauri packaging remains unavailable on
+  this machine because Rust and the Windows MSVC build tools are not installed.
+- Added compact MCP output for Asset Pipeline analysis. `analyze_asset_model` returns one short
+  JSON summary with metrics and up to five issue IDs, stores the full analysis under ignored
+  `Artifacts/AssetPipeline/`, and `get_asset_pipeline_issue` retrieves only one requested
+  finding at a time. A live `wood_box.fbx` analysis returned a compact warning payload without
+  changing the asset or importer; all 126 MCP server tests and 75 Market EditMode tests passed.
+- Added a focused Asset Pipeline Assistant for selected FBX/OBJ models. It reports bounds, mesh
+  statistics, profile-scale mismatches, pivot placement, invalid transforms, generic Blender names,
+  material/URP issues, importer settings, colliders, and project wrapper coverage. Explicit,
+  confirmation-gated actions can apply a static importer preset or create a non-destructive
+  project-owned wrapper prefab with a bounds-based BoxCollider; no batch mutation or background
+  postprocessor is used. The compact local gate passed GREEN with 75/75 Market tests, 145 scanned
+  assets, and a clean Market scene; opening the UI also left the scene clean.
+- Added a local verification gate that orchestrates Unity compilation, health, Project Health,
+  EditMode tests, and final scene cleanliness. The new MCP surface returns only a compact summary
+  and up to five issue IDs, writes full details under ignored `Artifacts/Verification/`, and
+  exposes one-issue-at-a-time detail retrieval to avoid sending large logs to the model. Live
+  verification returned GREEN with 62/62 focused Market tests, 140 scanned assets, and a clean
+  Market scene; all 124 MCP server tests also passed.
+- Added a read-only Market Project Health Scanner Editor window with focused checks for item,
+  crop, and NPC data contracts, ItemDatabase integrity, missing prefab scripts, and non-ASCII
+  project content. Results can be filtered, selected, pinged, copied, or saved outside Assets;
+  focused EditMode tests cover the shared validation rules. The live scan checked 139 assets and
+  returned GREEN with six informational legacy-ID notes; Unity compilation, all 121 Market tests,
+  and health passed with the Market scene unchanged and clean.
+- Added a five-slot bottom quickbar for the player inventory. It updates from inventory changes,
+  shows item icons, names, and quantities, and selects slots with keys 1-5 or mouse clicks.
+
+### Fixed
+- Removed Island Scene View rotation stalls caused by compact-Terrain patch entry: the Island and
+  Map builders now disable heightmap LOD frustum culling explicitly, keeping their small Terrain
+  patch sets stable while the editor camera turns. Added repeatable gameplay and Scene View
+  360-degree benchmarks under `Market/Debug/` to measure p95/max frame time instead of judging feel.
+  On the same focused Island Scene View turn, average/p95/max improved from
+  3.03/3.79/131.55 ms (2 frames over budget) to 2.12/2.54/9.05 ms (0 over budget); the gameplay
+  camera remained stable at 1.57/1.91/5.05 ms with 0 frames over budget.
+- Added a recoverable ocean basin to the Map Terrain: the broad center is lowered to Y=75 below the
+  Y=120 water surface, with a smooth 380-480 unit transition and an untouched TerrainData backup.
+  Removed the camera-centered dark circle by preventing the water shader from sampling URP main-light
+  shadow attenuation; the circle was the shadow-distance/cascade boundary moving with the camera.
+  Water remains lit, while depth sampling stays active only for shoreline foam.
+
+### Changed
+- K5a Island rendering pass: removed the ocean shader's full-frame opaque-color copy, redundant
+  scene-color blending and backface pass; disabled water motion vectors and probe work; switched the
+  Terrain to instanced drawing, one-sided shadows and bounded LOD/detail distances; lowered the
+  directional light's soft-shadow filter cost; capped Island cameras at 750 units with HDR/MSAA and
+  opaque-color capture disabled. The re-runnable builder now serializes these settings. Added
+  Project Health performance checks and EditMode coverage so Terrain or ocean regressions fail the
+  local gate, normalized the same Terrain defaults in the Map builder/scene, and added matching
+  outdoor-scene rules in `AGENTS.md`. `Market.Editor` now explicitly references the installed URP
+  runtime assembly for the camera/light override APIs used by the builder.
+- Reworked the Map ocean material from the MIT-licensed TinyPlay URP water structure to match the
+  supplied calm-night reference: dark depth color, two scrolling flow-map ripple layers, moving
+  RGB caustic highlights, horizon Fresnel, broad broken shoreline foam, and flat shadow-free
+  diffuse lighting without a procedural grid or a
+  camera-relative specular lobe that could produce a moving circle.
+- E2 farm bed visual fix: disabled crop-stage prefabs immediately when the editor builder creates a
+  cell, so empty soil never shows plants before planting. Raised the tilled soil and crop visuals
+  above the grass cell surface to prevent geometry clipping.
+- E2 farm bed: added an idempotent 3x3 interactive bed in the MainFarm zone. Each cell progresses
+  through untilled grass, tilled soil, watered dark soil, sprout, and harvest-ready carrot; planting
+  consumes supplier-bought seeds only after tilling and watering. Soil state now persists in SaveData
+  v7, with migration coverage for v6 saves. The builder also ensures the H debug key skips one game hour.
+- E2 Crop visual stages: the carrot plot now switches between sprout and harvest-ready Cartoon Farm
+  Crop visuals based on timer progress. The idempotent crop builder creates and wires both stages
+  while preserving the existing E1 planting, harvest, and save flow.
+- Added the `player_agent` MCP tool for embodied Play Mode inspection. It drives the real
+  first-person `CharacterController` through collision-aware movement, sprint, jump, look, and the
+  existing interaction path, then returns a 960x540 Game View PNG with the HUD plus scene, player
+  pose, grounded state, and current interaction telemetry. Direct camera capture works while Unity
+  is unfocused, and the Node bridge exposes the PNG as MCP image content. Verified with a live
+  observe/move/turn capture, Node tests (121/121), Market EditMode tests (103/103), script
+  recompilation, and a green Unity health report.
+- Replaced the Market scene's isolated 50x50 test floor surroundings with an idempotent 280x260
+  old-market valley Terrain: the preserved central market now anchors town, fair, two farm,
+  livestock, fishing/shipyard, crafting, horse/race, and expansion reserves connected by a
+  4-7 meter road loop. Eight terrain surfaces distinguish worn market ground, paths, both field
+  soils, grass, moist shore, rock, and workshop ground; asymmetric ridges and a future water basin
+  form the boundary. Sparse Textured Stylized Trees and Low-Poly Medieval Market trees, bushes,
+  and stone elements frame only the perimeter, while the builder preserves existing gameplay,
+  rebakes the scene NavMeshSurface, validates zone grades and spawn heights, and captures five
+  review views under `Artifacts/MarketLandscapeViews`.
+- Added a standalone walkable `AssetMuseum` scene and an idempotent editor builder that displays
+  all 285 imported buildings, animals, fish, trees, crops, and food-kit models in 17 labeled,
+  logically grouped exhibition zones without modifying the source assets. The scene reuses the
+  first-person player prefab, locks the cursor through `UIModeService`, assigns the tree pack's
+  bark/leaf textures through generated URP materials, and stays outside the game build list as a
+  development-only visual catalog. Open the scene and press Play, or rebuild it via
+  `Market/Debug/Build Asset Museum` after importing more assets.
+- Prepared the dedicated `Map` scene with a centered 256x256 URP Terrain, 30-unit height range,
+  513 heightmap resolution, and reusable grass/dirt Terrain Layers from the hand-painted ground pack.
+- Added an idempotent Simple Nature Pack material converter and converted its two imported
+  Built-in Standard materials to URP/Lit while preserving their base textures and colors.
+- Updated the embedded MCP Unity package from release 1.3.0 to upstream `main` commit `c35f184d`:
+  added Play Mode play/pause/stop/step controls, the Unity Dashboard MCP App, bounded
+  `get_gameobject` responses, private serialized-field updates, project-local Cursor/Claude/Codex
+  configuration, WebSocket lifecycle/origin/retry fixes, request diagnostics, and expanded tests.
+  Preserved the project's compact health/test tools and added a Unity 6.5-safe main-thread request
+  queue after upstream `delayCall` dispatch stalled live WebSocket requests. The direct-call helper
+  now also strips PowerShell's UTF-8 BOM from piped JSON. Node tests pass 119/119, MCP Unity
+  EditMode tests pass 59/59, Market EditMode tests pass 44/44, and the final health report is green.
+- Restored the embedded MCP Unity package and its local verification helpers after Unity's official
+  MCP reported a zero direct-connection entitlement for the current account.
+- Updated the E1 editor builder to Unity 6.5's non-order-dependent `FindAnyObjectByType` API, removing
+  the migration warnings without changing its scene-building behavior.
+- Restored Unity 6.5 compilation by explicitly narrowing the MCP package's `EntityId` raw value for
+  its legacy integer JSON field instead of using the now-erroring implicit conversion.
+- Removed the unused Unity Version Control package, which raised editor errors on machines without
+  a configured Plastic SCM client while the project uses Git.
+- Updated the project contract to the migrated Unity 6.5.3f1, URP 17.5.0, and AI Navigation 2.0.13
+  versions now serialized by the project.
 - Reduced development friction in serialized/project context: `InteractionSystem` now defaults to
   the `Interactable` layer instead of raycasting every layer, and a one-shot editor cleanup can apply
   the layer, disable Market-scene keyboard auto-debug helpers, normalize ASCII PlayerSettings, and
