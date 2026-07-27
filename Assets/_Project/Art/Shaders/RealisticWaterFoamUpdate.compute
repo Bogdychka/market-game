@@ -1,0 +1,179 @@
+#pragma kernel UpdateFoam
+
+Texture2D<float2> _FoamHistorySource;
+RWTexture2D<float2> _FoamHistoryDestination;
+Texture2D<float> _ShorelineMask;
+
+int _FoamBufferResolution;
+float4 _FoamUpdateWorldRect;
+float4 _WindDirection;
+float _WindSpread;
+float4 _Wave1Params;
+float4 _Wave2Params;
+float4 _Wave3Params;
+float4 _Wave4Params;
+float _Wave1Steepness;
+float _Wave2Steepness;
+float _Wave3Steepness;
+float _Wave4Steepness;
+float _FoamCrestGain;
+float _FoamCrestBias;
+float _FoamNoiseTiling;
+float _FoamNoiseSpeed;
+float2 _FoamDecayRates;
+float2 _FoamInjectionStrengths;
+float2 _FoamAdvectionVelocity;
+float _FoamDeltaTime;
+float _FoamTime;
+
+struct FoamWave
+{
+    float2 direction;
+    float wavelength;
+    float amplitude;
+    float speedMultiplier;
+    float steepness;
+};
+
+FoamWave MakeWave(float4 packed, float steepness)
+{
+    FoamWave wave;
+    float2 windDirection = _WindDirection.xz;
+    float windLengthSq = dot(windDirection, windDirection);
+    windDirection = windLengthSq > 0.0001
+        ? windDirection * rsqrt(windLengthSq)
+        : float2(1.0, 0.0);
+
+    float windAngle = atan2(windDirection.y, windDirection.x);
+    float authoredAngle = radians(packed.x);
+    float angleDelta = authoredAngle - windAngle;
+    float shortestDelta = atan2(sin(angleDelta), cos(angleDelta));
+    float waveAngle = windAngle + shortestDelta * saturate(_WindSpread);
+
+    wave.direction = float2(cos(waveAngle), sin(waveAngle));
+    wave.wavelength = max(0.05, packed.y);
+    wave.amplitude = max(0.0, packed.z);
+    wave.speedMultiplier = max(0.0, packed.w);
+    float waveNumberAmplitude =
+        6.28318530718 * wave.amplitude / wave.wavelength;
+    float foldSafeSteepness =
+        0.95 / max(4.0 * waveNumberAmplitude, 0.0001);
+    wave.steepness = min(saturate(steepness), foldSafeSteepness);
+    return wave;
+}
+
+void AccumulateJacobian(
+    FoamWave wave,
+    float2 worldXZ,
+    float time,
+    inout float jxx,
+    inout float jzz,
+    inout float jxz)
+{
+    // Sign must match RealisticWater.shader::EvaluateWave, or the injected whitecaps land off the
+    // rendered crests.
+    float k = 6.28318530718 / wave.wavelength;
+    float omega = sqrt(9.81 * k);
+    float phase =
+        k * dot(wave.direction, worldXZ) -
+        time * omega * wave.speedMultiplier;
+    float horizontalDerivative =
+        wave.steepness * k * wave.amplitude * sin(phase);
+    jxx -= horizontalDerivative * wave.direction.x * wave.direction.x;
+    jzz -= horizontalDerivative * wave.direction.y * wave.direction.y;
+    jxz -= horizontalDerivative * wave.direction.x * wave.direction.y;
+}
+
+float WhitecapSource(float2 worldXZ)
+{
+    float jxx = 1.0;
+    float jzz = 1.0;
+    float jxz = 0.0;
+    AccumulateJacobian(
+        MakeWave(_Wave1Params, _Wave1Steepness),
+        worldXZ, _FoamTime, jxx, jzz, jxz);
+    AccumulateJacobian(
+        MakeWave(_Wave2Params, _Wave2Steepness),
+        worldXZ, _FoamTime, jxx, jzz, jxz);
+    AccumulateJacobian(
+        MakeWave(_Wave3Params, _Wave3Steepness),
+        worldXZ, _FoamTime, jxx, jzz, jxz);
+    AccumulateJacobian(
+        MakeWave(_Wave4Params, _Wave4Steepness),
+        worldXZ, _FoamTime, jxx, jzz, jxz);
+    float jacobian = jxx * jzz - jxz * jxz;
+    return saturate(
+        (1.0 - jacobian - _FoamCrestBias) * _FoamCrestGain);
+}
+
+float FoamBreakupNoise(float2 worldXZ)
+{
+    float2 uv = worldXZ * _FoamNoiseTiling;
+    float time = _FoamTime * _FoamNoiseSpeed;
+    float a = sin(dot(uv, float2(0.9, 0.35)) + time);
+    float b = sin(
+        dot(uv, float2(-0.35, 0.95)) - time * 0.7 + a * 0.8);
+    float c = sin(
+        dot(uv, float2(0.6, -0.8)) + time * 0.5 + b * 0.6);
+    return saturate(
+        (a * 0.5 + b * 0.3 + c * 0.2) * 0.5 + 0.5);
+}
+
+float2 LoadHistoryBilinear(float2 uv)
+{
+    float2 pixelPosition = uv * _FoamBufferResolution - 0.5;
+    int2 basePixel = int2(floor(pixelPosition));
+    float2 blend = frac(pixelPosition);
+    int2 maximumPixel = int2(
+        _FoamBufferResolution - 1, _FoamBufferResolution - 1);
+    int2 p00 = clamp(basePixel, int2(0, 0), maximumPixel);
+    int2 p10 = clamp(basePixel + int2(1, 0), int2(0, 0), maximumPixel);
+    int2 p01 = clamp(basePixel + int2(0, 1), int2(0, 0), maximumPixel);
+    int2 p11 = clamp(basePixel + int2(1, 1), int2(0, 0), maximumPixel);
+    float2 row0 = lerp(
+        _FoamHistorySource.Load(int3(p00, 0)),
+        _FoamHistorySource.Load(int3(p10, 0)),
+        blend.x);
+    float2 row1 = lerp(
+        _FoamHistorySource.Load(int3(p01, 0)),
+        _FoamHistorySource.Load(int3(p11, 0)),
+        blend.x);
+    return lerp(row0, row1, blend.y);
+}
+
+[numthreads(8, 8, 1)]
+void UpdateFoam(uint3 dispatchId : SV_DispatchThreadID)
+{
+    if (dispatchId.x >= (uint)_FoamBufferResolution ||
+        dispatchId.y >= (uint)_FoamBufferResolution)
+    {
+        return;
+    }
+
+    float2 uv =
+        (float2(dispatchId.xy) + 0.5) / _FoamBufferResolution;
+    float2 worldSize = max(
+        _FoamUpdateWorldRect.zw, float2(0.001, 0.001));
+    float2 previousUV = uv -
+        _FoamAdvectionVelocity * _FoamDeltaTime / worldSize;
+    float historyInside =
+        step(0.0, previousUV.x) *
+        step(previousUV.x, 1.0) *
+        step(0.0, previousUV.y) *
+        step(previousUV.y, 1.0);
+    float whitecapHistory =
+        LoadHistoryBilinear(saturate(previousUV)).r * historyInside;
+    float shorelineHistory = _FoamHistorySource.Load(
+        int3(dispatchId.xy, 0)).g;
+    float2 history = float2(whitecapHistory, shorelineHistory);
+    history *= exp(-max(_FoamDecayRates, 0.0) * _FoamDeltaTime);
+
+    float2 worldXZ = _FoamUpdateWorldRect.xy + uv * worldSize;
+    float breakup = 0.55 + 0.45 * FoamBreakupNoise(worldXZ);
+    float whitecap = WhitecapSource(worldXZ) * breakup;
+    float shoreline = _ShorelineMask.Load(int3(dispatchId.xy, 0));
+    float2 injection =
+        float2(whitecap, shoreline) * _FoamInjectionStrengths;
+    _FoamHistoryDestination[dispatchId.xy] =
+        saturate(max(history, injection));
+}

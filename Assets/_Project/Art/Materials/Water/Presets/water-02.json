@@ -1,0 +1,97 @@
+{
+    "sourceMaterial": "example-water-01",
+    "normalMapGuid": "",
+    "floats": [
+        {
+            "name": "Vector1_17E53C12",
+            "value": 0.6000000238418579
+        },
+        {
+            "name": "Vector1_A0EAD698",
+            "value": 0.6000000238418579
+        },
+        {
+            "name": "Vector1_E5C51606",
+            "value": 0.9200000166893005
+        },
+        {
+            "name": "Vector1_244B0600",
+            "value": 1.2000000476837159
+        },
+        {
+            "name": "Vector1_F38B44AA",
+            "value": 0.4000000059604645
+        },
+        {
+            "name": "Vector1_46E42935",
+            "value": 0.25
+        },
+        {
+            "name": "Vector1_B9F56378",
+            "value": 0.3499999940395355
+        },
+        {
+            "name": "Vector1_A6A0BC26",
+            "value": 0.03500000014901161
+        },
+        {
+            "name": "_WaveFrequency",
+            "value": 1.75
+        },
+        {
+            "name": "_WaveScale",
+            "value": 0.05000000074505806
+        },
+        {
+            "name": "_WaveSpeed",
+            "value": 1.5
+        },
+        {
+            "name": "Vector1_36E8227",
+            "value": 0.6499999761581421
+        },
+        {
+            "name": "Vector1_C360A163",
+            "value": 2.5
+        },
+        {
+            "name": "Vector1_47683D42",
+            "value": 0.875
+        },
+        {
+            "name": "Vector1_3D886DA1",
+            "value": 0.05000000074505806
+        }
+    ],
+    "colors": [
+        {
+            "name": "Color_F01C36BF",
+            "value": {
+                "r": 0.7174404859542847,
+                "g": 0.5387899279594421,
+                "b": 0.658823549747467,
+                "a": 0.2980392277240753
+            }
+        },
+        {
+            "name": "Color_7D9A58EC",
+            "value": {
+                "r": 0.09019602090120316,
+                "g": 0.2898333966732025,
+                "b": 0.5372549295425415,
+                "a": 1.0
+            }
+        }
+    ],
+    "vectors": [
+        {
+            "name": "Vector2_37B21477",
+            "value": {
+                "x": 0.30000001192092898,
+                "y": 0.30000001192092898,
+                "z": 1.0,
+                "w": 1.0
+            }
+        }
+    ]
+}
