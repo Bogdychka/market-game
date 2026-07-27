@@ -1,4 +1,7 @@
+using System.Collections.Generic;
+using Market.DebugTools;
 using Market.Economy;
+using Market.Persistence;
 using Market.World;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -17,10 +20,18 @@ namespace Market.DebugTools.Editor
         private const string CropPath = "Assets/_Project/Data/Crops/Crop_Carrot.asset";
         private const string HarvestPath = "Assets/_Project/Data/Items/Item_Carrot.asset";
         private const string ItemDatabasePath = "Assets/_Project/Data/ItemDatabase.asset";
-        private const string PlotName = "Debug_CropPlot_Carrot";
+        private const string CarrotPlantPath = "Assets/Cartoon_Farm_Crops/Prefabs/Standard/Carrot_Plant.prefab";
+        private const string DirtPilePath = "Assets/Cartoon_Farm_Crops/Prefabs/Standard/Dirt_Pile.prefab";
+        private const string GrassTexturePath = "Assets/Handpainted_Grass_and_Ground_Textures/Textures/Grass/Grass_normal/Grass_normal_up.png";
+        private const string SoilMaterialPath = "Assets/_Project/Art/Farming/Materials/FarmCell_Grass.mat";
+        private const string FarmBedName = "FarmBed_Center";
+        private const string LegacyPlotName = "Debug_CropPlot_Carrot";
+        private const int GridSize = 3;
+        private const float CellSpacing = 2f;
+        private static readonly Vector2 FarmCenter = new(58f, 10f);
 
-        [MenuItem("Market/Debug/Create E1 Crop Plot")]
-        public static void CreateE1CropPlot()
+        [MenuItem("Market/Debug/Build E2 Farm Bed")]
+        public static void BuildFarmBed()
         {
             Scene scene = SceneManager.GetActiveScene();
             if (scene.name != MarketSceneName)
@@ -40,11 +51,13 @@ namespace Market.DebugTools.Editor
             CropSO crop = EnsureCrop(seed, harvest);
             AddItemToDatabase(seed);
             AddSeedToSupplier(seed);
-            CreatePlot(crop);
+            EnsureDebugTimeControl();
+            List<CropPlot> plots = CreateFarmBed(crop);
+            RegisterPlotsInSaver(plots);
 
             AssetDatabase.SaveAssets();
             EditorSceneManager.MarkSceneDirty(scene);
-            Debug.Log("[CropE1SceneBuilder] Created E1 carrot seed, crop, supplier stock, and plot.");
+            Debug.Log("[CropE1SceneBuilder] Built a 3x3 farm bed with soil preparation and carrot growth stages.");
         }
 
         private static ItemSO EnsureSeedItem(ItemSO harvest)
@@ -118,7 +131,7 @@ namespace Market.DebugTools.Editor
 
         private static void AddSeedToSupplier(ItemSO seed)
         {
-            SupplierShop supplier = Object.FindFirstObjectByType<SupplierShop>();
+            SupplierShop supplier = Object.FindAnyObjectByType<SupplierShop>();
             if (supplier == null)
                 return;
 
@@ -133,36 +146,213 @@ namespace Market.DebugTools.Editor
             EditorUtility.SetDirty(supplier);
         }
 
-        private static void CreatePlot(CropSO crop)
+        private static List<CropPlot> CreateFarmBed(CropSO crop)
         {
-            GameObject existing = FindRootObject(PlotName);
-            if (existing != null)
-                Object.DestroyImmediate(existing);
+            DestroyRootObject(FarmBedName);
+            DestroyRootObject(LegacyPlotName);
 
-            GameObject plot = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            plot.name = PlotName;
-            plot.transform.SetPositionAndRotation(new Vector3(-4.2f, 0.1f, -1.2f), Quaternion.identity);
-            plot.transform.localScale = new Vector3(1.8f, 0.2f, 1.8f);
+            Material grassMaterial = EnsureGrassMaterial();
+            Inventory inventory = Object.FindAnyObjectByType<Inventory>();
+            var plots = new List<CropPlot>(GridSize * GridSize);
+            GameObject farmBed = new(FarmBedName);
+            farmBed.transform.position = GetFarmPosition();
 
-            GameObject growth = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            growth.name = "GrowthStub";
-            growth.transform.SetParent(plot.transform, false);
-            growth.transform.localPosition = new Vector3(0f, 0.75f, 0f);
-            growth.transform.localScale = new Vector3(0.35f, 0.2f, 0.35f);
-            if (growth.TryGetComponent(out Collider growthCollider))
-                Object.DestroyImmediate(growthCollider);
+            for (int z = 0; z < GridSize; z++)
+            {
+                for (int x = 0; x < GridSize; x++)
+                {
+                    int index = z * GridSize + x;
+                    float offset = (GridSize - 1) * CellSpacing * 0.5f;
+                    Vector3 localPosition = new(x * CellSpacing - offset, 0f, z * CellSpacing - offset);
+                    plots.Add(CreatePlotCell(farmBed.transform, localPosition, index, crop, inventory, grassMaterial));
+                }
+            }
+
+            Undo.RegisterCreatedObjectUndo(farmBed, "Build E2 farm bed");
+            return plots;
+        }
+
+        private static CropPlot CreatePlotCell(
+            Transform parent,
+            Vector3 localPosition,
+            int index,
+            CropSO crop,
+            Inventory inventory,
+            Material grassMaterial)
+        {
+            GameObject plot = new($"FarmCell_{index + 1:00}");
+            plot.transform.SetParent(parent, false);
+            plot.transform.localPosition = localPosition;
+            int interactableLayer = LayerMask.NameToLayer("Interactable");
+            if (interactableLayer >= 0)
+                plot.layer = interactableLayer;
+
+            var collider = plot.AddComponent<BoxCollider>();
+            collider.center = new Vector3(0f, 0.1f, 0f);
+            collider.size = new Vector3(1.8f, 0.2f, 1.8f);
+            CreateGrassBase(plot.transform, grassMaterial);
+
+            GameObject tilled = CreateTilledVisual(plot.transform);
+            Transform sprout = CreateStageVisual(plot.transform, "Sprout", 0.35f);
+            Transform ready = CreateStageVisual(plot.transform, "Ready", 1f);
+            Renderer[] tilledRenderers = tilled != null
+                ? tilled.GetComponentsInChildren<Renderer>(true)
+                : new Renderer[0];
 
             CropPlot cropPlot = plot.AddComponent<CropPlot>();
-            Inventory inventory = Object.FindFirstObjectByType<Inventory>();
-
             var serialized = new SerializedObject(cropPlot);
+            serialized.FindProperty("plotId").stringValue = $"FarmCell_{index:00}";
             serialized.FindProperty("crop").objectReferenceValue = crop;
             serialized.FindProperty("inventory").objectReferenceValue = inventory;
-            serialized.FindProperty("growthVisual").objectReferenceValue = growth.transform;
-            serialized.FindProperty("debugInstantGrowOnInteract").boolValue = true;
+            serialized.FindProperty("sproutVisual").objectReferenceValue = sprout;
+            serialized.FindProperty("readyVisual").objectReferenceValue = ready;
+            serialized.FindProperty("tilledVisual").objectReferenceValue = tilled;
+            SerializedProperty renderers = serialized.FindProperty("tilledRenderers");
+            renderers.arraySize = tilledRenderers.Length;
+            for (int i = 0; i < tilledRenderers.Length; i++)
+                renderers.GetArrayElementAtIndex(i).objectReferenceValue = tilledRenderers[i];
+            serialized.FindProperty("debugInstantGrowOnInteract").boolValue = false;
             serialized.ApplyModifiedPropertiesWithoutUndo();
+            return cropPlot;
+        }
 
-            Undo.RegisterCreatedObjectUndo(plot, "Create E1 crop plot");
+        private static void CreateGrassBase(Transform parent, Material grassMaterial)
+        {
+            GameObject grass = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            grass.name = "GrassSoil";
+            grass.transform.SetParent(parent, false);
+            grass.transform.localPosition = new Vector3(0f, 0.1f, 0f);
+            grass.transform.localScale = new Vector3(1.8f, 0.2f, 1.8f);
+            Object.DestroyImmediate(grass.GetComponent<Collider>());
+            if (grassMaterial != null)
+                grass.GetComponent<Renderer>().sharedMaterial = grassMaterial;
+        }
+
+        private static GameObject CreateTilledVisual(Transform parent)
+        {
+            GameObject dirtPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(DirtPilePath);
+            if (dirtPrefab == null)
+            {
+                Debug.LogError($"[CropE1SceneBuilder] Missing tilled-soil prefab: {DirtPilePath}");
+                return null;
+            }
+
+            GameObject tilled = (GameObject)PrefabUtility.InstantiatePrefab(dirtPrefab);
+            tilled.name = "TilledSoil";
+            tilled.transform.SetParent(parent, false);
+            tilled.transform.localPosition = new Vector3(0f, 0.29f, 0f);
+            tilled.transform.localScale = Vector3.one * 1.55f;
+            RemoveColliders(tilled);
+            tilled.SetActive(false);
+            return tilled;
+        }
+
+        private static Transform CreateStageVisual(Transform parent, string stageName, float scale)
+        {
+            GameObject plantPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(CarrotPlantPath);
+            if (plantPrefab == null)
+            {
+                Debug.LogError($"[CropE1SceneBuilder] Missing crop prefab: {CarrotPlantPath}");
+                return null;
+            }
+
+            GameObject stage = (GameObject)PrefabUtility.InstantiatePrefab(plantPrefab);
+            stage.name = $"Carrot_{stageName}";
+            stage.transform.SetParent(parent, false);
+            stage.transform.localPosition = new Vector3(0f, 0.21f, 0f);
+            stage.transform.localScale = Vector3.one * scale;
+            RemoveColliders(stage);
+            stage.SetActive(false);
+            return stage.transform;
+        }
+
+        private static void RemoveColliders(GameObject root)
+        {
+            Collider[] colliders = root.GetComponentsInChildren<Collider>(true);
+            foreach (Collider collider in colliders)
+                Object.DestroyImmediate(collider);
+        }
+
+        /// <summary>Registers all farm cells in GameSaver so soil and crop states persist.</summary>
+        private static void RegisterPlotsInSaver(List<CropPlot> plots)
+        {
+            if (plots == null)
+                return;
+
+            GameSaver saver = Object.FindAnyObjectByType<GameSaver>();
+            if (saver == null)
+            {
+                Debug.LogWarning("[CropE1SceneBuilder] No GameSaver in scene; crop plot will not be saved.");
+                return;
+            }
+
+            var serialized = new SerializedObject(saver);
+            SerializedProperty plotReferences = serialized.FindProperty("cropPlots");
+            plotReferences.arraySize = plots.Count;
+            for (int i = 0; i < plots.Count; i++)
+                plotReferences.GetArrayElementAtIndex(i).objectReferenceValue = plots[i];
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(saver);
+        }
+
+        private static Material EnsureGrassMaterial()
+        {
+            Material material = AssetDatabase.LoadAssetAtPath<Material>(SoilMaterialPath);
+            if (material != null)
+                return material;
+
+            Shader shader = Shader.Find("Universal Render Pipeline/Lit");
+            Texture2D texture = AssetDatabase.LoadAssetAtPath<Texture2D>(GrassTexturePath);
+            if (shader == null || texture == null)
+            {
+                Debug.LogError("[CropE1SceneBuilder] Missing URP/Lit shader or grass texture for farm soil.");
+                return null;
+            }
+
+            EnsureFolder("Assets/_Project/Art");
+            EnsureFolder("Assets/_Project/Art/Farming");
+            EnsureFolder("Assets/_Project/Art/Farming/Materials");
+            material = new Material(shader) { name = "FarmCell_Grass" };
+            material.SetTexture("_BaseMap", texture);
+            material.SetColor("_BaseColor", Color.white);
+            AssetDatabase.CreateAsset(material, SoilMaterialPath);
+            return material;
+        }
+
+        private static void EnsureDebugTimeControl()
+        {
+            if (Object.FindAnyObjectByType<DebugTimeControl>() != null)
+                return;
+
+            GameObject debugRoot = new("DebugTimeControl");
+            debugRoot.AddComponent<DebugTimeControl>();
+        }
+
+        private static void EnsureFolder(string path)
+        {
+            if (AssetDatabase.IsValidFolder(path))
+                return;
+
+            int separator = path.LastIndexOf('/');
+            AssetDatabase.CreateFolder(path.Substring(0, separator), path.Substring(separator + 1));
+        }
+
+        private static Vector3 GetFarmPosition()
+        {
+            Terrain terrain = Terrain.activeTerrain;
+            if (terrain == null)
+                return new Vector3(FarmCenter.x, 0f, FarmCenter.y);
+
+            Vector3 position = new(FarmCenter.x, 0f, FarmCenter.y);
+            position.y = terrain.SampleHeight(position) + terrain.transform.position.y;
+            return position;
+        }
+
+        private static void DestroyRootObject(string objectName)
+        {
+            GameObject existing = FindRootObject(objectName);
+            if (existing != null)
+                Object.DestroyImmediate(existing);
         }
 
         private static bool Contains(SerializedProperty array, Object value)

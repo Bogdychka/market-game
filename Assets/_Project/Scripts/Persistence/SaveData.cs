@@ -6,11 +6,14 @@ namespace Market.Persistence
     [Serializable]
     public class SaveData
     {
-        public int version = 4;
+        public int version = 7;
+        public int moneyCoins;
+        // Legacy balance field (version 5 and earlier). Kept for old-save compatibility.
         public float money;
         public List<InventoryItemData> inventory = new();
         public List<StallSlotData> stallSlots    = new();
         public List<NPCVisitorData> npcVisitors   = new();
+        public List<CropPlotData> cropPlots       = new();
         public float playerX, playerY, playerZ;
         public float playerRotationY;
 
@@ -36,6 +39,17 @@ namespace Market.Persistence
         public string itemId;
         public string itemName;
         public float  sellPrice;
+    }
+
+    [Serializable]
+    public class CropPlotData
+    {
+        // The crop type is inherent to the plot (its serialized CropSO), so only the
+        // plant state, soil preparation, and the absolute game-minute timestamp need persisting.
+        public string plotId;
+        public bool   planted;
+        public float  plantedAtMinutes;
+        public int    soilState;
     }
 
     [Serializable]

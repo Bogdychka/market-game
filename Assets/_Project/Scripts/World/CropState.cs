@@ -10,4 +10,14 @@ namespace Market.World
         Growing,
         Ready
     }
+
+    /// <summary>
+    /// Preparation state of the soil in one crop plot.
+    /// </summary>
+    public enum CropSoilState
+    {
+        Untilled,
+        Tilled,
+        Watered
+    }
 }

@@ -11,6 +11,8 @@ namespace Market.NPC
     public class NPCTypeSO : ScriptableObject
     {
         [Header("Identity")]
+        [Tooltip("Stable save key. Set once and never change it; renaming the asset must not break saves.")]
+        [SerializeField] private string id;
         [SerializeField] private string typeName = "Regular shopper";
         [Tooltip("NPC prefab. Must contain NavMeshAgent + NPCVisitor components.")]
         [SerializeField] private GameObject npcPrefab;
@@ -26,6 +28,8 @@ namespace Market.NPC
         [Tooltip("Preferred item categories. Empty = buys any category.")]
         [SerializeField] private ItemCategory[] preferredCategories;
 
+        /// <summary>Stable save key. Falls back to the asset name when unset (legacy assets).</summary>
+        public string         Id                  => string.IsNullOrWhiteSpace(id) ? name : id;
         public string         TypeName            => typeName;
         public GameObject     NpcPrefab           => npcPrefab;
         public float          Budget              => budget;

@@ -7,11 +7,7 @@ using UnityEngine;
 namespace Market.DebugTools.Editor
 {
     /// <summary>
-    /// Fallback that starts the local MCP Unity bridge for Codex when the Unity Editor loads this project.
-    /// The package already auto-starts via [InitializeOnLoad]/[DidReloadScripts] when
-    /// <see cref="McpUnitySettings.AutoStartServer"/> is enabled; this delayed retry only covers the
-    /// rare case where the package's own start was skipped. It respects the AutoStartServer setting so
-    /// it never overrides a user who deliberately disabled auto-start.
+    /// Starts the local MCP Unity bridge when the package auto-start is delayed after a domain reload.
     /// </summary>
     [InitializeOnLoad]
     internal static class McpUnityAutoStart
@@ -35,9 +31,6 @@ namespace Market.DebugTools.Editor
             }
 
             EditorApplication.update -= TryStartServer;
-
-            // Respect the user's choice: if auto-start is disabled in settings, do nothing.
-            // Otherwise we would silently re-enable a server the user turned off.
             if (!McpUnitySettings.Instance.AutoStartServer)
             {
                 return;

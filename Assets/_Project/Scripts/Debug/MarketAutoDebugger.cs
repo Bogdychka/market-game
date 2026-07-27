@@ -216,7 +216,7 @@ namespace Market.DebugTools
             if (!logSnapshots) return;
 
             string time = _timeSystem != null ? _timeSystem.FormatTime() : "no-time";
-            string money = moneySystem != null ? moneySystem.Amount.ToString("0.##") : "no-money";
+            string money = moneySystem != null ? moneySystem.Amount.ToString() : "no-money";
 
             Debug.Log($"[AutoDebug] Snapshot ({reason}) | time={time} | money={money} | " +
                       $"inventory={BuildInventorySummary()} | stall={BuildStallSummary()} | " +

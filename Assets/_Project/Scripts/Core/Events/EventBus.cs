@@ -38,13 +38,19 @@ namespace Market.Core.Events
         {
             if (!_handlers.TryGetValue(typeof(T), out var handler)) return;
 
-            try
+            // Invoke each subscriber in isolation: one throwing handler must not prevent the
+            // remaining subscribers from receiving the event.
+            var invocationList = handler.GetInvocationList();
+            for (int i = 0; i < invocationList.Length; i++)
             {
-                ((Action<T>)handler).Invoke(@event);
-            }
-            catch (Exception e)
-            {
-                Debug.LogException(e);
+                try
+                {
+                    ((Action<T>)invocationList[i]).Invoke(@event);
+                }
+                catch (Exception e)
+                {
+                    Debug.LogException(e);
+                }
             }
         }
 

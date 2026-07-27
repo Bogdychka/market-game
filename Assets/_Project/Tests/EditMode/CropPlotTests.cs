@@ -57,6 +57,9 @@ namespace Market.Tests
         {
             _inventory.Add(_seed);
 
+            Assert.IsTrue(_plot.TryTill());
+            Assert.IsTrue(_plot.TryWater());
+
             Assert.IsTrue(_plot.TryPlant());
             Assert.AreEqual(0, _inventory.GetCount(_seed));
             Assert.AreEqual(CropState.Planted, _plot.State);
@@ -72,8 +75,23 @@ namespace Market.Tests
         [Test]
         public void Plant_FailsWithoutSeed()
         {
+            Assert.IsTrue(_plot.TryTill());
+            Assert.IsTrue(_plot.TryWater());
+
             Assert.IsFalse(_plot.TryPlant());
             Assert.AreEqual(CropState.Empty, _plot.State);
+        }
+
+        [Test]
+        public void Plant_RequiresTilledAndWateredSoil()
+        {
+            _inventory.Add(_seed);
+
+            Assert.IsFalse(_plot.TryPlant());
+            Assert.IsTrue(_plot.TryTill());
+            Assert.IsFalse(_plot.TryPlant());
+            Assert.IsTrue(_plot.TryWater());
+            Assert.IsTrue(_plot.TryPlant());
         }
 
         private static CropSO CreateCrop(ItemSO seed, ItemSO harvest, float growthHours)

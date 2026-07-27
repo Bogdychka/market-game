@@ -77,6 +77,7 @@ namespace Market.Tests
         {
             var original = new SaveData
             {
+                moneyCoins = 333,
                 money = 333.25f,
                 day = 12,
                 hour = 19,
@@ -97,6 +98,7 @@ namespace Market.Tests
             SaveData restored = JsonUtility.FromJson<SaveData>(JsonUtility.ToJson(original));
 
             Assert.AreEqual(original.version, restored.version);
+            Assert.AreEqual(333, restored.moneyCoins);
             Assert.AreEqual(333.25f, restored.money);
             Assert.AreEqual(12, restored.day);
             Assert.AreEqual(19, restored.hour);
@@ -124,6 +126,67 @@ namespace Market.Tests
             Assert.IsTrue(string.IsNullOrEmpty(data.stallSlots[0].stallId));
             Assert.AreEqual(2, data.stallSlots[0].slotIndex);
             Assert.AreEqual(18.5f, data.stallSlots[0].sellPrice);
+        }
+
+        [Test]
+        public void SaveData_V4Json_HasEmptyCropPlots()
+        {
+            // Crop plots arrived in version 5: a v4 save has no cropPlots field, so the list
+            // initializer must survive (empty, not null) and every plot restores to empty.
+            const string v4Json = "{\"version\":4,\"money\":80,\"npcVisitors\":[]}";
+
+            SaveData data = JsonUtility.FromJson<SaveData>(v4Json);
+
+            Assert.AreEqual(4, data.version);
+            Assert.IsNotNull(data.cropPlots);
+            Assert.AreEqual(0, data.cropPlots.Count);
+        }
+
+        [Test]
+        public void SaveData_V7CropPlots_RoundTrip()
+        {
+            var original = new SaveData();
+            original.cropPlots.Add(new CropPlotData
+            {
+                plotId = "CropPlot_0",
+                planted = true,
+                plantedAtMinutes = 1234.5f,
+                soilState = 2
+            });
+
+            SaveData restored = JsonUtility.FromJson<SaveData>(JsonUtility.ToJson(original));
+
+            Assert.AreEqual(7, restored.version);
+            Assert.AreEqual(1, restored.cropPlots.Count);
+            Assert.AreEqual("CropPlot_0", restored.cropPlots[0].plotId);
+            Assert.IsTrue(restored.cropPlots[0].planted);
+            Assert.AreEqual(1234.5f, restored.cropPlots[0].plantedAtMinutes);
+            Assert.AreEqual(2, restored.cropPlots[0].soilState);
+        }
+
+        [Test]
+        public void SaveData_V6CropPlotDefaultsToUntilledSoil()
+        {
+            const string v6Json = "{\"version\":6,\"cropPlots\":[{\"plotId\":\"CropPlot_0\",\"planted\":false,\"plantedAtMinutes\":0}]}";
+
+            SaveData data = JsonUtility.FromJson<SaveData>(v6Json);
+
+            Assert.AreEqual(6, data.version);
+            Assert.AreEqual(0, data.cropPlots[0].soilState);
+        }
+
+        [Test]
+        public void SaveData_V5Json_LegacyMoneyRoundsToCoins()
+        {
+            const string v5Json = "{\"version\":5,\"money\":120.5,\"cropPlots\":[]}";
+
+            SaveData data = JsonUtility.FromJson<SaveData>(v5Json);
+
+            Assert.AreEqual(5, data.version);
+            Assert.AreEqual(0, data.moneyCoins);
+            Assert.AreEqual(120.5f, data.money);
+            Assert.AreEqual(120, MoneySystem.ToCoins(120.49f));
+            Assert.AreEqual(121, MoneySystem.ToCoins(data.money));
         }
     }
 }

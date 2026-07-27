@@ -43,7 +43,7 @@ namespace McpUnity.Tools
             // First try to find by instance ID if provided
             if (instanceId.HasValue)
             {
-                selectedGameObject = McpUnity.Utils.ObjectIdUtils.ObjectFromLegacyInstanceId(instanceId.Value) as GameObject;
+                selectedGameObject = UnityObjectId.ObjectFromId(instanceId.Value) as GameObject;
             }
             else if (!string.IsNullOrEmpty(objectPath))
             {

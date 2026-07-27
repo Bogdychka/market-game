@@ -59,6 +59,12 @@ _ArchiveAssets/
 # Unrelated nested git project that lives in this folder
 AI-Engineering-Coach/
 
+# Unrelated tool that lives in this folder (DPI-bypass utility, not project content)
+zapret-discord-youtube-main*/
+
+# Codex CLI local config (local tool state, not project content)
+.codex/
+
 # Plastic SCM leftovers (project uses git now)
 .plastic/
 ignore.conf
@@ -70,6 +76,32 @@ plastic.selector
 
 # Runtime log written by FileLogger
 game.log
+
+# Read-only Unity project health scan output
+ProjectHealthReports/
+
+# Selected-model asset pipeline reports
+AssetPipelineReports/
+
+# Full local verification payloads; MCP returns only compact summaries
+Artifacts/Verification/
+
+# Full selected-model analysis; MCP returns only compact summaries
+Artifacts/AssetPipeline/
+
+# Extracted video frames and contact sheets
+Artifacts/VideoAnalysis/
+
+# Scene camera capture frames (SceneCameraCapture debug tool)
+Artifacts/Capture/
+
+# Local realistic-water snapshots and repeatable review baselines
+Artifacts/Backups/
+Artifacts/RealisticWater/
+
+# Landscape review screenshots and player-agent run logs
+Artifacts/MarketLandscapeViews/
+Artifacts/PlayerAgent/
 
 # Claude Code local (per-user) settings — shared settings.json is committed
 .claude/settings.local.json

@@ -22,12 +22,14 @@ namespace Market.Market
         [Header("References")]
         [SerializeField] private Inventory playerInventory;
 
+#if UNITY_EDITOR
         [Header("Debug Starting Stock")]
         [Tooltip("Enable placing debug stock on start. Off by default -- otherwise New Game starts with items on the stall.")]
         [SerializeField] private bool     enableDebugStartStock = false;
         [Tooltip("Items automatically placed on the stall at scene start. For testing only.")]
         [SerializeField] private ItemSO[] debugStartItems;
         [SerializeField] private float    debugStartSellPrice = 20f;
+#endif
 
         public event Action OnStockChanged;
         public event Action<MarketStall, GameObject> OpenRequested;
@@ -143,6 +145,7 @@ namespace Market.Market
         // -- Internals --------------------------------------------------
         private bool IsValidSlotIndex(int i) => i >= 0 && i < slots.Length;
 
+#if UNITY_EDITOR
         private void PrepopulateDebugStock()
         {
             if (debugStartItems == null) return;
@@ -154,6 +157,7 @@ namespace Market.Market
                     slots[i].Place(debugStartItems[i], debugStartSellPrice);
             }
         }
+#endif
 
         private void PrintCurrentState()
         {

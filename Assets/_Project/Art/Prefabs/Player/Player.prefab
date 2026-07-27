@@ -44,7 +44,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 99855d0e91a57d2409cd87f90fc7ba14, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Market.Player.HeadBob
+  m_EditorClassIdentifier: Market.Runtime::Market.Player.HeadBob
   controller: {fileID: 8671063287909985202}
   cameraTransform: {fileID: 8339504574774726922}
   walkFrequency: 8
@@ -52,6 +52,8 @@ MonoBehaviour:
   walkAmplitudeX: 0.025
   sprintMultiplier: 1.4
   resetSpeed: 6
+  baseSpeed: 4
+  sprintThreshold: 5
 --- !u!1 &8206362355933043061
 GameObject:
   m_ObjectHideFlags: 0
@@ -168,11 +170,11 @@ MonoBehaviour:
     m_Bits: 1
   m_VolumeTrigger: {fileID: 0}
   m_VolumeFrameworkUpdateModeOption: 2
-  m_RenderPostProcessing: 0
-  m_Antialiasing: 0
+  m_RenderPostProcessing: 1
+  m_Antialiasing: 2
   m_AntialiasingQuality: 2
   m_StopNaN: 0
-  m_Dithering: 0
+  m_Dithering: 1
   m_ClearDepth: 1
   m_AllowXRRendering: 1
   m_AllowHDROutput: 1
@@ -203,6 +205,7 @@ GameObject:
   - component: {fileID: 8671063287909985202}
   - component: {fileID: 7505738646445961488}
   - component: {fileID: 6830405779936573403}
+  - component: {fileID: 4961521082917172168}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -292,7 +295,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 19583cb474ae45049aefc0da6f8d9517, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Market.Player.FirstPersonController
+  m_EditorClassIdentifier: Market.Runtime::Market.Player.FirstPersonController
   walkSpeed: 4
   sprintSpeed: 7
   gravity: -20
@@ -303,6 +306,10 @@ MonoBehaviour:
   minPitch: -85
   maxPitch: 85
   invertY: 0
+  grassTrampleRadius: 0.6
+  flySpeed: 8
+  flySprintMultiplier: 1.75
+  flyVerticalSpeed: 6
 --- !u!114 &7505738646445961488
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -314,13 +321,13 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 480d04700a537414ea4ad92ba5321a17, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Market.Interaction.InteractionSystem
+  m_EditorClassIdentifier: Market.Runtime::Market.Interaction.InteractionSystem
   cam: {fileID: 138490818157885587}
   playerInput: {fileID: 8262038029800629798}
   maxDistance: 2.5
   layerMask:
     serializedVersion: 2
-    m_Bits: 4294967295
+    m_Bits: 64
   triggerInteraction: 2
 --- !u!114 &6830405779936573403
 MonoBehaviour:
@@ -333,4 +340,16 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e448682d39b2baf429feb1ce420c53e5, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Market.Economy.Inventory
+  m_EditorClassIdentifier: Market.Runtime::Market.Economy.Inventory
+--- !u!114 &4961521082917172168
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8527300036338462490}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 135c5319a963c834db2a9d0fd5fcde9f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Market.Runtime::Market.DebugTools.DebugFlyMode

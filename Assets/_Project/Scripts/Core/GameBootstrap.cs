@@ -19,7 +19,9 @@ namespace Market.Core
     {
         [Header("Boot")]
         [SerializeField] private string firstScene = SceneNames.MainMenu;
+#if UNITY_EDITOR
         [SerializeField] private bool   skipMenuInEditor = false;
+#endif
 
         [Header("Settings")]
         [Tooltip("Assign the SettingsSO asset so settings are available before any scene loads.")]

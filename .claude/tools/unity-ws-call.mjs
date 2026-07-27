@@ -62,7 +62,7 @@ if (!method) {
 
 const readParamsText = (value) => {
   if (value === '-') {
-    return fs.readFileSync(0, 'utf8');
+    return fs.readFileSync(0, 'utf8').replace(/^\uFEFF/, '');
   }
 
   if (value.startsWith('@')) {

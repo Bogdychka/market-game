@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using McpUnity.Unity;
 using McpUnity.Utils;
 using UnityEngine;
-using UnityEngine.Rendering;
 using UnityEditor;
+using UnityEngine.Rendering;
 using Newtonsoft.Json.Linq;
 
 namespace McpUnity.Tools
@@ -180,7 +180,7 @@ namespace McpUnity.Tools
 
             if (instanceId.HasValue)
             {
-                gameObject = McpUnity.Utils.ObjectIdUtils.ObjectFromLegacyInstanceId(instanceId.Value) as GameObject;
+                gameObject = UnityObjectId.ObjectFromId(instanceId.Value) as GameObject;
             }
             else if (!string.IsNullOrEmpty(objectPath))
             {

@@ -14,7 +14,7 @@ namespace Market.DebugTools
         [SerializeField] private MoneySystem moneySystem;
 
         [Header("Settings")]
-        [SerializeField] private float amount = 100f;
+        [SerializeField] private int amount = 100;
         [SerializeField] private Key addKey   = Key.F1;
         [SerializeField] private Key spendKey = Key.F2;
 

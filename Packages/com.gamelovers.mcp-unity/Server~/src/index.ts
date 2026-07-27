@@ -19,6 +19,11 @@ import { registerLoadSceneTool } from './tools/loadSceneTool.js';
 import { registerSaveSceneTool } from './tools/saveSceneTool.js';
 import { registerGetSceneInfoTool } from './tools/getSceneInfoTool.js';
 import { registerGetHealthReportTool } from './tools/getHealthReportTool.js';
+import { registerGetPlayModeStatusTool } from './tools/getPlayModeStatusTool.js';
+import { registerSetPlayModeStatusTool } from './tools/setPlayModeStatusTool.js';
+import { registerPlayerAgentTool } from './tools/playerAgentTool.js';
+import { registerVerifyProjectTools } from './tools/verifyProjectTool.js';
+import { registerAssetPipelineTools } from './tools/assetPipelineTool.js';
 import { registerUnloadSceneTool } from './tools/unloadSceneTool.js';
 import { registerRecompileScriptsTool } from './tools/recompileScriptsTool.js';
 import { registerGetGameObjectTool } from './tools/getGameObjectTool.js';
@@ -26,6 +31,8 @@ import { registerTransformTools } from './tools/transformTools.js';
 import { registerCreateMaterialTool, registerAssignMaterialTool, registerModifyMaterialTool, registerGetMaterialInfoTool } from './tools/materialTools.js';
 import { registerDuplicateGameObjectTool, registerDeleteGameObjectTool, registerReparentGameObjectTool } from './tools/gameObjectTools.js';
 import { registerBatchExecuteTool } from './tools/batchExecuteTool.js';
+import { registerShowUnityDashboardTool } from './tools/showUnityDashboardTool.js';
+import { registerGetScenesHierarchyTool } from './tools/getScenesHierarchyTool.js';
 import { registerGetMenuItemsResource } from './resources/getMenuItemResource.js';
 import { registerGetConsoleLogsResource } from './resources/getConsoleLogsResource.js';
 import { registerGetHierarchyResource } from './resources/getScenesHierarchyResource.js';
@@ -33,7 +40,9 @@ import { registerGetPackagesResource } from './resources/getPackagesResource.js'
 import { registerGetAssetsResource } from './resources/getAssetsResource.js';
 import { registerGetTestsResource } from './resources/getTestsResource.js';
 import { registerGetGameObjectResource } from './resources/getGameObjectResource.js';
+import { registerUnityDashboardAppResource } from './resources/unityDashboardAppResource.js';
 import { registerGameObjectHandlingPrompt } from './prompts/gameobjectHandlingPrompt.js';
+import { registerUnityDashboardPrompt } from './prompts/unityDashboardPrompt.js';
 
 // Initialize loggers
 const serverLogger = new Logger('Server', LogLevel.INFO);
@@ -76,6 +85,13 @@ registerLoadSceneTool(server, mcpUnity, toolLogger);
 registerSaveSceneTool(server, mcpUnity, toolLogger);
 registerGetSceneInfoTool(server, mcpUnity, toolLogger);
 registerGetHealthReportTool(server, mcpUnity, toolLogger);
+registerGetPlayModeStatusTool(server, mcpUnity, toolLogger);
+registerSetPlayModeStatusTool(server, mcpUnity, toolLogger);
+registerPlayerAgentTool(server, mcpUnity, toolLogger);
+registerVerifyProjectTools(server, mcpUnity, toolLogger);
+registerAssetPipelineTools(server, mcpUnity, toolLogger);
+registerShowUnityDashboardTool(server, toolLogger);
+registerGetScenesHierarchyTool(server, mcpUnity, toolLogger);
 registerUnloadSceneTool(server, mcpUnity, toolLogger);
 registerRecompileScriptsTool(server, mcpUnity, toolLogger);
 registerGetGameObjectTool(server, mcpUnity, toolLogger);
@@ -101,9 +117,11 @@ registerGetConsoleLogsResource(server, mcpUnity, resourceLogger);
 registerGetHierarchyResource(server, mcpUnity, resourceLogger);
 registerGetPackagesResource(server, mcpUnity, resourceLogger);
 registerGetAssetsResource(server, mcpUnity, resourceLogger);
+registerUnityDashboardAppResource(server, resourceLogger);
 
 // Register all prompts into the MCP server
 registerGameObjectHandlingPrompt(server);
+registerUnityDashboardPrompt(server);
 
 // Server startup function
 async function startServer() {

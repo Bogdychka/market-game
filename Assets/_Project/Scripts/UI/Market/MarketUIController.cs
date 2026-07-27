@@ -42,6 +42,7 @@ namespace Market.UI
 
         private MarketPanelView _view;
         private InventoryPanelRenderer _inventoryRenderer;
+        private HotbarView _hotbarView;
         private SupplierPanelRenderer _supplierRenderer;
         private StallPanelRenderer _stallRenderer;
         private EveningSummaryPanelRenderer _eveningSummaryRenderer;
@@ -63,6 +64,7 @@ namespace Market.UI
 
             _view = new MarketPanelView(transform, gameObject.layer, ClosePanel);
             _inventoryRenderer = new InventoryPanelRenderer(_view);
+            _hotbarView = new HotbarView(transform, gameObject.layer, inventory);
             _supplierRenderer = new SupplierPanelRenderer(_view, Refresh);
             _stallRenderer = new StallPanelRenderer(_view, gameObject.layer, Refresh);
             _eveningSummaryRenderer = new EveningSummaryPanelRenderer(_view);
@@ -95,7 +97,14 @@ namespace Market.UI
                 return;
 
             HandleInventoryInput(keyboard);
+            if (uiModeService == null || !uiModeService.IsMenuMode)
+                _hotbarView.HandleInput(keyboard);
             UpdateTooltipPosition();
+        }
+
+        private void OnDestroy()
+        {
+            _hotbarView?.Dispose();
         }
 
         /// <summary>Opens the inventory panel.</summary>
@@ -193,7 +202,7 @@ namespace Market.UI
 
         private string MoneyText()
         {
-            return moneySystem != null ? $"{Mathf.FloorToInt(moneySystem.Amount)} coins" : string.Empty;
+            return moneySystem != null ? $"{moneySystem.Amount} coins" : string.Empty;
         }
 
         private string SupplierSubtitle()
@@ -251,7 +260,7 @@ namespace Market.UI
             }
         }
 
-        private void RefreshMoney(float amount)
+        private void RefreshMoney(int amount)
         {
             Refresh();
         }

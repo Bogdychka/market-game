@@ -166,7 +166,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -285,7 +285,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a79441f348de89743a2939f4d699eac1, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalCameraData
   m_RenderShadows: 1
   m_RequiresDepthTextureOption: 2
@@ -1635,8 +1635,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ebad939da9ca4ea4b8f3e4f2e5bf2b16, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::Market.UI.SettingsMenuController
+  m_Name: 
+  m_EditorClassIdentifier: Market.Runtime::Market.UI.SettingsMenuController
   settingsSO: {fileID: 11400000, guid: 628b5f18e817e7743aba5b87093fbdbb, type: 2}
   playerController: {fileID: 0}
   playerInput: {fileID: 0}
@@ -1652,7 +1652,7 @@ MonoBehaviour:
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
           m_IntArgument: 0
           m_FloatArgument: 0
-          m_StringArgument:
+          m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
 --- !u!1 &1880443142
@@ -2130,7 +2130,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 52c2bc474ca17474ea43e1bf6073b6e8, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Market.UI.MainMenuController
+  m_EditorClassIdentifier: Market.Runtime::Market.UI.MainMenuController
   newGameButton: {fileID: 1163710282}
   continueButton: {fileID: 1407901642}
   settingsButton: {fileID: 1780224253}
@@ -2148,8 +2148,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2e22510cb2d0455aaeb30d65b78e9a72, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::Market.UI.UIModeService
+  m_Name: 
+  m_EditorClassIdentifier: Market.Runtime::Market.UI.UIModeService
   playerController: {fileID: 0}
   interactionSystem: {fileID: 0}
   startInMenuMode: 1

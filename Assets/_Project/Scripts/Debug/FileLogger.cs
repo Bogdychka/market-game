@@ -26,7 +26,9 @@ namespace Market.DebugTools
                 _logPath = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "game.log"));
 
                 _writer = new StreamWriter(_logPath, append: false);
-                _writer.AutoFlush = true;
+                // Do not flush on every routine Log (audit L6); severe messages and Shutdown flush
+                // explicitly, so a crash still captures the important lines without per-line disk I/O.
+                _writer.AutoFlush = false;
 
                 Application.logMessageReceived += OnLog;
                 Application.quitting += Shutdown;
@@ -59,6 +61,10 @@ namespace Market.DebugTools
 
             if (type == LogType.Error || type == LogType.Exception)
                 _writer.WriteLine(stackTrace);
+
+            // Flush the buffer on anything that might precede a crash, so important lines survive.
+            if (type != LogType.Log)
+                _writer.Flush();
         }
 
         public static void Shutdown()
