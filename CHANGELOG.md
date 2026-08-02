@@ -14,6 +14,8 @@ their historical agent attributions (Claude / Codex / user); new entries don't n
 
 ## [Unreleased]
 
+## [1.10.0] - 2026-08-02
+
 ### Added
 - **Wave profile assets with a procedural wave editor** - the water's Gerstner bank is now an
   asset, not four hardcoded shader properties. `WaveProfile` (`Market/Water/Wave Profile`) holds up
@@ -53,7 +55,16 @@ their historical agent attributions (Claude / Codex / user); new entries don't n
   shader and the foam compute kernel - compute compile errors reach the console even less than
   shader errors do.
 - `WaterShaderLab`: the `Water` object carries a `WaveProfileBinder` bound to `WP_OceanSwell`, and
-  the weather controller points at it.
+  the weather controller points at it. The lab scene builder wires both, so a rebuild keeps them.
+  Verify: `shader-vision.ps1 water-lab` - six poses render the 6-layer bank with no magenta and no
+  non-finite pixels; `topdown` luminance stays 0.061, i.e. the v1.9.1 absorption tuning is intact.
+
+### Tooling
+- `.claude/tools/unity-dialog.ps1` - lists and dismisses the Editor modal dialogs that freeze the
+  MCP bridge (`-Action Accept` presses the default button, `-Action Cancel` presses Escape, with a
+  `-TitlePattern` guard). Unity dialogs are IMGUI, so UI Automation cannot see their buttons and
+  `SetForegroundWindow` alone drops the keystroke - the script focuses via `AppActivate`.
+  Recorded as gotcha 13 in `AGENTS.md`.
 
 ## [1.9.1] - 2026-08-02
 
