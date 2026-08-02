@@ -14,6 +14,8 @@ their historical agent attributions (Claude / Codex / user); new entries don't n
 
 ## [Unreleased]
 
+## [1.11.0] - 2026-08-02
+
 ### Added
 - **Water settings wall in WaterShaderLab** - a physical panel beside the player spawn with 16
   labelled sliders (waves, surface, depth, foam, caustics), a `<` / `>` arrow pair per row for a
