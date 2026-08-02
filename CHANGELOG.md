@@ -14,6 +14,47 @@ their historical agent attributions (Claude / Codex / user); new entries don't n
 
 ## [Unreleased]
 
+### Added
+- **Wave profile assets with a procedural wave editor** - the water's Gerstner bank is now an
+  asset, not four hardcoded shader properties. `WaveProfile` (`Market/Water/Wave Profile`) holds up
+  to 8 layers (wave length, amplitude, steepness, directional or circular travel, direction/origin,
+  speed), three multipliers with an **Apply** that bakes them into the layers, per-index curves for
+  length/amplitude/steepness, and a Steepness Clamping fold limit. `WaveProfileBinder` on the water
+  object uploads the resolved bank to the shaders; with no profile bound the shaders fall back to
+  the legacy four wave properties, so nothing that already exists changes behaviour.
+- **Procedural editor** (`Market/Debug/Water/Wave Creation Wizard`, also reachable from the profile
+  inspector): seed, layer count, min/max wave length, amplitude-by-length and steepness-by-length
+  curves, min/max amplitude and steepness, base direction and angle variation, wave length jitter,
+  and travel mode. Generation is a seeded integer hash, not `UnityEngine.Random`, so a bank is
+  reproducible from its settings on any machine; the settings live in the asset next to the layers
+  they produced.
+- **Preset profiles** built by `Market/Debug/Water/Create Preset Wave Profiles`:
+  `WP_OceanSwell` (long swell + chop, wide fan), `WP_LakeChop` (short, low, aligned), `WP_PondRings`
+  (circular rings from an origin). Re-running the menu item regenerates them in place.
+- **`WaveSampler`** - the wave bank evaluated in C#, formula for formula against the HLSL, including
+  the fixed-point inverse of the horizontal displacement. `WaveProfileBinder.SampleHeight/SampleNormal`
+  read the same surface the GPU draws, which is what buoyancy, splashes or a boat need.
+  Covered by `WaveProfileTests` (reproducibility, multiplier/curve resolution, the inverse solve
+  landing on the displaced surface, fold-safe clamping, circular radiation).
+
+### Changed
+- **The Gerstner bank now lives in one file** (`RealisticWaterWaves.hlsl`), included by
+  `RealisticWater.shader`, `RealisticWaterUnderwaterSurface.shader` and
+  `RealisticWaterFoamUpdate.compute`. It had been copy-pasted into all three, which is how the
+  underwater copy drifted: it advanced the phase with `+ time`, so seen from below the crests
+  travelled into the wind while the surface above them travelled with it. Fixed by unification.
+  The whitecap kernel now derives its Jacobian from the shared evaluator instead of a
+  derivative-only twin.
+- `RealisticWaterUnderwaterSurface.EvaluateSurfaceHeight` and the weather controller read the wave
+  bank instead of their own copies. Weather scales a bound profile through
+  `WaveProfileBinder.BankScale` (a runtime scale, never written to the asset), so calm-to-storm
+  still moves the sea rather than only the foam and micro normals.
+- `Market/Debug/Water/Inspect Realistic Water Shader Errors` also inspects the underwater surface
+  shader and the foam compute kernel - compute compile errors reach the console even less than
+  shader errors do.
+- `WaterShaderLab`: the `Water` object carries a `WaveProfileBinder` bound to `WP_OceanSwell`, and
+  the weather controller points at it.
+
 ## [1.9.1] - 2026-08-02
 
 ### Changed

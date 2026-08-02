@@ -1,3 +1,4 @@
+using Market.World;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -502,6 +503,10 @@ namespace Market.DebugTools
             CopyFloat(waterMaterial, Wave2SteepnessId);
             CopyFloat(waterMaterial, Wave3SteepnessId);
             CopyFloat(waterMaterial, Wave4SteepnessId);
+            // A compute kernel does not see the global wave arrays a WaveProfileBinder uploads,
+            // so the bank is copied across explicitly; with no profile bound this writes a zero
+            // layer count and the kernel stays on the legacy four waves above.
+            WaveShaderBridge.ApplyTo(_updateCompute);
             CopyFloat(waterMaterial, FoamCrestGainId);
             CopyFloat(waterMaterial, FoamCrestBiasId);
             CopyFloat(waterMaterial, FoamNoiseTilingId);

@@ -1,0 +1,190 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 66aa48d54723f2d48a72c1df8571e113, type: 3}
+  m_Name: WP_LakeChop
+  m_EditorClassIdentifier: Market.Runtime::Market.World.WaveProfile
+  _layers:
+  - _enabled: 1
+    _mode: 0
+    _wavelength: 6
+    _amplitude: 0.075
+    _steepness: 0.42
+    _directionAngle: 39.467873
+    _origin: {x: 0, y: 0}
+    _speedMultiplier: 0.91491365
+  - _enabled: 1
+    _mode: 0
+    _wavelength: 4.8470693
+    _amplitude: 0.06627595
+    _steepness: 0.3847339
+    _directionAngle: 49.59104
+    _origin: {x: 0, y: 0}
+    _speedMultiplier: 0.92073905
+  - _enabled: 1
+    _mode: 0
+    _wavelength: 2.922744
+    _amplitude: 0.031258028
+    _steepness: 0.32587218
+    _directionAngle: 68.20362
+    _origin: {x: 0, y: 0}
+    _speedMultiplier: 0.9694219
+  - _enabled: 1
+    _mode: 0
+    _wavelength: 2.9361277
+    _amplitude: 0.03151077
+    _steepness: 0.32628155
+    _directionAngle: 90.1726
+    _origin: {x: 0, y: 0}
+    _speedMultiplier: 1.0966508
+  - _enabled: 1
+    _mode: 0
+    _wavelength: 1.534949
+    _amplitude: 0.010856952
+    _steepness: 0.28342196
+    _directionAngle: 111.12704
+    _origin: {x: 0, y: 0}
+    _speedMultiplier: 0.9419759
+  _wavelengthMultiplier: 1
+  _amplitudeMultiplier: 1
+  _steepnessMultiplier: 1
+  _wavelengthCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  _amplitudeCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  _steepnessCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  _steepnessClamping: 0.8
+  _generation:
+    _seed: 8801
+    _layerCount: 5
+    _minMaxWavelength: {x: 0.9, y: 6}
+    _amplitudeByLength:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    _minMaxAmplitude: {x: 0.008, y: 0.075}
+    _steepnessByLength:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0.35
+        inSlope: 0
+        outSlope: 0.65
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0.65
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    _minMaxSteepness: {x: 0.18, y: 0.42}
+    _baseDirectionAngle: 70
+    _directionAngleVariation: 70
+    _wavelengthJitter: 0.15
+    _mode: 0
+    _origin: {x: 0, y: 0}

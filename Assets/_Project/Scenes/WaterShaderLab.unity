@@ -6688,6 +6688,7 @@ GameObject:
   - component: {fileID: 654257935}
   - component: {fileID: 654257934}
   - component: {fileID: 654257933}
+  - component: {fileID: 654257941}
   m_Layer: 0
   m_Name: Water
   m_TagString: Untagged
@@ -6740,6 +6741,7 @@ MonoBehaviour:
   waterRenderer: {fileID: 654257939}
   causticProjection: {fileID: 654257936}
   underwaterSurface: {fileID: 654257931}
+  waveProfileBinder: {fileID: 654257941}
   statusLabel: {fileID: 2053584226}
   weather: 1
   windDirection: {x: 0.4226, y: -0.9063}
@@ -6905,6 +6907,23 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 654257930}
   m_Mesh: {fileID: 4300000, guid: a42d347c5d0092a468af0d0e6d79ac8e, type: 2}
+--- !u!114 &654257941
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 654257930}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a04cab65027a6a94fbe785d2e27fcdd5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Market.Runtime::Market.World.WaveProfileBinder
+  _profile: {fileID: 11400000, guid: b5e394125a0f4004fbb07f18ce92d481, type: 2}
+  _windSourceMaterial: {fileID: 0}
+  _uploadEveryFrame: 1
+  _useTransformAsWaterLevel: 1
+  _waterLevel: 0
 --- !u!1 &668647980
 GameObject:
   m_ObjectHideFlags: 0

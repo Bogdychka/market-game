@@ -1,3 +1,4 @@
+using Market.World;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -14,6 +15,9 @@ namespace Market.DebugTools
         [SerializeField] private Renderer waterRenderer;
         [SerializeField] private RealisticWaterCausticProjection causticProjection;
         [SerializeField] private RealisticWaterUnderwaterSurface underwaterSurface;
+        [Tooltip("Optional. When a wave profile drives the surface, weather scales its bank " +
+            "instead of the material's legacy four waves.")]
+        [SerializeField] private WaveProfileBinder waveProfileBinder;
         [SerializeField] private TextMesh statusLabel;
 
         [Header("Weather")]
@@ -287,6 +291,14 @@ namespace Market.DebugTools
                 Wave3SteepnessId, profile.WaveSteepness.z);
             _runtimeMaterial.SetFloat(
                 Wave4SteepnessId, profile.WaveSteepness.w);
+
+            // With a wave profile bound the four properties above are inert, so the same weather
+            // step is expressed as a scale on the profile's bank.
+            if (waveProfileBinder != null)
+            {
+                waveProfileBinder.BankScale =
+                    RealisticWaterWeatherProfiles.GetBankScale(profile);
+            }
         }
 
         private void ApplySurfaceProperties(

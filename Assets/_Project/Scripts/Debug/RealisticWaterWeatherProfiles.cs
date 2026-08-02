@@ -203,6 +203,43 @@ namespace Market.DebugTools
             new Vector2(0.52f, 0.9f));
 
         /// <summary>
+        /// Returns the (wavelength, amplitude, steepness) scale this weather state represents,
+        /// measured against the Windy state the wave profile assets are authored at. A bound
+        /// WaveProfile replaces the four legacy waves, so this is what keeps calm-to-storm
+        /// changing the sea instead of only the foam and the micro normals.
+        /// </summary>
+        public static Vector3 GetBankScale(RealisticWaterWeatherProfile profile)
+        {
+            return new Vector3(
+                Ratio(MeanWavelength(profile), MeanWavelength(Windy)),
+                Ratio(TotalAmplitude(profile), TotalAmplitude(Windy)),
+                Ratio(MeanSteepness(profile), MeanSteepness(Windy)));
+        }
+
+        private static float MeanWavelength(RealisticWaterWeatherProfile profile)
+        {
+            return (profile.Wave1Params.y + profile.Wave2Params.y +
+                profile.Wave3Params.y + profile.Wave4Params.y) * 0.25f;
+        }
+
+        private static float TotalAmplitude(RealisticWaterWeatherProfile profile)
+        {
+            return profile.Wave1Params.z + profile.Wave2Params.z +
+                profile.Wave3Params.z + profile.Wave4Params.z;
+        }
+
+        private static float MeanSteepness(RealisticWaterWeatherProfile profile)
+        {
+            return (profile.WaveSteepness.x + profile.WaveSteepness.y +
+                profile.WaveSteepness.z + profile.WaveSteepness.w) * 0.25f;
+        }
+
+        private static float Ratio(float value, float reference)
+        {
+            return reference > 0.0001f ? value / reference : 1f;
+        }
+
+        /// <summary>
         /// Returns the coordinated shader profile for a supported weather state.
         /// </summary>
         public static RealisticWaterWeatherProfile Get(

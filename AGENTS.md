@@ -241,6 +241,12 @@ Water look tuning: `Market/Debug/Water/Stylized Water Tuner` (editor window) and
 on **F7** (`StylizedWaterRuntimeTuner`) - same labelled sliders and the same JSON presets under
 `Art/Materials/Water/Presets`; the property table lives once in `StylizedWaterShaderCatalog`.
 Tune a project copy of the material, never the imported package material.
+Wave shape for `RealisticWater` is an asset, not shader properties: `WaveProfile` under
+`Art/Materials/Water/Profiles` (presets rebuilt by `Market/Debug/Water/Create Preset Wave
+Profiles`), authored in `Market/Debug/Water/Wave Creation Wizard`, uploaded by `WaveProfileBinder`
+on the water object. The math lives once in `Art/Shaders/RealisticWaterWaves.hlsl` and is mirrored
+in `Market.World.WaveSampler` - edit the two together, and read wave height from the sampler rather
+than adding a fourth copy.
 WaterWorks (GapperGames SSR water) was evaluated and rejected - `RealisticWater.shader` beats it on
 waves, absorption, refraction, reflection and foam, and it has no distance fade on its micro
 normals, which is why it boils at range. `Market/Debug/Water/Build WaterWorks Lab` still rebuilds
@@ -367,6 +373,14 @@ Helper scripts live in `.claude/tools/` (`check-mcp-unity.ps1`, `start-mcp-unity
     `UiFactory.StretchToParent` does it right.
 12. MCP `recompile_scripts` does NOT import brand-new files (no `.meta` yet). CS0246 against your own
     new class -> run `execute_menu_item` `Assets/Refresh` first, then recompile.
+13. **Every MCP call timing out while the Unity process burns no CPU = a modal dialog, not a dead
+    bridge.** Editing a scene/asset file on disk while the Editor has it open raises "The open
+    scene(s) have been modified externally" and blocks everything until it is answered. Handle it:
+    `powershell -File .claude/tools/unity-dialog.ps1` lists open dialogs, `-Action Accept
+    -TitlePattern 'modified externally'` presses the default button (Reload), `-Action Cancel`
+    presses Escape. Unity dialogs are IMGUI, so UI Automation cannot see their buttons and
+    `SetForegroundWindow` alone loses the keystroke - the script focuses via `AppActivate` first.
+    Prefer MCP `update_component` over hand-editing an open scene so the dialog never appears.
 
 ---
 

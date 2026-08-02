@@ -120,73 +120,11 @@ Shader "Market/World/RealisticWaterUnderwaterSurface"
                 half fogFactor : TEXCOORD3;
             };
 
-            struct GerstnerWave
-            {
-                float2 direction;
-                float wavelength;
-                float amplitude;
-                float speedMultiplier;
-                float steepness;
-            };
-
-            GerstnerWave MakeWave(float4 packed, float steepness)
-            {
-                GerstnerWave wave;
-                float2 windDirection = _WindDirection.xz;
-                float windLengthSq = dot(windDirection, windDirection);
-                windDirection = windLengthSq > 0.0001
-                    ? windDirection * rsqrt(windLengthSq)
-                    : float2(1.0, 0.0);
-                float windAngle = atan2(windDirection.y, windDirection.x);
-                float authoredAngle = radians(packed.x);
-                float angleDelta = authoredAngle - windAngle;
-                float shortestDelta = atan2(sin(angleDelta), cos(angleDelta));
-                float waveAngle =
-                    windAngle + shortestDelta * saturate(_WindSpread);
-                wave.direction = float2(cos(waveAngle), sin(waveAngle));
-                wave.wavelength = max(0.05, packed.y);
-                wave.amplitude = max(0.0, packed.z);
-                wave.speedMultiplier = max(0.0, packed.w);
-                float waveNumberAmplitude =
-                    6.28318530718 * wave.amplitude / wave.wavelength;
-                float foldSafeSteepness =
-                    0.95 / max(4.0 * waveNumberAmplitude, 0.0001);
-                wave.steepness = min(
-                    saturate(steepness), foldSafeSteepness);
-                return wave;
-            }
-
-            void EvaluateWave(
-                GerstnerWave wave,
-                float2 worldXZ,
-                float time,
-                inout float3 offset,
-                inout float3 tangentX,
-                inout float3 tangentZ)
-            {
-                float waveNumber = 6.28318530718 / wave.wavelength;
-                float waveNumberAmplitude = waveNumber * wave.amplitude;
-                float angularFrequency = sqrt(9.81 * waveNumber);
-                float phase = waveNumber * dot(wave.direction, worldXZ) +
-                    time * angularFrequency * wave.speedMultiplier;
-                float sine = sin(phase);
-                float cosine = cos(phase);
-                offset.x += wave.steepness * wave.amplitude *
-                    wave.direction.x * cosine;
-                offset.z += wave.steepness * wave.amplitude *
-                    wave.direction.y * cosine;
-                offset.y += wave.amplitude * sine;
-                float horizontalDerivative =
-                    wave.steepness * waveNumberAmplitude * sine;
-                tangentX += float3(
-                    -horizontalDerivative * wave.direction.x * wave.direction.x,
-                    waveNumberAmplitude * wave.direction.x * cosine,
-                    -horizontalDerivative * wave.direction.x * wave.direction.y);
-                tangentZ += float3(
-                    -horizontalDerivative * wave.direction.x * wave.direction.y,
-                    waveNumberAmplitude * wave.direction.y * cosine,
-                    -horizontalDerivative * wave.direction.y * wave.direction.y);
-            }
+            // Shared Gerstner bank - the same layers the top surface draws. This also fixes the
+            // sign of the time term: the local copy advanced the phase with "+ time", so seen
+            // from below the crests used to travel into the wind while the surface above them
+            // travelled with it.
+            #include "Assets/_Project/Art/Shaders/RealisticWaterWaves.hlsl"
 
             Varyings Vert(Attributes IN)
             {
@@ -197,17 +135,7 @@ Shader "Market/World/RealisticWaterUnderwaterSurface"
                 float3 tangentX = float3(1, 0, 0);
                 float3 tangentZ = float3(0, 0, 1);
                 float time = _Time.y;
-                EvaluateWave(
-                    MakeWave(_Wave1Params, _Wave1Steepness),
-                    baseWorldXZ, time, offset, tangentX, tangentZ);
-                EvaluateWave(
-                    MakeWave(_Wave2Params, _Wave2Steepness),
-                    baseWorldXZ, time, offset, tangentX, tangentZ);
-                EvaluateWave(
-                    MakeWave(_Wave3Params, _Wave3Steepness),
-                    baseWorldXZ, time, offset, tangentX, tangentZ);
-                EvaluateWave(
-                    MakeWave(_Wave4Params, _Wave4Steepness),
+                RealisticWaterAccumulateWaves(
                     baseWorldXZ, time, offset, tangentX, tangentZ);
                 worldPos += offset;
                 float3 macroNormal = cross(tangentZ, tangentX);

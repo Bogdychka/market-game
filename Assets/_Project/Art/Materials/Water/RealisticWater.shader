@@ -321,80 +321,9 @@ Shader "Market/World/RealisticWater"
                 half fogFactor : TEXCOORD5;
             };
 
-            struct GerstnerWave
-            {
-                float2 direction;
-                float wavelength;
-                float amplitude;
-                float speedMultiplier;
-                float steepness;
-            };
-
-            GerstnerWave MakeWave(float4 packed, float steepness)
-            {
-                GerstnerWave w;
-
-                float2 windDirection = _WindDirection.xz;
-                float windLengthSq = dot(windDirection, windDirection);
-                windDirection = windLengthSq > 0.0001
-                    ? windDirection * rsqrt(windLengthSq)
-                    : float2(1.0, 0.0);
-
-                float windAngle = atan2(windDirection.y, windDirection.x);
-                float authoredAngle = radians(packed.x);
-                float angleDelta = authoredAngle - windAngle;
-                float shortestDelta = atan2(sin(angleDelta), cos(angleDelta));
-                float waveAngle = windAngle + shortestDelta * saturate(_WindSpread);
-
-                w.direction = float2(cos(waveAngle), sin(waveAngle));
-                w.wavelength = max(0.05, packed.y);
-                w.amplitude = max(0.0, packed.z);
-                w.speedMultiplier = max(0.0, packed.w);
-
-                // Bound the sum of horizontal derivatives below the fold limit. This keeps the
-                // displacement map invertible at normal tuning values while leaving headroom for
-                // the Jacobian to approach zero and drive crest foam.
-                float waveNumberAmplitude =
-                    6.28318530718 * w.amplitude / w.wavelength;
-                float foldSafeSteepness =
-                    0.95 / max(4.0 * waveNumberAmplitude, 0.0001);
-                w.steepness = min(saturate(steepness), foldSafeSteepness);
-                return w;
-            }
-
-            // GPU Gems 1, Ch.1 "Effective Water Simulation from Physical Models": Gerstner
-            // displacement and exact surface derivatives. Deep-water dispersion derives angular
-            // frequency from wavelength; packed.w remains an art-directed frequency multiplier.
-            // The time term is SUBTRACTED, unlike GPU Gems' printed "+ phi*t": with a plus sign the
-            // crest travels along -direction, i.e. straight into the wind, and the temporal foam
-            // (which advects along +_WindDirection) then smears its history against the crests.
-            // Keep this sign identical to RealisticWaterFoamUpdate.compute::AccumulateJacobian.
-            void EvaluateWave(
-                GerstnerWave w, float2 xz, float t,
-                inout float3 offset, inout float3 tangentX, inout float3 tangentZ)
-            {
-                float k = 6.28318530718 / w.wavelength;
-                float wa = k * w.amplitude;
-                float omega = sqrt(9.81 * k);
-                float phase =
-                    k * dot(w.direction, xz) - t * omega * w.speedMultiplier;
-                float s = sin(phase);
-                float c = cos(phase);
-
-                offset.x += w.steepness * w.amplitude * w.direction.x * c;
-                offset.z += w.steepness * w.amplitude * w.direction.y * c;
-                offset.y += w.amplitude * s;
-
-                float horizontalDerivative = w.steepness * wa * s;
-                tangentX += float3(
-                    -horizontalDerivative * w.direction.x * w.direction.x,
-                    wa * w.direction.x * c,
-                    -horizontalDerivative * w.direction.x * w.direction.y);
-                tangentZ += float3(
-                    -horizontalDerivative * w.direction.x * w.direction.y,
-                    wa * w.direction.y * c,
-                    -horizontalDerivative * w.direction.y * w.direction.y);
-            }
+            // The Gerstner bank lives in one file shared with the underwater surface, the
+            // whitecap compute and Market.World.WaveSampler - see RealisticWaterWaves.hlsl.
+            #include "Assets/_Project/Art/Shaders/RealisticWaterWaves.hlsl"
 
             Varyings Vert(Attributes IN)
             {
@@ -408,17 +337,7 @@ Shader "Market/World/RealisticWater"
                 float3 tangentX = float3(1, 0, 0);
                 float3 tangentZ = float3(0, 0, 1);
 
-                EvaluateWave(
-                    MakeWave(_Wave1Params, _Wave1Steepness),
-                    worldPos.xz, t, offset, tangentX, tangentZ);
-                EvaluateWave(
-                    MakeWave(_Wave2Params, _Wave2Steepness),
-                    worldPos.xz, t, offset, tangentX, tangentZ);
-                EvaluateWave(
-                    MakeWave(_Wave3Params, _Wave3Steepness),
-                    worldPos.xz, t, offset, tangentX, tangentZ);
-                EvaluateWave(
-                    MakeWave(_Wave4Params, _Wave4Steepness),
+                RealisticWaterAccumulateWaves(
                     worldPos.xz, t, offset, tangentX, tangentZ);
 
                 // Shoaling: fade the whole wave - offset and the derivatives that build the macro
@@ -432,17 +351,15 @@ Shader "Market/World/RealisticWater"
                 worldPos += offset;
 
                 // The horizontal Jacobian is taken directly from the same derivatives as the
-                // macro normal. J == 1 on flat water and approaches 0 near a folding crest.
-                float jxx = tangentX.x;
-                float jzz = tangentZ.z;
-                float jxz = 0.5 * (tangentX.z + tangentZ.x);
+                // macro normal.
+                float jacobian = RealisticWaterJacobian(tangentX, tangentZ);
                 float3 macroNormal = cross(tangentZ, tangentX);
                 if (dot(macroNormal, macroNormal) < 0.000001)
                     macroNormal = float3(0, 1, 0);
 
                 OUT.worldPos = worldPos;
                 OUT.macroNormal = normalize(macroNormal);
-                OUT.foamJacobian = jxx * jzz - jxz * jxz;
+                OUT.foamJacobian = jacobian;
                 OUT.baseWaterY = baseWaterY;
                 OUT.baseWorldXZ = baseWorldXZ;
                 OUT.positionCS = TransformWorldToHClip(worldPos);

@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using Market.World;
 using UnityEngine;
 
 namespace Market.DebugTools
@@ -44,6 +46,11 @@ namespace Market.DebugTools
         private Vector4 _wave2Params = new(95f, 8f, 0.2f, 1.4f);
         private Vector4 _wave3Params = new(200f, 4.5f, 0.1f, 1.8f);
         private Vector4 _wave4Params = new(320f, 2.2f, 0.05f, 2.4f);
+        private float _wave1Steepness = 0.5f;
+        private float _wave2Steepness = 0.4f;
+        private float _wave3Steepness = 0.3f;
+        private float _wave4Steepness = 0.25f;
+        private readonly List<ResolvedWaveLayer> _sampleLayers = new(WaveProfile.MaxLayers);
 
         public WaterUnderwaterSurfaceQuality Quality => quality;
         public float TransitionBlend => _transitionBlend;
@@ -51,17 +58,22 @@ namespace Market.DebugTools
             underwaterRenderer != null && underwaterRenderer.enabled;
 
         /// <summary>
-        /// Evaluates the approximate displaced surface height at a world position.
+        /// Evaluates the displaced surface height at a world position, on the same wave bank the
+        /// shaders draw - the uploaded wave profile when one is bound, the material's legacy four
+        /// waves otherwise.
         /// </summary>
         public float EvaluateSurfaceHeight(Vector3 worldPosition, float time)
         {
-            float height = transform.position.y;
-            Vector2 worldXZ = new(worldPosition.x, worldPosition.z);
-            height += EvaluateWaveHeight(_wave1Params, worldXZ, time);
-            height += EvaluateWaveHeight(_wave2Params, worldXZ, time);
-            height += EvaluateWaveHeight(_wave3Params, worldXZ, time);
-            height += EvaluateWaveHeight(_wave4Params, worldXZ, time);
-            return height;
+            RefreshSampleLayers();
+            WaveWindSettings wind = new(
+                new Vector2(_windDirection.x, _windDirection.z), _windSpread);
+            return WaveSampler.SampleHeight(
+                _sampleLayers,
+                wind,
+                new Vector2(worldPosition.x, worldPosition.z),
+                time,
+                transform.position.y,
+                WaveShaderBridge.UploadedFoldLimit);
         }
 
         /// <summary>
@@ -252,32 +264,45 @@ namespace Market.DebugTools
                 _wave3Params = source.GetVector("_Wave3Params");
             if (source.HasProperty("_Wave4Params"))
                 _wave4Params = source.GetVector("_Wave4Params");
+            if (source.HasProperty("_Wave1Steepness"))
+                _wave1Steepness = source.GetFloat("_Wave1Steepness");
+            if (source.HasProperty("_Wave2Steepness"))
+                _wave2Steepness = source.GetFloat("_Wave2Steepness");
+            if (source.HasProperty("_Wave3Steepness"))
+                _wave3Steepness = source.GetFloat("_Wave3Steepness");
+            if (source.HasProperty("_Wave4Steepness"))
+                _wave4Steepness = source.GetFloat("_Wave4Steepness");
         }
 
-        private float EvaluateWaveHeight(
-            Vector4 packed, Vector2 worldXZ, float time)
+        private void RefreshSampleLayers()
         {
-            Vector2 wind = new(_windDirection.x, _windDirection.z);
-            if (wind.sqrMagnitude < 0.0001f)
-                wind = Vector2.right;
-            else
-                wind.Normalize();
+            _sampleLayers.Clear();
 
-            float windAngle = Mathf.Atan2(wind.y, wind.x);
-            float authoredAngle = packed.x * Mathf.Deg2Rad;
-            float angleDelta = authoredAngle - windAngle;
-            float shortestDelta = Mathf.Atan2(
-                Mathf.Sin(angleDelta), Mathf.Cos(angleDelta));
-            float waveAngle =
-                windAngle + shortestDelta * Mathf.Clamp01(_windSpread);
-            Vector2 direction = new(
-                Mathf.Cos(waveAngle), Mathf.Sin(waveAngle));
-            float wavelength = Mathf.Max(0.05f, packed.y);
-            float waveNumber = Mathf.PI * 2f / wavelength;
-            float angularFrequency = Mathf.Sqrt(9.81f * waveNumber);
-            float phase = waveNumber * Vector2.Dot(direction, worldXZ) +
-                time * angularFrequency * Mathf.Max(0f, packed.w);
-            return Mathf.Max(0f, packed.z) * Mathf.Sin(phase);
+            IReadOnlyList<ResolvedWaveLayer> uploaded = WaveShaderBridge.UploadedLayers;
+            if (WaveShaderBridge.UploadedLayerCount > 0)
+            {
+                for (int i = 0; i < uploaded.Count; i++)
+                    _sampleLayers.Add(uploaded[i]);
+
+                return;
+            }
+
+            AddLegacyLayer(_wave1Params, _wave1Steepness);
+            AddLegacyLayer(_wave2Params, _wave2Steepness);
+            AddLegacyLayer(_wave3Params, _wave3Steepness);
+            AddLegacyLayer(_wave4Params, _wave4Steepness);
+        }
+
+        private void AddLegacyLayer(Vector4 packed, float steepness)
+        {
+            _sampleLayers.Add(new ResolvedWaveLayer(
+                packed.y,
+                packed.z,
+                steepness,
+                packed.x,
+                packed.w,
+                WaveLayerMode.Directional,
+                Vector2.zero));
         }
 
         private void CopyFloat(Material source, string propertyName)

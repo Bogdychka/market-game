@@ -4,6 +4,7 @@ using Market.DebugTools;
 using Market.Interaction;
 using Market.Player;
 using Market.UI;
+using Market.World;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -868,16 +869,42 @@ namespace Market.DebugTools.Editor
             controller.RefreshQuality();
         }
 
+        private const string OceanWaveProfilePath =
+            "Assets/_Project/Art/Materials/Water/Profiles/WP_OceanSwell.asset";
+
+        private static WaveProfileBinder BuildWaveProfileBinder(GameObject water)
+        {
+            if (water == null)
+                return null;
+
+            WaveProfileBinder binder =
+                water.GetComponent<WaveProfileBinder>() ??
+                water.AddComponent<WaveProfileBinder>();
+
+            var serializedObject = new SerializedObject(binder);
+            // Missing profile is not an error: the shaders fall back to the material's legacy four
+            // waves, so a rebuilt lab still renders water.
+            serializedObject.FindProperty("_profile").objectReferenceValue =
+                AssetDatabase.LoadAssetAtPath<WaveProfile>(OceanWaveProfilePath);
+            serializedObject.FindProperty("_uploadEveryFrame").boolValue = true;
+            serializedObject.FindProperty("_useTransformAsWaterLevel").boolValue = true;
+            serializedObject.ApplyModifiedPropertiesWithoutUndo();
+            return binder;
+        }
+
         private static void BuildWeatherController(
             GameObject water, TextMesh statusLabel)
         {
             if (water == null)
                 return;
 
+            WaveProfileBinder waveProfileBinder = BuildWaveProfileBinder(water);
             RealisticWaterWeatherController controller =
                 water.GetComponent<RealisticWaterWeatherController>() ??
                 water.AddComponent<RealisticWaterWeatherController>();
             var serializedObject = new SerializedObject(controller);
+            serializedObject.FindProperty("waveProfileBinder").objectReferenceValue =
+                waveProfileBinder;
             serializedObject.FindProperty("waterRenderer").objectReferenceValue =
                 water.GetComponent<Renderer>();
             serializedObject.FindProperty("causticProjection").objectReferenceValue =

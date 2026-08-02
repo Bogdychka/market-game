@@ -26,82 +26,20 @@ float2 _FoamAdvectionVelocity;
 float _FoamDeltaTime;
 float _FoamTime;
 
-struct FoamWave
-{
-    float2 direction;
-    float wavelength;
-    float amplitude;
-    float speedMultiplier;
-    float steepness;
-};
-
-FoamWave MakeWave(float4 packed, float steepness)
-{
-    FoamWave wave;
-    float2 windDirection = _WindDirection.xz;
-    float windLengthSq = dot(windDirection, windDirection);
-    windDirection = windLengthSq > 0.0001
-        ? windDirection * rsqrt(windLengthSq)
-        : float2(1.0, 0.0);
-
-    float windAngle = atan2(windDirection.y, windDirection.x);
-    float authoredAngle = radians(packed.x);
-    float angleDelta = authoredAngle - windAngle;
-    float shortestDelta = atan2(sin(angleDelta), cos(angleDelta));
-    float waveAngle = windAngle + shortestDelta * saturate(_WindSpread);
-
-    wave.direction = float2(cos(waveAngle), sin(waveAngle));
-    wave.wavelength = max(0.05, packed.y);
-    wave.amplitude = max(0.0, packed.z);
-    wave.speedMultiplier = max(0.0, packed.w);
-    float waveNumberAmplitude =
-        6.28318530718 * wave.amplitude / wave.wavelength;
-    float foldSafeSteepness =
-        0.95 / max(4.0 * waveNumberAmplitude, 0.0001);
-    wave.steepness = min(saturate(steepness), foldSafeSteepness);
-    return wave;
-}
-
-void AccumulateJacobian(
-    FoamWave wave,
-    float2 worldXZ,
-    float time,
-    inout float jxx,
-    inout float jzz,
-    inout float jxz)
-{
-    // Sign must match RealisticWater.shader::EvaluateWave, or the injected whitecaps land off the
-    // rendered crests.
-    float k = 6.28318530718 / wave.wavelength;
-    float omega = sqrt(9.81 * k);
-    float phase =
-        k * dot(wave.direction, worldXZ) -
-        time * omega * wave.speedMultiplier;
-    float horizontalDerivative =
-        wave.steepness * k * wave.amplitude * sin(phase);
-    jxx -= horizontalDerivative * wave.direction.x * wave.direction.x;
-    jzz -= horizontalDerivative * wave.direction.y * wave.direction.y;
-    jxz -= horizontalDerivative * wave.direction.x * wave.direction.y;
-}
+// The whitecap Jacobian has to come out of the exact same wave bank the surface draws, or the
+// injected foam lands off the rendered crests. It is built from the shared evaluator rather than
+// a local derivative-only copy: over a 256x256 dispatch the extra cosine is free next to a
+// crest-tracking bug.
+#include "Assets/_Project/Art/Shaders/RealisticWaterWaves.hlsl"
 
 float WhitecapSource(float2 worldXZ)
 {
-    float jxx = 1.0;
-    float jzz = 1.0;
-    float jxz = 0.0;
-    AccumulateJacobian(
-        MakeWave(_Wave1Params, _Wave1Steepness),
-        worldXZ, _FoamTime, jxx, jzz, jxz);
-    AccumulateJacobian(
-        MakeWave(_Wave2Params, _Wave2Steepness),
-        worldXZ, _FoamTime, jxx, jzz, jxz);
-    AccumulateJacobian(
-        MakeWave(_Wave3Params, _Wave3Steepness),
-        worldXZ, _FoamTime, jxx, jzz, jxz);
-    AccumulateJacobian(
-        MakeWave(_Wave4Params, _Wave4Steepness),
-        worldXZ, _FoamTime, jxx, jzz, jxz);
-    float jacobian = jxx * jzz - jxz * jxz;
+    float3 offset = float3(0.0, 0.0, 0.0);
+    float3 tangentX = float3(1.0, 0.0, 0.0);
+    float3 tangentZ = float3(0.0, 0.0, 1.0);
+    RealisticWaterAccumulateWaves(
+        worldXZ, _FoamTime, offset, tangentX, tangentZ);
+    float jacobian = RealisticWaterJacobian(tangentX, tangentZ);
     return saturate(
         (1.0 - jacobian - _FoamCrestBias) * _FoamCrestGain);
 }

@@ -16,6 +16,15 @@ namespace Market.DebugTools.Editor
         {
             "Assets/_Project/Art/Materials/Water/RealisticWater.shader",
             "Assets/_Project/Art/Shaders/RealisticWaterProjectedCaustics.shader",
+            "Assets/_Project/Art/Shaders/RealisticWaterUnderwaterSurface.shader",
+        };
+
+        // The whitecap kernel shares the Gerstner include with the surface shaders, so a broken
+        // edit there has to be visible here too - compute errors reach the console even less than
+        // shader errors do.
+        private static readonly string[] RealisticWaterComputePaths =
+        {
+            "Assets/_Project/Art/Shaders/RealisticWaterFoamUpdate.compute",
         };
 
         [MenuItem("Market/Debug/Inspect GrassWind Shader Errors")]
@@ -47,6 +56,37 @@ namespace Market.DebugTools.Editor
         {
             foreach (string shaderPath in RealisticWaterShaderPaths)
                 InspectShader(shaderPath);
+
+            foreach (string computePath in RealisticWaterComputePaths)
+                InspectComputeShader(computePath);
+        }
+
+        private static void InspectComputeShader(string computePath)
+        {
+            var compute = AssetDatabase.LoadAssetAtPath<ComputeShader>(computePath);
+            if (compute == null)
+            {
+                Debug.LogError(
+                    $"[ShaderCompileInspector] Could not load compute shader at {computePath}");
+                return;
+            }
+
+            int messageCount = ShaderUtil.GetComputeShaderMessageCount(compute);
+            Debug.Log(
+                $"[ShaderCompileInspector] {compute.name}: messages={messageCount}");
+
+            if (messageCount <= 0)
+                return;
+
+            ShaderMessage[] messages = ShaderUtil.GetComputeShaderMessages(compute);
+            foreach (ShaderMessage msg in messages)
+            {
+                string severity =
+                    msg.severity == ShaderCompilerMessageSeverity.Error ? "ERROR" : "WARNING";
+                Debug.LogError(
+                    $"[ShaderCompileInspector] {severity} ({msg.platform}) " +
+                    $"{msg.file}:{msg.line} - {msg.message}");
+            }
         }
 
         private static void InspectShader(string shaderPath)

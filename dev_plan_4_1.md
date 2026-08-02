@@ -1100,3 +1100,4 @@ and report the changed player pose with no console errors.
 - [x] T19 Photon-traced caustic flipbook matching reference beach photography
 - [x] T20 GrassLab layered meadow visual showcase pass
 - [x] T21 Grass interaction bend and presentation polish
+- [x] T22 Wave profile assets and procedural wave editor
