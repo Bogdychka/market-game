@@ -17,6 +17,8 @@ namespace Market.DebugTools.Editor
             "Assets/_Project/Art/Textures/Water/T_RealisticWater_NormalA.png";
         private const string NormalMapBPath =
             "Assets/_Project/Art/Textures/Water/T_RealisticWater_NormalB.png";
+        private static string CausticMapPath =>
+            RealisticWaterCausticBaker.FlipbookAssetPath;
         private const string ShaderName = "Market/World/RealisticWater";
         private const string ProjectedCausticShaderName =
             "Market/World/RealisticWaterProjectedCaustics";
@@ -46,6 +48,7 @@ namespace Market.DebugTools.Editor
 
             AssignTextureIfAvailable(material, "_NormalMapA", NormalMapAPath);
             AssignTextureIfAvailable(material, "_NormalMapB", NormalMapBPath);
+            AssignTextureIfAvailable(material, "_CausticMap", CausticMapPath);
             SetFloatIfAvailable(material, "_RefractionEdgeFade", 0.08f);
             SetFloatIfAvailable(material, "_RefractionDepthScale", 2f);
             SetFloatIfAvailable(material, "_PlanarReflectionStrength", 0.85f);
@@ -53,6 +56,15 @@ namespace Market.DebugTools.Editor
             SetFloatIfAvailable(material, "_FoamCrestStrength", 1f);
             SetFloatIfAvailable(material, "_FoamShoreStrength", 1f);
             SetFloatIfAvailable(material, "_FoamCrestBias", 0.12f);
+            SetFloatIfAvailable(material, "_CausticTiling", 0.222f);
+            SetFloatIfAvailable(material, "_CausticSpeed", 0.28f);
+            SetFloatIfAvailable(material, "_CausticIntensity", 0.9f);
+            SetFloatIfAvailable(material, "_CausticPedestal", 1.28f);
+            SetFloatIfAvailable(material, "_CausticContrast", 1.15f);
+            SetFloatIfAvailable(material, "_CausticSoften", 30f);
+            SetColorIfAvailable(
+                material, "_CausticColor", new Color(1f, 0.97f, 0.9f, 1f));
+            ApplyCausticAtlasLayout(material);
             RemoveUndeclaredSavedProperties(material);
             EnsureProjectedCausticMaterial();
             EnsureUnderwaterSurfaceMaterial();
@@ -90,14 +102,29 @@ namespace Market.DebugTools.Editor
                 material.shader = shader;
             }
 
+            AssignTextureIfAvailable(material, "_CausticMap", CausticMapPath);
             SetFloatIfAvailable(material, "_CausticIntensity", 1.1f);
-            SetFloatIfAvailable(material, "_CausticTilingA", 0.72f);
-            SetFloatIfAvailable(material, "_CausticTilingB", 1.03f);
-            SetFloatIfAvailable(material, "_CausticSpeedA", 0.12f);
-            SetFloatIfAvailable(material, "_CausticSpeedB", 0.08f);
-            SetFloatIfAvailable(material, "_CausticDepthStart", 0.15f);
+            SetFloatIfAvailable(material, "_CausticScale", 4.5f);
+            SetFloatIfAvailable(material, "_CausticDepthSpread", 0.35f);
+            SetFloatIfAvailable(material, "_CausticSpeedA", 0.28f);
+            SetFloatIfAvailable(material, "_CausticSpeedB", 0.4f);
+            SetVectorIfAvailable(
+                material, "_CausticFlow", new Vector4(0.42f, 0.15f, 0f, 0f));
+            SetFloatIfAvailable(material, "_CausticWarp", 0.06f);
+            SetFloatIfAvailable(material, "_CausticPedestal", 1.28f);
+            SetFloatIfAvailable(material, "_CausticContrast", 1.15f);
+            SetFloatIfAvailable(material, "_CausticSoften", 30f);
+            SetFloatIfAvailable(material, "_CausticDepthStart", 0.12f);
             SetFloatIfAvailable(material, "_CausticDepthEnd", 12f);
-            SetFloatIfAvailable(material, "_CausticTurbidity", 0.1f);
+            SetFloatIfAvailable(material, "_CausticTurbidity", 0.06f);
+            SetColorIfAvailable(
+                material,
+                "_CausticAbsorption",
+                new Color(0.36f, 0.06f, 0.03f, 1f));
+            SetColorIfAvailable(
+                material, "_CausticColor", new Color(1f, 0.97f, 0.9f, 1f));
+            ApplyCausticAtlasLayout(material);
+            RemoveUndeclaredSavedProperties(material);
             EditorUtility.SetDirty(material);
             return material;
         }
@@ -165,6 +192,33 @@ namespace Market.DebugTools.Editor
         {
             if (material.HasProperty(propertyName))
                 material.SetColor(propertyName, value);
+        }
+
+        private static void SetVectorIfAvailable(
+            Material material, string propertyName, Vector4 value)
+        {
+            if (material.HasProperty(propertyName))
+                material.SetVector(propertyName, value);
+        }
+
+        /// <summary>
+        /// Copies the baked flipbook layout into the material so the shaders can address
+        /// individual frames without hard-coding the baker's constants.
+        /// </summary>
+        private static void ApplyCausticAtlasLayout(Material material)
+        {
+            SetVectorIfAvailable(
+                material,
+                "_CausticAtlasLayout",
+                RealisticWaterCausticBaker.AtlasLayout);
+            SetVectorIfAvailable(
+                material,
+                "_CausticAtlasFrame",
+                RealisticWaterCausticBaker.AtlasFrameRect);
+            SetFloatIfAvailable(
+                material,
+                "_CausticEncodeRange",
+                RealisticWaterCausticBaker.EncodeRangeValue);
         }
 
         private static void RemoveUndeclaredSavedProperties(Material material)

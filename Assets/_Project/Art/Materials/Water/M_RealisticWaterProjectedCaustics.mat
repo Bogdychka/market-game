@@ -22,20 +22,33 @@ Material:
   m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
-    m_TexEnvs: []
+    m_TexEnvs:
+    - _CausticMap:
+        m_Texture: {fileID: 2800000, guid: c9baf7ae0ab8a0f4cb0ebc26fbb2a5b0, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
+    - _CausticContrast: 1.15
     - _CausticDepthEnd: 12
-    - _CausticDepthStart: 0.15
+    - _CausticDepthSpread: 0.35
+    - _CausticDepthStart: 0.12
+    - _CausticEncodeRange: 8
     - _CausticIntensity: 1.1
-    - _CausticSpeedA: 0.12
-    - _CausticSpeedB: 0.08
-    - _CausticTilingA: 0.72
-    - _CausticTilingB: 1.03
-    - _CausticTurbidity: 0.1
+    - _CausticPedestal: 1.28
+    - _CausticScale: 4.5
+    - _CausticSoften: 30
+    - _CausticSpeedA: 0.28
+    - _CausticSpeedB: 0.4
+    - _CausticTurbidity: 0.06
+    - _CausticWarp: 0.06
     - _CausticWaterHeight: 0
     m_Colors:
-    - _CausticColor: {r: 0.54999995, g: 0.85, b: 0.78, a: 1}
+    - _CausticAbsorption: {r: 0.36, g: 0.06, b: 0.03, a: 1}
+    - _CausticAtlasFrame: {r: 0.12109375, g: 0.2421875, b: 0.001953125, a: 0.00390625}
+    - _CausticAtlasLayout: {r: 8, g: 4, b: 32, a: 1.6}
+    - _CausticColor: {r: 1, g: 0.97, b: 0.9, a: 1}
+    - _CausticFlow: {r: 0.42, g: 0.15, b: 0, a: 0}
     - _CausticWaterBounds: {r: -50, g: -50, b: 50, a: 50}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

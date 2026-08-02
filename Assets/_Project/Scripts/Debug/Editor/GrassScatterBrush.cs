@@ -6,13 +6,14 @@ using UnityEngine;
 namespace Market.DebugTools.Editor
 {
     /// <summary>
-    /// Scene-view terrain brush that scatters random mixes of two grass sources (mesh assets or
-    /// scene GameObjects) around the cursor. Hold left mouse and drag over a TerrainCollider to paint.
+    /// Scene-view terrain brush that scatters a random mix of grass clumps around the cursor:
+    /// random variant, random yaw, random width/height, random lean, and a share of X-cross clumps
+    /// so the patch never reads as a field of identical cards.
+    /// Hold left mouse and drag over a TerrainCollider to paint, add Shift to erase.
     /// </summary>
     public class GrassScatterBrush : EditorWindow
     {
         private const string ContainerName = "GrassScatter";
-        private const string GrassCardFolder = "Assets/_Project/Art/Nature/Grass";
         private const string GrassMaterialPath = "Assets/blender/Grass_1.mat";
 
         private static readonly string[] LegacyGrassPaths =
@@ -22,14 +23,25 @@ namespace Market.DebugTools.Editor
         };
 
         private readonly List<GameObject> _sources = new List<GameObject>();
+        private readonly List<GameObject> _crossSources = new List<GameObject>();
         private Material _material;
         private float _radius = 2f;
-        private int _instancesPerStroke = 3;
-        private float _minScale = 0.85f;
-        private float _maxScale = 1.15f;
+        private int _instancesPerStroke = 8;
+        // Width and height jitter separately: uniform scaling alone keeps every clump the same
+        // silhouette, just nearer or further away.
+        private float _minWidth = 0.8f;
+        private float _maxWidth = 1.3f;
+        private float _minHeight = 0.7f;
+        private float _maxHeight = 1.45f;
+        // Share of clumps painted as X-crosses. A minority is enough: they fill the gaps the flat
+        // cards leave when viewed edge-on, at twice the fill rate, so they are the expensive half.
+        private float _crossChance = 0.35f;
+        private float _maxTilt = 10f;
+        private float _sink = 0.03f;
         private float _strokeInterval = 0.05f;
         private bool _alignToSlope;
         private bool _paintingEnabled;
+        private bool _showCrossPalette;
         private double _lastPaintTime = double.NegativeInfinity;
 
         [MenuItem("Market/Debug/Grass Scatter Brush")]
@@ -46,21 +58,13 @@ namespace Market.DebugTools.Editor
         }
 
         /// <summary>
-        /// Fills the palette with every built grass card clump. Card prefabs carry their own
-        /// material, so no override is needed; only the older raw FBX sources need one.
+        /// Fills both palettes from the grass card builder. Card prefabs carry their own material,
+        /// so no override is needed; only the older raw FBX sources need one.
         /// </summary>
         private void LoadDefaultSources()
         {
-            foreach (string guid in AssetDatabase.FindAssets("t:Prefab", new[] { GrassCardFolder }))
-            {
-                string path = AssetDatabase.GUIDToAssetPath(guid);
-                if (!path.EndsWith("_Clump.prefab", System.StringComparison.Ordinal))
-                    continue;
-
-                var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
-                if (prefab != null)
-                    _sources.Add(prefab);
-            }
+            _sources.AddRange(GrassCardBuilder.LoadPalettePrefabs(false));
+            _crossSources.AddRange(GrassCardBuilder.LoadPalettePrefabs(true));
 
             if (_sources.Count > 0)
                 return;
@@ -82,7 +86,19 @@ namespace Market.DebugTools.Editor
 
         private void OnGUI()
         {
-            DrawSourceList();
+            DrawSourceList("Grass Sources (single card)", _sources);
+
+            _showCrossPalette = EditorGUILayout.Foldout(
+                _showCrossPalette, $"Cross Sources (X-clumps): {_crossSources.Count}", true);
+            if (_showCrossPalette)
+                DrawSourceList("Cross Sources", _crossSources);
+
+            if (GUILayout.Button("Reload grass cards"))
+            {
+                _sources.Clear();
+                _crossSources.Clear();
+                LoadDefaultSources();
+            }
 
             _material = (Material)EditorGUILayout.ObjectField("Material Override", _material, typeof(Material), false);
             EditorGUILayout.HelpBox("Optional. Leave empty for grass card prefabs, which already carry their own material; set it for raw FBX sources that would otherwise paint with their imported gray material.", MessageType.None);
@@ -90,20 +106,30 @@ namespace Market.DebugTools.Editor
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("Brush", EditorStyles.boldLabel);
             _radius = EditorGUILayout.Slider("Radius", _radius, 0.25f, 15f);
-            _instancesPerStroke = EditorGUILayout.IntSlider("Instances / Tick", _instancesPerStroke, 1, 30);
+            _instancesPerStroke = EditorGUILayout.IntSlider("Instances / Tick", _instancesPerStroke, 1, 40);
             _strokeInterval = EditorGUILayout.Slider("Tick Interval (s)", _strokeInterval, 0.02f, 0.5f);
-            EditorGUILayout.MinMaxSlider("Scale Jitter", ref _minScale, ref _maxScale, 0.25f, 2.5f);
-            EditorGUILayout.LabelField($"  {_minScale:0.00}x - {_maxScale:0.00}x");
+
+            EditorGUILayout.Space();
+            EditorGUILayout.LabelField("Randomisation", EditorStyles.boldLabel);
+            EditorGUILayout.MinMaxSlider("Width Jitter", ref _minWidth, ref _maxWidth, 0.25f, 2.5f);
+            EditorGUILayout.LabelField($"  {_minWidth:0.00}x - {_maxWidth:0.00}x");
+            EditorGUILayout.MinMaxSlider("Height Jitter", ref _minHeight, ref _maxHeight, 0.25f, 2.5f);
+            EditorGUILayout.LabelField($"  {_minHeight:0.00}x - {_maxHeight:0.00}x");
+            using (new EditorGUI.DisabledScope(_crossSources.Count == 0))
+                _crossChance = EditorGUILayout.Slider("Cross Chance", _crossChance, 0f, 1f);
+            _maxTilt = EditorGUILayout.Slider("Max Lean (deg)", _maxTilt, 0f, 35f);
+            _sink = EditorGUILayout.Slider("Sink Into Ground", _sink, 0f, 0.25f);
             _alignToSlope = EditorGUILayout.Toggle("Align To Slope", _alignToSlope);
 
             EditorGUILayout.Space();
             _paintingEnabled = EditorGUILayout.ToggleLeft("Enable Painting", _paintingEnabled);
-            EditorGUILayout.HelpBox("With painting enabled, hold Left Mouse and drag over the terrain in the Scene view to scatter grass.", MessageType.Info);
+            EditorGUILayout.HelpBox("With painting enabled, hold Left Mouse and drag over the terrain in the Scene view to scatter grass. Hold Shift while dragging to erase inside the brush.", MessageType.Info);
         }
 
         private void OnSceneGUI(SceneView view)
         {
-            if (!_paintingEnabled || !HasSource())
+            // Erasing needs no palette, so only painting is gated on having one.
+            if (!_paintingEnabled || (!HasSource() && !Event.current.shift))
                 return;
 
             Event e = Event.current;
@@ -114,7 +140,10 @@ namespace Market.DebugTools.Editor
 
             if (hasHit)
             {
-                Handles.color = new Color(0.2f, 1f, 0.4f, 0.6f);
+                bool erasing = e.shift;
+                Handles.color = erasing
+                    ? new Color(1f, 0.4f, 0.3f, 0.6f)
+                    : new Color(0.2f, 1f, 0.4f, 0.6f);
                 Handles.DrawWireDisc(hit.point, hit.normal, _radius);
 
                 bool isPaintEvent = e.type is EventType.MouseDown or EventType.MouseDrag && e.button == 0 && !e.alt;
@@ -123,7 +152,10 @@ namespace Market.DebugTools.Editor
                     double now = EditorApplication.timeSinceStartup;
                     if (now - _lastPaintTime >= _strokeInterval)
                     {
-                        PaintAt(hit);
+                        if (erasing)
+                            EraseAt(hit);
+                        else
+                            PaintAt(hit);
                         _lastPaintTime = now;
                     }
 
@@ -148,11 +180,15 @@ namespace Market.DebugTools.Editor
 
         private void PaintAt(RaycastHit centerHit)
         {
+            if (!HasSource())
+                return;
+
             Transform parent = GetOrCreateContainer();
 
             for (int i = 0; i < _instancesPerStroke; i++)
             {
-                GameObject source = PickSource();
+                bool cross = _crossSources.Count > 0 && Random.value < _crossChance;
+                GameObject source = PickSource(cross ? _crossSources : _sources) ?? PickSource(_sources);
                 if (source == null)
                     continue;
 
@@ -166,14 +202,29 @@ namespace Market.DebugTools.Editor
                 Quaternion rotation = source.transform.rotation;
                 if (_alignToSlope)
                     rotation = Quaternion.FromToRotation(source.transform.up, localHit.normal) * rotation;
+                // A flat card seen from behind is its own mirror image, so a full turn of yaw already
+                // doubles the silhouette count for free - no negative scaling needed.
                 rotation = Quaternion.AngleAxis(Random.Range(0f, 360f), localHit.normal) * rotation;
+                if (_maxTilt > 0f)
+                {
+                    Vector3 leanAxis = Quaternion.AngleAxis(Random.Range(0f, 360f), Vector3.up) * Vector3.right;
+                    rotation = Quaternion.AngleAxis(Random.Range(-_maxTilt, _maxTilt), leanAxis) * rotation;
+                }
 
                 GameObject instance = PrefabUtility.IsPartOfPrefabAsset(source)
                     ? (GameObject)PrefabUtility.InstantiatePrefab(source, parent)
                     : Instantiate(source, parent);
 
-                instance.transform.SetPositionAndRotation(localHit.point, rotation);
-                instance.transform.localScale = source.transform.localScale * Random.Range(_minScale, _maxScale);
+                float width = Random.Range(_minWidth, _maxWidth);
+                float height = Random.Range(_minHeight, _maxHeight);
+                // Leaning clumps lift their root off the ground; sink scales with height so a tall
+                // card is buried as deep as it is tilted, instead of hovering over the terrain.
+                instance.transform.SetPositionAndRotation(
+                    localHit.point - localHit.normal * (_sink * height),
+                    rotation);
+                instance.transform.localScale = Vector3.Scale(
+                    source.transform.localScale,
+                    new Vector3(width, height, width));
                 instance.name = source.name;
 
                 if (_material != null)
@@ -188,6 +239,26 @@ namespace Market.DebugTools.Editor
                 }
 
                 Undo.RegisterCreatedObjectUndo(instance, "Paint Grass");
+            }
+        }
+
+        /// <summary>Removes painted clumps whose root falls inside the brush disc.</summary>
+        private void EraseAt(RaycastHit centerHit)
+        {
+            GameObject container = GameObject.Find(ContainerName);
+            if (container == null)
+                return;
+
+            float radiusSquared = _radius * _radius;
+            Transform parent = container.transform;
+            for (int i = parent.childCount - 1; i >= 0; i--)
+            {
+                Transform child = parent.GetChild(i);
+                Vector3 delta = child.position - centerHit.point;
+                // Horizontal distance only: on a slope the vertical gap is terrain, not brush miss.
+                delta.y = 0f;
+                if (delta.sqrMagnitude <= radiusSquared)
+                    Undo.DestroyObjectImmediate(child.gameObject);
             }
         }
 
@@ -224,41 +295,34 @@ namespace Market.DebugTools.Editor
         }
 
         /// <summary>Palette of grass sources: every painted instance picks one at random.</summary>
-        private void DrawSourceList()
+        private void DrawSourceList(string label, List<GameObject> sources)
         {
-            EditorGUILayout.LabelField("Grass Sources", EditorStyles.boldLabel);
-            for (int index = 0; index < _sources.Count; index++)
+            EditorGUILayout.LabelField(label, EditorStyles.boldLabel);
+            for (int index = 0; index < sources.Count; index++)
             {
                 using (new EditorGUILayout.HorizontalScope())
                 {
-                    _sources[index] = (GameObject)EditorGUILayout.ObjectField(
+                    sources[index] = (GameObject)EditorGUILayout.ObjectField(
                         $"Grass {index + 1}",
-                        _sources[index],
+                        sources[index],
                         typeof(GameObject),
                         true);
                     if (!GUILayout.Button("-", GUILayout.Width(24f)))
                         continue;
 
-                    _sources.RemoveAt(index);
+                    sources.RemoveAt(index);
                     return;
                 }
             }
 
-            using (new EditorGUILayout.HorizontalScope())
-            {
-                if (GUILayout.Button("Add slot"))
-                    _sources.Add(null);
-                if (GUILayout.Button("Reload grass cards"))
-                {
-                    _sources.Clear();
-                    LoadDefaultSources();
-                }
-            }
+            if (GUILayout.Button("Add slot"))
+                sources.Add(null);
 
-            if (!HasSource())
+            if (sources == _sources && !HasSource())
             {
                 EditorGUILayout.HelpBox(
-                    "Assign at least one grass source (prefab, model, or scene object).",
+                    "Assign at least one grass source (prefab, model, or scene object), " +
+                    "or run Market/Debug/Grass Card/2. Build Material + Clump Prefab first.",
                     MessageType.Warning);
             }
         }
@@ -274,22 +338,22 @@ namespace Market.DebugTools.Editor
             return false;
         }
 
-        private GameObject PickSource()
+        private static GameObject PickSource(List<GameObject> sources)
         {
-            if (!HasSource())
+            if (sources.Count == 0)
                 return null;
 
             for (int attempt = 0; attempt < 8; attempt++)
             {
-                GameObject candidate = _sources[Random.Range(0, _sources.Count)];
+                GameObject candidate = sources[Random.Range(0, sources.Count)];
                 if (candidate != null)
                     return candidate;
             }
 
-            for (int index = 0; index < _sources.Count; index++)
+            for (int index = 0; index < sources.Count; index++)
             {
-                if (_sources[index] != null)
-                    return _sources[index];
+                if (sources[index] != null)
+                    return sources[index];
             }
 
             return null;

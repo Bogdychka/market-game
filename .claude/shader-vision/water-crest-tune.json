@@ -1,0 +1,21 @@
+{
+  "runId": "",
+  "outputName": "water-crest-tune",
+  "scene": "Assets/_Project/Scenes/WaterShaderLab.unity",
+  "width": 700,
+  "height": 394,
+  "columns": 2,
+  "freezeTime": true,
+  "time": 8.0,
+  "sun": { "apply": true, "yaw": -140.0, "pitch": 42.0, "intensity": -1.0 },
+  "material": "Assets/_Project/Art/Materials/Water/M_RealisticWaterLab.mat",
+  "views": [
+    { "name": "openwater", "position": [0.0, 3.2, 2.0], "lookAt": [0.0, 0.0, 26.0], "fov": 45.0 }
+  ],
+  "sweep": {
+    "property": "_FoamCrestHeight",
+    "type": "float",
+    "values": [0.35, 0.28, 0.2, 0.12],
+    "view": "openwater"
+  }
+}

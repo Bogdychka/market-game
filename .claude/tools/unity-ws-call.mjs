@@ -56,7 +56,10 @@ for (let index = 2; index < process.argv.length; index += 1) {
 
 const [method, paramsJson = '{}'] = positional;
 if (!method) {
-  console.error('Usage: node .claude/tools/unity-ws-call.mjs <method> [paramsJson|-|@file] [--timeout ms]');
+  console.error(
+    'Usage: node .claude/tools/unity-ws-call.mjs <method> [paramsJson|-|@file] [--timeout ms]\n' +
+    'Waits out a bridge restart (Play mode, domain reload) for UNITY_RECONNECT_WINDOW_MS (default 30000).',
+  );
   process.exit(2);
 }
 
@@ -81,12 +84,21 @@ try {
 }
 
 const requestId = `agent-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-const ws = new WebSocket(`ws://${options.host}:${options.port}/McpUnity`, {
-  headers: { 'X-Client-Name': options.client },
-  handshakeTimeout: Math.min(options.timeout, 10000),
-});
 
+// Entering Play mode takes the bridge down for a few seconds: the Editor closes clients with
+// code 4001, the play-mode domain reload wipes the server instance, and McpUnityAutoStart brings
+// it back. A call that starts inside that window used to fail outright. Waiting through it is
+// correct - but only while the request is still unsent. Once the payload has gone out we cannot
+// know whether Unity ran it before the socket dropped, and silently re-running something like
+// execute_menu_item would be worse than reporting the truth.
+const reconnectWindowMs = Number(process.env.UNITY_RECONNECT_WINDOW_MS || 30000);
+const reconnectDeadline = Date.now() + reconnectWindowMs;
+const reconnectDelayMs = 750;
+
+let ws = null;
+let requestSent = false;
 let finished = false;
+
 const finish = (exitCode, payload) => {
   if (finished) {
     return;
@@ -94,7 +106,7 @@ const finish = (exitCode, payload) => {
   finished = true;
   clearTimeout(timer);
   try {
-    ws.close();
+    ws?.close();
   } catch {
     // Ignore close races during process shutdown.
   }
@@ -120,47 +132,92 @@ const timer = setTimeout(() => {
   finish(1, `Unity WebSocket request timed out after ${options.timeout}ms`);
 }, options.timeout);
 
-ws.once('open', () => {
-  ws.send(JSON.stringify({ method, params, id: requestId }));
-});
-
-ws.on('message', (raw) => {
-  let message;
-  try {
-    message = JSON.parse(raw.toString());
-  } catch {
-    return;
+/**
+ * Retries only while the request is still unsent, and only until the reconnect window closes.
+ * Returns false when the caller should give up and report `failure` instead.
+ */
+const retryUnlessSent = (failure) => {
+  if (finished) {
+    return true;
   }
 
-  if (message.id !== requestId) {
-    return;
+  if (requestSent || Date.now() >= reconnectDeadline) {
+    finish(1, failure);
+    return true;
   }
 
-  if (message.error) {
-    finish(1, message.error);
-    return;
-  }
+  setTimeout(connect, reconnectDelayMs);
+  return true;
+};
 
-  finish(0, message.result);
-});
-
-ws.once('error', (error) => {
-  finish(1, `Unity WebSocket error: ${error.message}`);
-});
-
-ws.once('close', (code, reasonBuf) => {
+function connect() {
   if (finished) {
     return;
   }
 
-  // 4001 = UnityCloseCode.PlayMode: the Editor closes clients when entering Play
-  // mode. Surface that clearly instead of a generic "closed" error so the caller
-  // knows to re-issue the request once Play mode has settled.
-  if (code === 4001) {
-    finish(1, 'Unity entered Play mode (close code 4001) before responding. Retry once Play mode has settled.');
-    return;
-  }
+  ws = new WebSocket(`ws://${options.host}:${options.port}/McpUnity`, {
+    headers: { 'X-Client-Name': options.client },
+    handshakeTimeout: Math.min(options.timeout, 10000),
+  });
 
-  const reason = reasonBuf && reasonBuf.length ? `: ${reasonBuf.toString()}` : '';
-  finish(1, `Unity WebSocket closed before a response was received (code ${code}${reason})`);
-});
+  // A failed socket emits 'error' AND 'close'; without this guard one attempt would schedule
+  // two reconnects and the backoff would double every round.
+  let settled = false;
+  const failAttempt = (failure) => {
+    if (settled) {
+      return;
+    }
+    settled = true;
+    retryUnlessSent(failure);
+  };
+
+  ws.once('open', () => {
+    requestSent = true;
+    ws.send(JSON.stringify({ method, params, id: requestId }));
+  });
+
+  ws.on('message', (raw) => {
+    let message;
+    try {
+      message = JSON.parse(raw.toString());
+    } catch {
+      return;
+    }
+
+    if (message.id !== requestId) {
+      return;
+    }
+
+    if (message.error) {
+      finish(1, message.error);
+      return;
+    }
+
+    finish(0, message.result);
+  });
+
+  ws.once('error', (error) => {
+    // The usual case while Unity restarts the bridge: ECONNREFUSED on a port nobody listens on.
+    failAttempt(`Unity WebSocket error: ${error.message}`);
+  });
+
+  ws.once('close', (code, reasonBuf) => {
+    if (finished) {
+      return;
+    }
+
+    // 4001 = UnityCloseCode.PlayMode: the Editor closes clients when entering Play mode.
+    if (code === 4001) {
+      failAttempt(
+        'Unity entered Play mode (close code 4001) after the request was sent, so it may or may not ' +
+        'have run. Re-issue it once Play mode has settled.',
+      );
+      return;
+    }
+
+    const reason = reasonBuf && reasonBuf.length ? `: ${reasonBuf.toString()}` : '';
+    failAttempt(`Unity WebSocket closed before a response was received (code ${code}${reason})`);
+  });
+}
+
+connect();

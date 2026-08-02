@@ -14,6 +14,7 @@ namespace Market.World
         private static readonly int InteractorsId = Shader.PropertyToID("_GrassInteractors");
         private static readonly int DirectionsId = Shader.PropertyToID("_GrassInteractorDirs");
         private static readonly int CountId = Shader.PropertyToID("_GrassInteractorCount");
+        private static readonly int BendId = Shader.PropertyToID("_GrassInteractionBend");
 
         private readonly Vector4[] _positions = new Vector4[MaxInteractors];
         private readonly Vector4[] _directions = new Vector4[MaxInteractors];
@@ -21,7 +22,12 @@ namespace Market.World
         private void LateUpdate()
         {
             GrassTrample.Tick(Time.deltaTime);
+            int count = CollectInteractors();
+            PushShaderGlobals(count);
+        }
 
+        private int CollectInteractors()
+        {
             int count = 0;
             for (int i = 0; i < MaxInteractors; i++)
             {
@@ -33,9 +39,15 @@ namespace Market.World
                 count++;
             }
 
+            return count;
+        }
+
+        private void PushShaderGlobals(int count)
+        {
             Shader.SetGlobalVectorArray(InteractorsId, _positions);
             Shader.SetGlobalVectorArray(DirectionsId, _directions);
             Shader.SetGlobalInt(CountId, count);
+            Shader.SetGlobalFloat(BendId, 0.24f);
         }
     }
 }

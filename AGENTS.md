@@ -241,8 +241,49 @@ Water look tuning: `Market/Debug/Water/Stylized Water Tuner` (editor window) and
 on **F7** (`StylizedWaterRuntimeTuner`) - same labelled sliders and the same JSON presets under
 `Art/Materials/Water/Presets`; the property table lives once in `StylizedWaterShaderCatalog`.
 Tune a project copy of the material, never the imported package material.
+WaterWorks (GapperGames SSR water) was evaluated and rejected - `RealisticWater.shader` beats it on
+waves, absorption, refraction, reflection and foam, and it has no distance fade on its micro
+normals, which is why it boils at range. `Market/Debug/Water/Build WaterWorks Lab` still rebuilds
+the evaluation scene (F6 panel) if it needs re-checking; it puts its full-screen underwater blit on
+its own renderer asset - never add that feature to `PC_Renderer`.
+Shader compiler errors do not reach the MCP console bridge: use
+`Market/Debug/Inspect Selected Shader Errors` after touching any shader.
+Seeing a shader result: **Shader Vision**, see its own section below.
 Remove each one once real UI covers it. Play Mode issues -> check `game.log` and serialized scene
 values before guessing.
+
+---
+
+## Shader Vision - look at the shader, don't guess
+
+Never claim a shader/material/lighting change "looks better" without a capture. Runs write PNGs +
+`report.json` to `Artifacts/ShaderVision/<outputName>/` (git-ignored); **read `sheet.png`** - it is
+one image holding every pose or sweep value, with the label burned into each cell.
+
+```powershell
+powershell -File .claude/tools/shader-vision.ps1 -SceneView          # one shot of the current Scene view
+powershell -File .claude/tools/shader-vision.ps1 water-lab           # preset: 6 fixed poses
+powershell -File .claude/tools/shader-vision.ps1 water-lab -CompareRun water-lab   # A/B vs the previous run
+```
+
+Presets: `water-lab`, `water-foam-sweep`, `grass-lab`. Full job schema (poses, turntable, sun,
+overrides, sweep, time samples): `.claude/shader-vision/README.md`. A job file is cheap - write a
+new one for a new scene instead of forcing an existing preset.
+
+**The A/B loop is the point.** Capture -> edit the shader -> capture with `-CompareRun <same name>`.
+Poses, sun and the shader clock are pinned, so two runs of an unchanged scene are bit-identical and
+`changed 0.0%` means the edit did nothing - check that before writing a paragraph about why it
+looks better. Changed pixels also come out as `diff_<pose>.png`, which shows *where*.
+
+**Tuning a number** is a `sweep`, not six edit-and-look cycles: one pose, N values of one property,
+one sheet. All cells measuring identically means the property is inert on that material (wrong
+property, or a branch disables it) - a finding worth one run.
+
+Read the numbers, not just the picture: `nonFinitePct` > 0 = NaN in the shader, `magentaPct` > 0 =
+Unity's error shader, `clippedPct` high = blown out, `detail` dropping = micro-normals/foam lost.
+
+Constraints: Edit Mode only, max 24 cells per run, and the capture camera is built by the tool -
+put poses in the job file, don't hand-place a camera in the scene.
 
 ---
 
@@ -270,6 +311,21 @@ Loop: `recompile_scripts` -> `get_health_report` (`includeTests: false`; must be
 `get_console_logs` (`includeStackTrace: false`, small `limit`) when needed -> `run_tests`
 (filter `Market.Tests`, `returnOnlyFailures`) for shared/risky logic. A passed gate is final -
 re-run only what a later edit invalidated.
+
+**Play mode:** the bridge stays connected through the whole Play Mode cycle - no 4001 drop, no
+dead window (measured: play + status round trip 713 ms, was ~4.8 s of nothing). This depends on
+**Enter Play Mode Options with the domain reload disabled**
+(`Market/Debug/MCP/Enable Fast Play Mode (no domain reload)`; `.../Log Play Mode Options` prints
+the current state, `.../Restore Domain Reload On Play` reverts). Without the reload the server
+object survives the transition, and `McpUnityServer.OnPlayModeStateChanged` only closes clients
+when a reload is actually coming (local patch to the vendored package).
+**The cost: statics no longer reset between Play sessions.** Every static holder must reset itself
+in a `[RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]` - done for
+`ServiceLocator`, `FileLogger`, `GameBootstrap`, `GrassTrample`. Add the same to any new static
+state, or it leaks from one Play session into the next.
+`unity-ws-call.mjs` also waits out a bridge restart (`UNITY_RECONNECT_WINDOW_MS`, default 30 s)
+for recompiles and manual restarts - but only while the request is still unsent; one that was sent
+before the drop is reported as "may or may not have run" rather than silently retried.
 
 WS fallback if MCP transport is closed (from project root; same pattern for any tool):
 

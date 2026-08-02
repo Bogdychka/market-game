@@ -26,6 +26,12 @@ namespace Market.DebugTools.Editor
             public string MeshPath;
             public string MaterialPath;
             public string PrefabPath;
+
+            /// <summary>False keeps the variant buildable but out of the scatter brush palette.</summary>
+            public bool InBrushPalette = true;
+
+            public string CrossMeshPath => MeshPath.Replace("_Mesh.asset", "_Mesh_Cross.asset");
+            public string CrossPrefabPath => PrefabPath.Replace("_Clump.prefab", "_Clump_Cross.prefab");
         }
 
         // All variants share the Grass_3 quad as geometry; each texture is cropped to its own
@@ -37,7 +43,10 @@ namespace Market.DebugTools.Editor
                 TexturePath = "Assets/blender/Grass_3.1.png",
                 MeshPath = OutputFolder + "/GrassCard_Mesh.asset",
                 MaterialPath = OutputFolder + "/GrassCard.mat",
-                PrefabPath = OutputFolder + "/GrassCard_Clump.prefab"
+                PrefabPath = OutputFolder + "/GrassCard_Clump.prefab",
+                // Painted a full stop darker than the rest of the set; it reads as a different plant
+                // next to them, so it stays built but off the brush palette.
+                InBrushPalette = false
             },
             new CardVariant
             {
@@ -53,14 +62,44 @@ namespace Market.DebugTools.Editor
                 MaterialPath = OutputFolder + "/GrassCard_5.mat",
                 PrefabPath = OutputFolder + "/GrassCard_5_Clump.prefab"
             },
+            new CardVariant
+            {
+                TexturePath = "Assets/blender/Grass_6.1.png",
+                MeshPath = OutputFolder + "/GrassCard_6_Mesh.asset",
+                MaterialPath = OutputFolder + "/GrassCard_6.mat",
+                PrefabPath = OutputFolder + "/GrassCard_6_Clump.prefab"
+            },
+            new CardVariant
+            {
+                TexturePath = "Assets/blender/Grass_7.1.png",
+                MeshPath = OutputFolder + "/GrassCard_7_Mesh.asset",
+                MaterialPath = OutputFolder + "/GrassCard_7.mat",
+                PrefabPath = OutputFolder + "/GrassCard_7_Clump.prefab"
+            },
+            new CardVariant
+            {
+                TexturePath = "Assets/blender/Grass_8.1.png",
+                MeshPath = OutputFolder + "/GrassCard_8_Mesh.asset",
+                MaterialPath = OutputFolder + "/GrassCard_8.mat",
+                PrefabPath = OutputFolder + "/GrassCard_8_Clump.prefab"
+            },
+            new CardVariant
+            {
+                TexturePath = "Assets/blender/Grass_9.1.png",
+                MeshPath = OutputFolder + "/GrassCard_9_Mesh.asset",
+                MaterialPath = OutputFolder + "/GrassCard_9.mat",
+                PrefabPath = OutputFolder + "/GrassCard_9_Clump.prefab"
+            },
         };
 
         private const float AlphaCutoff = 0.35f;
-        // Cards per clump, spread evenly over 180 deg (the shader is Cull Off, so a half turn already
-        // covers every orientation). 1 = a single quad: cheapest, and it goes edge-on invisible from
-        // some angles - fine here, density from the scatter brush hides it. Raise to 2 for the usual
-        // X-cross if a clump ever has to read solid on its own.
+        // Every variant is baked twice, so the brush can mix silhouettes that are cheap with ones that
+        // read solid from any angle. Cards are spread evenly over 180 deg - the shader is Cull Off, so
+        // a half turn already covers every orientation.
+        // 1 card  = a single quad: cheapest, goes edge-on invisible from some angles.
+        // 2 cards = the classic X-cross: never disappears, twice the fill rate.
         private const int CardsPerClump = 1;
+        private const int CardsPerCross = 2;
         private const int PatchInstances = 400;
         private const float PatchRadius = 6f;
 
@@ -110,7 +149,7 @@ namespace Market.DebugTools.Editor
 
             AssetDatabase.SaveAssets();
             Debug.Log($"[GrassCardBuilder] Built {built} grass card variant(s) in {OutputFolder} " +
-                      $"({CardsPerClump} card(s) per clump).");
+                      $"(single + {CardsPerCross}-card cross clump each).");
         }
 
         private static bool BuildVariant(Mesh sourceMesh, CardVariant variant)
@@ -123,10 +162,19 @@ namespace Market.DebugTools.Editor
 
             ConfigureTextureImport(variant.TexturePath);
             Rect artBounds = MeasureAlphaBounds(variant.TexturePath);
-            Mesh clumpMesh = BuildClumpMesh(sourceMesh, artBounds, variant.MeshPath);
             Material material = BuildMaterial(artBounds, variant);
-            BuildClumpPrefab(clumpMesh, material, variant.PrefabPath);
-            return material != null;
+            if (material == null)
+                return false;
+
+            BuildClumpPrefab(
+                BuildClumpMesh(sourceMesh, artBounds, variant.MeshPath, CardsPerClump),
+                material,
+                variant.PrefabPath);
+            BuildClumpPrefab(
+                BuildClumpMesh(sourceMesh, artBounds, variant.CrossMeshPath, CardsPerCross),
+                material,
+                variant.CrossPrefabPath);
+            return true;
         }
 
         [MenuItem("Market/Debug/Grass Card/3. Scatter Patch In Scene")]
@@ -231,17 +279,32 @@ namespace Market.DebugTools.Editor
             }
         }
 
-        /// <summary>Clump prefabs of every variant that has been built.</summary>
-        private static List<GameObject> LoadVariantPrefabs()
+        /// <summary>
+        /// Clump prefabs the scatter brush paints with, in the flavour asked for: single quads or
+        /// their X-cross twins. Variants flagged out of the palette are skipped.
+        /// </summary>
+        public static List<GameObject> LoadPalettePrefabs(bool cross)
         {
             var prefabs = new List<GameObject>();
             foreach (CardVariant variant in Variants)
             {
-                var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(variant.PrefabPath);
+                if (!variant.InBrushPalette)
+                    continue;
+
+                var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                    cross ? variant.CrossPrefabPath : variant.PrefabPath);
                 if (prefab != null)
                     prefabs.Add(prefab);
             }
 
+            return prefabs;
+        }
+
+        /// <summary>Clump prefabs of every variant that has been built, both flavours.</summary>
+        private static List<GameObject> LoadVariantPrefabs()
+        {
+            var prefabs = LoadPalettePrefabs(false);
+            prefabs.AddRange(LoadPalettePrefabs(true));
             return prefabs;
         }
 
@@ -265,22 +328,22 @@ namespace Market.DebugTools.Editor
         }
 
         /// <summary>
-        /// Bakes <see cref="CardsPerClump"/> copies of the card, spread evenly around Y, into one
+        /// Bakes <paramref name="cardCount"/> copies of the card, spread evenly around Y, into one
         /// mesh - so a multi-card clump still costs a single renderer instead of one per quad.
         /// The source quad is authored lying flat (root at the origin, tip along +Z, Y flat) like
         /// Grass_1/Grass_2, so each copy is stood upright first: -90 deg around X maps +Z to +Y.
         /// </summary>
-        private static Mesh BuildClumpMesh(Mesh sourceMesh, Rect artBounds, string meshPath)
+        private static Mesh BuildClumpMesh(Mesh sourceMesh, Rect artBounds, string meshPath, int cardCount)
         {
             Mesh quad = BuildCroppedQuad(sourceMesh, artBounds);
             Quaternion standUpright = Quaternion.Euler(-90f, 0f, 0f);
-            var combine = new CombineInstance[CardsPerClump];
-            for (int i = 0; i < CardsPerClump; i++)
+            var combine = new CombineInstance[cardCount];
+            for (int i = 0; i < cardCount; i++)
             {
                 combine[i].mesh = quad;
                 combine[i].transform = Matrix4x4.TRS(
                     Vector3.zero,
-                    Quaternion.Euler(0f, i * (180f / CardsPerClump), 0f) * standUpright,
+                    Quaternion.Euler(0f, i * (180f / cardCount), 0f) * standUpright,
                     Vector3.one);
             }
 
@@ -453,16 +516,26 @@ namespace Market.DebugTools.Editor
             material.EnableKeyword("_WINDMASK_UV");
             // The quad carries no authored vertex-color tint; let the texture and the tint colors rule.
             material.SetFloat("_VertexColorTint", 0f);
-            // The texture already carries the blade colors, so the tints only shade it.
-            material.SetColor("_BaseColor", new Color(0.72f, 0.86f, 0.62f, 1f));
-            material.SetColor("_TipColor", new Color(1.0f, 1.0f, 0.86f, 1f));
-            material.SetFloat("_NormalSoftness", 0.85f);
+            material.SetFloat("_ColorSaturation", 0.74f);
+            material.SetFloat("_ColorVariation", 0.82f);
+            material.SetFloat("_PatchVariation", 0.17f);
+            material.SetFloat("_RootDarkening", 0.32f);
+            // The texture already carries the blade colors, so the tints only shade it. The tip
+            // tint stays a light green rather than near-white: multiplied over the artwork, white
+            // bleaches the top of every card.
+            material.SetColor("_BaseColor", new Color(0.68f, 0.8f, 0.5f, 1f));
+            material.SetColor("_TipColor", new Color(0.88f, 0.94f, 0.6f, 1f));
+            // Past ~0.5 every card ends up with the same world-up normal, and with it the toon ramp
+            // saturates to one band, the backlight term goes to zero and the Fresnel rim turns into
+            // a flat wash over the whole field. 0.4 keeps the rounded look and the shading.
+            material.SetFloat("_NormalSoftness", 0.4f);
+            material.SetFloat("_ToonBands", 3f);
             material.SetFloat("_Smoothness", 0.12f);
             material.SetFloat("_Translucency", 1.1f);
-            material.SetFloat("_RimStrength", 0.35f);
-            material.SetFloat("_WindStrength", 0.05f);
-            material.SetFloat("_SquashAmount", 0.15f);
-            material.SetFloat("_WobbleAmount", 0.03f);
+            material.SetFloat("_WrapLighting", 0.24f);
+            material.SetFloat("_RimStrength", 0.15f);
+            // Wind lives on GrassWindController now; the material only says how hard it answers.
+            material.SetFloat("_WindResponse", 1f);
             material.enableInstancing = true;
             EditorUtility.SetDirty(material);
             return material;
@@ -480,6 +553,8 @@ namespace Market.DebugTools.Editor
             renderer.sharedMaterial = material;
             renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
             renderer.receiveShadows = true;
+            renderer.motionVectorGenerationMode =
+                UnityEngine.MotionVectorGenerationMode.ForceNoMotion;
             GameObjectUtility.SetStaticEditorFlags(root, StaticEditorFlags.ContributeGI | StaticEditorFlags.OccludeeStatic);
 
             PrefabUtility.SaveAsPrefabAsset(root, prefabPath);

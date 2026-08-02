@@ -27,8 +27,12 @@ namespace Market.DebugTools.Editor
         private const string TemporalFoamComputePath =
             "Assets/_Project/Art/Shaders/RealisticWaterFoamUpdate.compute";
         private const string GeneratedFolder = "Assets/_Project/Art/WaterShaderLab";
+        private const string PostProcessingProfilePath =
+            "Assets/_Project/Art/PostProcessing/MarketPostFX.asset";
         private const string CausticReceiverRootName =
             "Caustic Projection Receivers";
+        private const string FeatureReceiverRootName =
+            "Underwater Feature Receivers";
         private const string UnderwaterSurfaceName = "Underwater Surface";
 
         private const float TerraceWidth = 100f;
@@ -72,7 +76,9 @@ namespace Market.DebugTools.Editor
             scene.name = "WaterShaderLab";
 
             BuildSeabed();
+            BuildLabArchitecture();
             BuildFoamTestRocks();
+            BuildFeatureStations();
             RealisticWaterMaterialInstaller.CreateMaterial();
             GameObject water = BuildRealisticWater();
             BuildProjectedCaustics(scene, water);
@@ -81,7 +87,9 @@ namespace Market.DebugTools.Editor
             BuildStandaloneCapture(water);
             BuildUnderwaterFog(water);
             BuildLighting();
-            BuildLabel();
+            TextMesh weatherStatus = BuildLabel();
+            BuildWeatherController(water, weatherStatus);
+            BuildPostProcessing();
             BuildPlayer();
 
             EditorSceneManager.SaveScene(scene, ScenePath);
@@ -98,6 +106,32 @@ namespace Market.DebugTools.Editor
                 BuildTerrace(seabed.transform, terrace, z + TerraceDepth * 0.5f);
                 z += TerraceDepth;
             }
+
+            BuildBeachSlope(seabed.transform);
+        }
+
+        /// <summary>
+        /// A gentle ramp laid over the Beach/Shallows step. The terraces are useful for reading
+        /// depth-based effects at known depths, but their risers are vertical: the waterline ends up
+        /// tucked behind a 1 m lip where no camera can see it, and there is nowhere for a surf band
+        /// to sit. The ramp gives the shoreline somewhere to actually happen.
+        /// </summary>
+        private static void BuildBeachSlope(Transform parent)
+        {
+            const float RampLength = 26f;
+            const float RampDrop = 2.6f;
+
+            GameObject ramp = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            ramp.name = "Beach Slope";
+            ramp.transform.SetParent(parent, false);
+            // Centred on the Beach/Shallows boundary so the ramp crosses the water line.
+            ramp.transform.localPosition = new Vector3(0f, -1.6f, -30f);
+            ramp.transform.localRotation = Quaternion.Euler(
+                -Mathf.Atan2(RampDrop, RampLength) * Mathf.Rad2Deg, 0f, 0f);
+            ramp.transform.localScale = new Vector3(
+                TerraceWidth, 3.2f, Mathf.Sqrt(RampLength * RampLength + RampDrop * RampDrop));
+            ramp.GetComponent<Renderer>().sharedMaterial =
+                GetOrCreateMaterial("Terrace_Beach", Terraces[0].Color);
         }
 
         private static void BuildTerrace(Transform parent, Terrace terrace, float centerZ)
@@ -113,25 +147,302 @@ namespace Market.DebugTools.Editor
         private static void BuildFoamTestRocks()
         {
             GameObject rocks = new("Foam Test Rocks");
-            Material material = GetOrCreateMaterial("FoamTestRock", new Color(0.32f, 0.30f, 0.28f));
+            Material material = GetOrCreateMaterial(
+                "FoamTestRock", new Color(0.24f, 0.27f, 0.29f), 0.22f);
             Vector3[] positions =
             {
-                new(-14f, -0.2f, -18f),
-                new(6f, -0.4f, -8f),
-                new(-4f, -0.6f, 2f),
-                new(16f, -1.2f, 10f),
+                new(-15f, -0.15f, -19f),
+                new(-8f, -0.35f, -15f),
+                new(-3f, -0.7f, -3f),
+                new(8f, -1.1f, 7f),
+            };
+            Vector3[] scales =
+            {
+                new(3.8f, 2.1f, 3.1f),
+                new(2.7f, 1.6f, 3.4f),
+                new(3.1f, 2.4f, 2.6f),
+                new(4.2f, 2.8f, 3.2f),
+            };
+            float[] rotations = { 18f, 52f, 81f, 127f };
+
+            for (int i = 0; i < positions.Length; i++)
+            {
+                GameObject rock = CreatePrimitive(
+                    PrimitiveType.Sphere,
+                    rocks.transform,
+                    $"Contact Rock {i + 1}",
+                    positions[i],
+                    scales[i],
+                    material);
+                rock.transform.localRotation =
+                    Quaternion.Euler(8f, rotations[i], 5f);
+            }
+        }
+
+        private static void BuildLabArchitecture()
+        {
+            GameObject root = new("Lab Observation Deck");
+            Material wood = GetOrCreateMaterial(
+                "LabDeckWood", new Color(0.23f, 0.13f, 0.07f), 0.16f);
+            Material metal = GetOrCreateMaterial(
+                "LabDeckMetal", new Color(0.16f, 0.21f, 0.24f), 0.55f, 0.35f);
+
+            CreateBox(
+                root.transform, "Observation Platform",
+                new Vector3(0f, 2.25f, -43f),
+                new Vector3(18f, 0.5f, 8f), wood);
+            BuildDeckSupports(root.transform, metal);
+            BuildDeckRails(root.transform, metal);
+            BuildDeckStairs(root.transform, wood);
+            BuildEntryFrame(root.transform, metal);
+        }
+
+        private static void BuildDeckSupports(Transform parent, Material material)
+        {
+            Vector3[] positions =
+            {
+                new(-8f, 0.9f, -46f),
+                new(8f, 0.9f, -46f),
+                new(-8f, 0.9f, -40f),
+                new(8f, 0.9f, -40f),
             };
 
             foreach (Vector3 position in positions)
             {
-                GameObject rock = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                rock.name = "Rock";
-                rock.transform.SetParent(rocks.transform, false);
-                rock.transform.localPosition = position;
-                rock.transform.localScale = new Vector3(2.5f, 1.6f, 2.5f);
-                rock.transform.localRotation = Quaternion.Euler(0f, UnityEngine.Random.Range(0f, 90f), 0f);
-                rock.GetComponent<Renderer>().sharedMaterial = material;
+                CreateBox(
+                    parent, "Deck Support", position,
+                    new Vector3(0.45f, 3.2f, 0.45f), material);
             }
+        }
+
+        private static void BuildDeckRails(Transform parent, Material material)
+        {
+            CreateBox(
+                parent, "Left Rail", new Vector3(-8.55f, 3.35f, -43f),
+                new Vector3(0.18f, 1.7f, 7.6f), material);
+            CreateBox(
+                parent, "Right Rail", new Vector3(8.55f, 3.35f, -43f),
+                new Vector3(0.18f, 1.7f, 7.6f), material);
+            CreateBox(
+                parent, "Rear Rail", new Vector3(0f, 3.35f, -46.85f),
+                new Vector3(17.2f, 1.7f, 0.18f), material);
+        }
+
+        private static void BuildDeckStairs(Transform parent, Material material)
+        {
+            const int StepCount = 6;
+            for (int i = 0; i < StepCount; i++)
+            {
+                float top = 2.25f - i * 0.34f;
+                CreateBox(
+                    parent,
+                    $"Deck Step {i + 1}",
+                    new Vector3(0f, top - 0.16f, -38.3f + i * 1.15f),
+                    new Vector3(6f, 0.32f, 1.35f),
+                    material);
+            }
+        }
+
+        private static void BuildEntryFrame(Transform parent, Material material)
+        {
+            CreateBox(
+                parent, "Entry Frame Left",
+                new Vector3(-7.2f, 3.4f, -35.6f),
+                new Vector3(0.35f, 5.8f, 0.35f), material);
+            CreateBox(
+                parent, "Entry Frame Right",
+                new Vector3(7.2f, 3.4f, -35.6f),
+                new Vector3(0.35f, 5.8f, 0.35f), material);
+            CreateBox(
+                parent, "Entry Frame Header",
+                new Vector3(0f, 6.05f, -35.6f),
+                new Vector3(14.75f, 0.5f, 0.35f), material);
+        }
+
+        private static void BuildFeatureStations()
+        {
+            GameObject root = new("Shader Feature Stations");
+            GameObject receivers = new(FeatureReceiverRootName);
+            receivers.transform.SetParent(root.transform, false);
+
+            BuildDepthStation(root.transform, receivers.transform);
+            BuildRefractionStation(root.transform);
+            BuildReflectionStation(root.transform);
+            BuildWaveStation(root.transform);
+            BuildUnderwaterStation(root.transform, receivers.transform);
+            BuildFeatureSigns(root.transform);
+        }
+
+        private static void BuildDepthStation(
+            Transform parent, Transform receiverParent)
+        {
+            Material tile = GetOrCreateMaterial(
+                "LabDepthTile", new Color(0.78f, 0.82f, 0.80f), 0.42f);
+            Vector3[] positions =
+            {
+                new(-25f, -0.48f, -17f),
+                new(-25f, -2.38f, -2f),
+                new(-25f, -5.88f, 17f),
+                new(-25f, -13.88f, 37f),
+            };
+
+            for (int i = 0; i < positions.Length; i++)
+            {
+                CreateBox(
+                    receiverParent, $"Depth Tile {i + 1}", positions[i],
+                    new Vector3(10f, 0.18f, 6f), tile);
+            }
+
+            BuildDepthBuoys(parent);
+        }
+
+        private static void BuildDepthBuoys(Transform parent)
+        {
+            Material light = GetOrCreateMaterial(
+                "LabStripeLight", new Color(0.88f, 0.9f, 0.87f), 0.28f);
+            Material dark = GetOrCreateMaterial(
+                "LabStripeDark", new Color(0.04f, 0.08f, 0.11f), 0.35f);
+            float[] zPositions = { -17f, -2f, 17f, 37f };
+            for (int i = 0; i < zPositions.Length; i++)
+            {
+                CreateStripedColumn(
+                    parent, $"Depth Marker {i + 1}",
+                    new Vector3(-31f, -1.2f, zPositions[i]),
+                    3.8f, 8, 0.42f, light, dark, 0f);
+            }
+        }
+
+        private static void BuildRefractionStation(Transform parent)
+        {
+            Material light = GetOrCreateMaterial(
+                "LabRefractionLight", new Color(0.92f, 0.93f, 0.86f), 0.35f);
+            Material dark = GetOrCreateMaterial(
+                "LabRefractionDark", new Color(0.025f, 0.06f, 0.1f), 0.4f);
+            float[] xPositions = { 15f, 20f, 25f, 30f };
+            float[] tilts = { -8f, 5f, -4f, 9f };
+
+            for (int i = 0; i < xPositions.Length; i++)
+            {
+                CreateStripedColumn(
+                    parent, $"Refraction Column {i + 1}",
+                    new Vector3(xPositions[i], -2.35f, -2f),
+                    6.2f, 10, 0.62f, light, dark, tilts[i]);
+            }
+        }
+
+        private static void BuildReflectionStation(Transform parent)
+        {
+            GameObject root = new("Reflection Beacons");
+            root.transform.SetParent(parent, false);
+            Material metal = GetOrCreateMaterial(
+                "LabBeaconMetal", new Color(0.08f, 0.12f, 0.15f), 0.72f, 0.65f);
+            Material cyan = GetOrCreateEmissiveMaterial(
+                "LabBeaconCyan", new Color(0.03f, 0.42f, 0.58f),
+                new Color(0.1f, 1.6f, 2.4f));
+            Material coral = GetOrCreateEmissiveMaterial(
+                "LabBeaconCoral", new Color(0.72f, 0.16f, 0.08f),
+                new Color(2.6f, 0.35f, 0.12f));
+
+            BuildReflectionBeacon(root.transform, new Vector3(16f, -1.5f, 14f), metal, cyan);
+            BuildReflectionBeacon(root.transform, new Vector3(24f, -1.5f, 14f), metal, coral);
+            BuildReflectionBeacon(root.transform, new Vector3(32f, -1.5f, 14f), metal, cyan);
+            CreateBox(
+                root.transform, "Beacon Crossbar", new Vector3(24f, 3f, 14f),
+                new Vector3(16.5f, 0.35f, 0.45f), metal);
+        }
+
+        private static void BuildReflectionBeacon(
+            Transform parent, Vector3 position, Material stem, Material lamp)
+        {
+            CreateCylinder(
+                parent, "Beacon Stem", position,
+                new Vector3(0.42f, 4.5f, 0.42f), stem);
+            CreatePrimitive(
+                PrimitiveType.Sphere, parent, "Beacon Lamp",
+                position + Vector3.up * 4.5f,
+                new Vector3(1.25f, 1.25f, 1.25f), lamp);
+        }
+
+        private static void BuildWaveStation(Transform parent)
+        {
+            GameObject root = new("Wave and Contact Gauges");
+            root.transform.SetParent(parent, false);
+            Material light = GetOrCreateMaterial(
+                "LabWaveGaugeLight", new Color(0.88f, 0.9f, 0.86f), 0.28f);
+            Material dark = GetOrCreateMaterial(
+                "LabWaveGaugeDark", new Color(0.08f, 0.12f, 0.14f), 0.45f);
+            float[] xPositions = { -12f, -4f, 4f, 12f };
+
+            for (int i = 0; i < xPositions.Length; i++)
+            {
+                CreateStripedColumn(
+                    root.transform, $"Wave Gauge {i + 1}",
+                    new Vector3(xPositions[i], -1.35f, 26f),
+                    4.4f, 8, 0.5f, light, dark, 0f);
+            }
+        }
+
+        private static void BuildUnderwaterStation(
+            Transform parent, Transform receiverParent)
+        {
+            Material stone = GetOrCreateMaterial(
+                "LabUnderwaterStone", new Color(0.18f, 0.28f, 0.31f), 0.3f);
+            Material path = GetOrCreateMaterial(
+                "LabUnderwaterPath", new Color(0.72f, 0.76f, 0.7f), 0.38f);
+            Material lamp = GetOrCreateEmissiveMaterial(
+                "LabUnderwaterLamp", new Color(0.02f, 0.35f, 0.4f),
+                new Color(0.06f, 1.8f, 2.2f));
+
+            CreateBox(
+                receiverParent, "Underwater Gallery Floor",
+                new Vector3(0f, -13.86f, 40f),
+                new Vector3(14f, 0.2f, 28f), path);
+            float[] zPositions = { 33f, 40f, 47f };
+            foreach (float z in zPositions)
+                BuildUnderwaterArch(parent, z, stone, lamp);
+        }
+
+        private static void BuildUnderwaterArch(
+            Transform parent, float z, Material stone, Material lamp)
+        {
+            CreateBox(
+                parent, "Underwater Arch Left",
+                new Vector3(-5.5f, -8.45f, z),
+                new Vector3(0.7f, 10.8f, 0.9f), stone);
+            CreateBox(
+                parent, "Underwater Arch Right",
+                new Vector3(5.5f, -8.45f, z),
+                new Vector3(0.7f, 10.8f, 0.9f), stone);
+            CreateBox(
+                parent, "Underwater Arch Top",
+                new Vector3(0f, -3.1f, z),
+                new Vector3(11.7f, 0.7f, 0.9f), stone);
+            CreatePrimitive(
+                PrimitiveType.Sphere, parent, "Underwater Lamp",
+                new Vector3(0f, -2.6f, z),
+                new Vector3(0.75f, 0.75f, 0.75f), lamp);
+        }
+
+        private static void BuildFeatureSigns(Transform parent)
+        {
+            CreateFeatureSign(
+                parent, "Shore Sign", new Vector3(-22f, 3.4f, -24f), 15f,
+                "SHORE + CONTACT FOAM", "Slope, rocks and wave shoaling");
+            CreateFeatureSign(
+                parent, "Depth Sign", new Vector3(-25f, 3.4f, -9f), 13f,
+                "DEPTH + CAUSTICS", "Four calibrated receiver shelves");
+            CreateFeatureSign(
+                parent, "Refraction Sign", new Vector3(23f, 4.2f, -8f), 13f,
+                "REFRACTION", "Striped columns cross the surface");
+            CreateFeatureSign(
+                parent, "Reflection Sign", new Vector3(24f, 5.2f, 9f), 13f,
+                "PLANAR REFLECTION", "Bright beacons expose stability");
+            CreateFeatureSign(
+                parent, "Wave Sign", new Vector3(0f, 4.2f, 20f), 12f,
+                "WAVES + WHITECAPS", "Gauges expose displacement and foam");
+            CreateFeatureSign(
+                parent, "Underwater Sign", new Vector3(0f, 3.2f, 31f), 12f,
+                "UNDERWATER GALLERY", "F4 fly, Left Ctrl descend");
         }
 
         private static GameObject BuildRealisticWater()
@@ -403,6 +714,18 @@ namespace Market.DebugTools.Editor
             var renderers = new List<MeshRenderer>();
             AddRenderers(FindRoot(scene, "Seabed"), renderers);
             AddRenderers(FindRoot(scene, "Foam Test Rocks"), renderers);
+            GameObject stations = FindRoot(scene, "Shader Feature Stations");
+            if (stations != null)
+            {
+                Transform featureReceivers =
+                    stations.transform.Find(FeatureReceiverRootName);
+                if (featureReceivers != null)
+                {
+                    renderers.AddRange(
+                        featureReceivers.GetComponentsInChildren<MeshRenderer>(true));
+                }
+            }
+
             return renderers;
         }
 
@@ -545,6 +868,31 @@ namespace Market.DebugTools.Editor
             controller.RefreshQuality();
         }
 
+        private static void BuildWeatherController(
+            GameObject water, TextMesh statusLabel)
+        {
+            if (water == null)
+                return;
+
+            RealisticWaterWeatherController controller =
+                water.GetComponent<RealisticWaterWeatherController>() ??
+                water.AddComponent<RealisticWaterWeatherController>();
+            var serializedObject = new SerializedObject(controller);
+            serializedObject.FindProperty("waterRenderer").objectReferenceValue =
+                water.GetComponent<Renderer>();
+            serializedObject.FindProperty("causticProjection").objectReferenceValue =
+                water.GetComponent<RealisticWaterCausticProjection>();
+            serializedObject.FindProperty("underwaterSurface").objectReferenceValue =
+                water.GetComponent<RealisticWaterUnderwaterSurface>();
+            serializedObject.FindProperty("statusLabel").objectReferenceValue =
+                statusLabel;
+            serializedObject.FindProperty("weather").enumValueIndex =
+                (int)RealisticWaterWeather.Breeze;
+            serializedObject.FindProperty("transitionDuration").floatValue = 3f;
+            serializedObject.FindProperty("enableLabHotkeys").boolValue = true;
+            serializedObject.ApplyModifiedPropertiesWithoutUndo();
+        }
+
         private static void BuildStandaloneCapture(GameObject water)
         {
             if (water != null &&
@@ -574,30 +922,71 @@ namespace Market.DebugTools.Editor
             GameObject lightObject = new("Sun");
             Light sun = lightObject.AddComponent<Light>();
             sun.type = LightType.Directional;
-            sun.intensity = 1.3f;
-            sun.color = new Color(1f, 0.96f, 0.88f);
+            sun.intensity = 1.2f;
+            sun.color = new Color(1f, 0.95f, 0.86f);
             sun.shadows = LightShadows.Soft;
             lightObject.transform.rotation = Quaternion.Euler(48f, -32f, 0f);
             RenderSettings.sun = sun;
             RenderSettings.ambientMode = AmbientMode.Flat;
-            RenderSettings.ambientLight = new Color(0.45f, 0.52f, 0.55f);
+            RenderSettings.ambientLight = new Color(0.34f, 0.42f, 0.46f);
+            RenderSettings.fog = true;
+            RenderSettings.fogMode = FogMode.Linear;
+            RenderSettings.fogColor = new Color(0.61f, 0.71f, 0.77f);
+            RenderSettings.fogStartDistance = 65f;
+            RenderSettings.fogEndDistance = 155f;
         }
 
-        private static void BuildLabel()
+        private static TextMesh BuildLabel()
         {
             GameObject label = new("Label - Water Shader Lab");
-            label.transform.position = new Vector3(0f, 3.2f, -20f);
+            label.transform.position = new Vector3(0f, 5.45f, -35.75f);
             label.transform.rotation = Quaternion.identity;
-            CreateTextLine(label.transform, "WATER SHADER LAB", 0f, 0.10f, Color.white);
-            CreateTextLine(label.transform, "Edit RealisticWater.shader / M_RealisticWaterLab.mat to iterate", -0.6f, 0.045f, new Color(0.8f, 0.9f, 0.95f));
-            CreateTextLine(label.transform, "F4 fly  |  Space / Left Ctrl up-down while flying", -1.2f, 0.045f, new Color(0.8f, 0.9f, 0.95f));
+            Material board = GetOrCreateMaterial(
+                "LabSignBoard", new Color(0.035f, 0.075f, 0.095f), 0.4f, 0.2f);
+            CreateBox(
+                label.transform, "Title Board", Vector3.zero,
+                new Vector3(13.5f, 1.35f, 0.22f), board);
+            CreateTextLine(
+                label.transform, "REALISTIC WATER LAB", 0.18f, 0.062f,
+                Color.white, -0.13f);
+            TextMesh weatherStatus = CreateTextLine(
+                label.transform, "FOLLOW THE STATIONS  |  F4 TO FLY", -0.32f, 0.032f,
+                new Color(0.48f, 0.9f, 0.94f), -0.13f);
+            weatherStatus.text =
+                "WEATHER: BREEZE  |  BRACKET KEYS TO CHANGE";
+            return weatherStatus;
         }
 
-        private static void CreateTextLine(Transform parent, string value, float localY, float characterSize, Color color)
+        private static void BuildPostProcessing()
+        {
+            VolumeProfile profile =
+                AssetDatabase.LoadAssetAtPath<VolumeProfile>(PostProcessingProfilePath);
+            if (profile == null)
+            {
+                Debug.LogWarning(
+                    $"[WaterShaderLabSceneBuilder] Missing {PostProcessingProfilePath}.");
+                return;
+            }
+
+            GameObject volumeObject = new("Global Post Processing");
+            Volume volume = volumeObject.AddComponent<Volume>();
+            volume.isGlobal = true;
+            volume.priority = 1f;
+            volume.weight = 1f;
+            volume.sharedProfile = profile;
+        }
+
+        private static TextMesh CreateTextLine(
+            Transform parent,
+            string value,
+            float localY,
+            float characterSize,
+            Color color,
+            float localZ = 0f)
         {
             GameObject line = new($"Line - {value}");
             line.transform.SetParent(parent, false);
-            line.transform.localPosition = new Vector3(0f, localY, 0f);
+            line.transform.localPosition = new Vector3(0f, localY, localZ);
             TextMesh text = line.AddComponent<TextMesh>();
             text.text = value;
             text.anchor = TextAnchor.MiddleCenter;
@@ -605,6 +994,7 @@ namespace Market.DebugTools.Editor
             text.fontSize = 64;
             text.characterSize = characterSize;
             text.color = color;
+            return text;
         }
 
         private static void BuildPlayer()
@@ -615,13 +1005,102 @@ namespace Market.DebugTools.Editor
                 throw new InvalidOperationException($"Player prefab is missing at {PlayerPrefabPath}.");
 
             player.name = "Player";
-            player.transform.position = new Vector3(0f, Terraces[0].TopY + 0.6f, -42f);
+            player.transform.position = new Vector3(0f, 2.7f, -43f);
             FirstPersonController controller = player.GetComponent<FirstPersonController>();
             InteractionSystem interaction = player.GetComponent<InteractionSystem>();
             GameObject uiModeObject = new("UI Mode Service");
             UIModeService uiMode = uiModeObject.AddComponent<UIModeService>();
             SetObjectReference(uiMode, "playerController", controller);
             SetObjectReference(uiMode, "interactionSystem", interaction);
+        }
+
+        private static void CreateFeatureSign(
+            Transform parent,
+            string name,
+            Vector3 position,
+            float width,
+            string title,
+            string detail)
+        {
+            GameObject sign = new(name);
+            sign.transform.SetParent(parent, false);
+            sign.transform.localPosition = position;
+            Material board = GetOrCreateMaterial(
+                "LabStationSign", new Color(0.025f, 0.13f, 0.16f), 0.34f, 0.12f);
+            CreateBox(
+                sign.transform, "Board", Vector3.zero,
+                new Vector3(width, 1.25f, 0.18f), board);
+            CreateTextLine(
+                sign.transform, title, 0.18f, 0.052f,
+                Color.white, -0.11f);
+            CreateTextLine(
+                sign.transform, detail, -0.28f, 0.031f,
+                new Color(0.5f, 0.88f, 0.92f), -0.11f);
+        }
+
+        private static void CreateStripedColumn(
+            Transform parent,
+            string name,
+            Vector3 position,
+            float height,
+            int segmentCount,
+            float width,
+            Material first,
+            Material second,
+            float tilt)
+        {
+            GameObject column = new(name);
+            column.transform.SetParent(parent, false);
+            column.transform.localPosition = position;
+            column.transform.localRotation = Quaternion.Euler(0f, 0f, tilt);
+            float segmentHeight = height / segmentCount;
+            for (int i = 0; i < segmentCount; i++)
+            {
+                CreateBox(
+                    column.transform, $"Band {i + 1}",
+                    new Vector3(0f, segmentHeight * (i + 0.5f), 0f),
+                    new Vector3(width, segmentHeight * 0.96f, width),
+                    i % 2 == 0 ? first : second);
+            }
+        }
+
+        private static GameObject CreateBox(
+            Transform parent,
+            string name,
+            Vector3 position,
+            Vector3 scale,
+            Material material)
+        {
+            return CreatePrimitive(
+                PrimitiveType.Cube, parent, name, position, scale, material);
+        }
+
+        private static GameObject CreateCylinder(
+            Transform parent,
+            string name,
+            Vector3 position,
+            Vector3 scale,
+            Material material)
+        {
+            return CreatePrimitive(
+                PrimitiveType.Cylinder, parent, name, position, scale, material);
+        }
+
+        private static GameObject CreatePrimitive(
+            PrimitiveType type,
+            Transform parent,
+            string name,
+            Vector3 position,
+            Vector3 scale,
+            Material material)
+        {
+            GameObject instance = GameObject.CreatePrimitive(type);
+            instance.name = name;
+            instance.transform.SetParent(parent, false);
+            instance.transform.localPosition = position;
+            instance.transform.localScale = scale;
+            instance.GetComponent<Renderer>().sharedMaterial = material;
+            return instance;
         }
 
         private static void SetObjectReference(UnityEngine.Object target, string propertyName, UnityEngine.Object value)
@@ -648,7 +1127,11 @@ namespace Market.DebugTools.Editor
                 AssetDatabase.CreateFolder("Assets/_Project/Art", "WaterShaderLab");
         }
 
-        private static Material GetOrCreateMaterial(string name, Color color)
+        private static Material GetOrCreateMaterial(
+            string name,
+            Color color,
+            float smoothness = 0.1f,
+            float metallic = 0f)
         {
             string path = $"{GeneratedFolder}/{name}.mat";
             Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
@@ -660,7 +1143,21 @@ namespace Market.DebugTools.Editor
             }
 
             material.SetColor("_BaseColor", color);
-            material.SetFloat("_Smoothness", 0.1f);
+            material.SetFloat("_Smoothness", smoothness);
+            material.SetFloat("_Metallic", metallic);
+            EditorUtility.SetDirty(material);
+            return material;
+        }
+
+        private static Material GetOrCreateEmissiveMaterial(
+            string name, Color baseColor, Color emissionColor)
+        {
+            Material material = GetOrCreateMaterial(
+                name, baseColor, 0.58f, 0.08f);
+            material.EnableKeyword("_EMISSION");
+            material.SetColor("_EmissionColor", emissionColor);
+            material.globalIlluminationFlags =
+                MaterialGlobalIlluminationFlags.None;
             EditorUtility.SetDirty(material);
             return material;
         }

@@ -32,12 +32,20 @@ namespace Market.DebugTools
             Shader.PropertyToID("_CausticWaterBounds");
         private static readonly int WaterHeightId =
             Shader.PropertyToID("_CausticWaterHeight");
+        private static readonly int CausticIntensityId =
+            Shader.PropertyToID("_CausticIntensity");
+        private static readonly int CausticSpeedAId =
+            Shader.PropertyToID("_CausticSpeedA");
+        private static readonly int CausticSpeedBId =
+            Shader.PropertyToID("_CausticSpeedB");
 
         private Renderer _waterRenderer;
         private MaterialPropertyBlock _propertyBlock;
         private Vector4 _appliedBounds;
         private float _appliedWaterHeight = float.NaN;
         private bool _appliedProjectedState;
+        private float _weatherIntensity = 0.85f;
+        private Vector2 _weatherSpeeds = new(0.035f, 0.024f);
 
         public WaterCausticQuality Quality => quality;
         public int ReceiverCount =>
@@ -60,6 +68,16 @@ namespace Market.DebugTools
         public void RefreshProjection()
         {
             CacheComponents();
+            ApplyProjectionState(true);
+        }
+
+        /// <summary>
+        /// Applies weather-driven visibility and motion to the projected caustic receivers.
+        /// </summary>
+        public void SetWeatherAppearance(float intensity, Vector2 speeds)
+        {
+            _weatherIntensity = Mathf.Max(0f, intensity);
+            _weatherSpeeds = Vector2.Max(Vector2.zero, speeds);
             ApplyProjectionState(true);
         }
 
@@ -155,6 +173,10 @@ namespace Market.DebugTools
                 receiver.GetPropertyBlock(_propertyBlock);
                 _propertyBlock.SetVector(WaterBoundsId, bounds);
                 _propertyBlock.SetFloat(WaterHeightId, waterHeight);
+                _propertyBlock.SetFloat(
+                    CausticIntensityId, _weatherIntensity);
+                _propertyBlock.SetFloat(CausticSpeedAId, _weatherSpeeds.x);
+                _propertyBlock.SetFloat(CausticSpeedBId, _weatherSpeeds.y);
                 receiver.SetPropertyBlock(_propertyBlock);
             }
         }

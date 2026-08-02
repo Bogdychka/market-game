@@ -1,0 +1,52 @@
+{
+  "runId": "",
+  "outputName": "water-lab",
+  "scene": "Assets/_Project/Scenes/WaterShaderLab.unity",
+  "width": 512,
+  "height": 288,
+  "columns": 3,
+  "freezeTime": true,
+  "time": 8.0,
+  "timeSamples": 1,
+  "timeStep": 0.35,
+  "compareRun": "",
+  "sun": { "apply": true, "yaw": -140.0, "pitch": 42.0, "intensity": -1.0 },
+  "views": [
+    {
+      "name": "deck",
+      "position": [0.0, 9.0, -50.0],
+      "lookAt": [0.0, -1.0, 10.0],
+      "fov": 60.0
+    },
+    {
+      "name": "grazing",
+      "position": [0.0, 0.9, -6.0],
+      "lookAt": [0.0, 0.35, 60.0],
+      "fov": 55.0
+    },
+    {
+      "name": "shoreline",
+      "position": [-16.0, 3.0, -18.0],
+      "lookAt": [0.0, -0.5, 0.0],
+      "fov": 50.0
+    },
+    {
+      "name": "closeup",
+      "position": [3.0, 1.4, -8.0],
+      "lookAt": [0.0, 0.0, 2.0],
+      "fov": 38.0
+    },
+    {
+      "name": "beacons",
+      "position": [24.0, 4.0, -6.0],
+      "lookAt": [24.0, -0.5, 14.0],
+      "fov": 50.0
+    },
+    {
+      "name": "topdown",
+      "position": [0.0, 24.0, -4.0],
+      "lookAt": [0.0, 0.0, 6.0],
+      "fov": 55.0
+    }
+  ]
+}

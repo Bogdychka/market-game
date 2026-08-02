@@ -780,6 +780,17 @@ namespace McpUnity.Unity
         }
 
         /// <summary>
+        /// True when entering Play Mode will reload the script domain, which destroys this
+        /// instance and its WebSocket server along with it. False when the project disables the
+        /// domain reload in Enter Play Mode Options, in which case the bridge can simply stay up.
+        /// </summary>
+        private static bool WillReloadDomainOnEnterPlayMode()
+        {
+            return !EditorSettings.enterPlayModeOptionsEnabled
+                || (EditorSettings.enterPlayModeOptions & EnterPlayModeOptions.DisableDomainReload) == 0;
+        }
+
+        /// <summary>
         /// Handles changes in Unity Editor's play mode state.
         /// Stops the server when exiting Edit Mode if configured, and restarts it when entering Play Mode or returning to Edit Mode if auto-start is enabled.
         /// </summary>
@@ -791,8 +802,12 @@ namespace McpUnity.Unity
             switch (state)
             {
                 case PlayModeStateChange.ExitingEditMode:
-                    // About to enter Play Mode - use custom close code so clients use fast polling
-                    if (_instance.IsListening)
+                    // About to enter Play Mode - use custom close code so clients use fast polling.
+                    // Local change: only when a domain reload is actually coming. With Enter Play
+                    // Mode Options set to disable it, this instance and its socket survive the
+                    // transition, so dropping every client here would open a dead window (~5s,
+                    // mostly the reload) for no reason.
+                    if (_instance.IsListening && WillReloadDomainOnEnterPlayMode())
                     {
                         _instance.StopServer(UnityCloseCode.PlayMode, "Unity entering Play mode");
                     }

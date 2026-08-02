@@ -21,21 +21,24 @@ instruction.** If MCP can't run, state exactly what was NOT verified - and don't
 Fast path: run `.claude/tools/verify-unity.ps1` (add `-Refresh` after creating files, `-RunTests`
 for shared/risky logic).
 
-## Committing (automatic - no need to ask)
-- **Commit without being asked, once verification is green.** Don't end a turn leaving finished,
-  verified work uncommitted. Green means `get_health_report` is `ok`: compiles, 0 errors,
-  0 dirty scenes. Red or unverified -> report it and leave the work uncommitted.
-- **Commit on a `claude/<slug>` branch, never straight onto `main`.** If the current branch is
-  `main`, branch first (see Git process). This is what keeps auto-commit safe: nothing lands on
-  `main` without the user merging it.
-- **One logical change per commit**, Conventional Commits, and update `CHANGELOG.md [Unreleased]`
-  in the same commit. Several unrelated fixes in one turn -> several commits.
-- **Stage deliberately - never `git add -A`.** Add the files the change actually touched. Anything
-  a tool rewrote as a side effect (re-serialized `.unity`/`.prefab`, re-baked textures, `Library/`,
-  build output) stays out unless it IS the change; if unsure whether a rewrite belongs, leave it
-  unstaged and say so.
-- **Still ask first for:** merging, tagging, pushing, `git reset --hard`, force-push, history
-  rewrites, reverting someone else's commit, or committing when the user said they were mid-edit.
+## Committing and pushing (automatic - no need to ask)
+- **Commit and push without being asked, once verification is green.** Don't end a turn leaving
+  finished, verified work uncommitted or unpushed. Green means `get_health_report` is `ok`:
+  compiles, 0 errors, 0 dirty scenes. Red or unverified -> report it and leave the work uncommitted.
+- **Commit on a `claude/<slug>` branch, never straight onto `main`**, and push that branch
+  (`git push -u origin <branch>`). If the current branch is `main`, branch first (see Git process).
+  This is what keeps it safe: nothing reaches `main` without the user merging it.
+- **Commit everything in the working tree, not just the files this task touched.** Claude and
+  Codex share this repo, so work left uncommitted on one side is work the other silently diverges
+  from or overwrites - `.unity`/`.prefab` merge badly enough that a stale tree is the expensive
+  failure, not an untidy commit. Include tool-rewritten files (re-serialized scenes, re-baked
+  textures) and new untracked assets. Separate anything clearly unrelated into its own commit
+  where practical; a mixed commit still beats leaving it on disk.
+- **Conventional Commits**, and update `CHANGELOG.md [Unreleased]` in the same push.
+- The exclusion list is `.gitignore` (it already covers `Library/`, `Temp/`, `Logs/`, `obj/`,
+  `Artifacts/`), plus: never commit secrets, credentials, or `.env` files even if unignored.
+- **Still ask first for:** merging, tagging, `git reset --hard`, force-push, history rewrites,
+  reverting someone else's commit, or committing when the user said they were mid-edit.
 - If a commit fails a hook, fix the cause - never `--no-verify`.
 
 ## Git process

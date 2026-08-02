@@ -36,6 +36,17 @@ namespace Market.Core
         [SerializeField] private float escapeSceneLoadCooldown = 1.5f;
 
         private static bool _initialized;
+
+        /// <summary>
+        /// Play mode runs without a domain reload, so statics survive between sessions. A stale
+        /// <c>true</c> here would make the new session's bootstrap destroy itself on Awake.
+        /// </summary>
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics()
+        {
+            _initialized = false;
+        }
+
         private bool _isPrimaryInstance;
         private SceneLoader _sceneLoader;
         private TimeSystem _timeSystem;  // cached to avoid ServiceLocator.TryGet every frame

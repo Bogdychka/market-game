@@ -103,6 +103,9 @@ Artifacts/RealisticWater/
 Artifacts/MarketLandscapeViews/
 Artifacts/PlayerAgent/
 
+# Shader Vision captures, contact sheets, diffs and reports
+Artifacts/ShaderVision/
+
 # Claude Code local (per-user) settings — shared settings.json is committed
 .claude/settings.local.json
 
