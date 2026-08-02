@@ -14,6 +14,8 @@ their historical agent attributions (Claude / Codex / user); new entries don't n
 
 ## [Unreleased]
 
+## [1.9.0] - 2026-08-02
+
 ### Added
 - **RealisticWater crest subsurface scattering** (`_SubsurfaceColor`, `_SubsurfaceStrength`,
   `_SubsurfacePower`, `_SubsurfaceHeight`). Sunlight transmitted through the thin water at the top
