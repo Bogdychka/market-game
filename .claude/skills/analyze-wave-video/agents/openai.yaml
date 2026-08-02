@@ -1,0 +1,4 @@
+interface:
+  display_name: "Analyze Wave Video"
+  short_description: "Measure shore waves and plan a Unity shader"
+  default_prompt: "Use $analyze-wave-video to analyze my shore-wave reference video and turn the evidence into a Unity shader plan."

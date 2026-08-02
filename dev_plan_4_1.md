@@ -906,6 +906,20 @@ look, jump, and interaction commands, then returns a Game View PNG plus compact 
 **Check:** an unfocused Unity Editor can capture the HUD, execute movement and rotation in Play Mode,
 and report the changed player pose with no console errors.
 
+### T24. Reference wave video analyzer `[assets: ready]`
+**Do:** Add a Codex/Claude skill and local CLI that turns a shore-wave reference video into
+camera-compensated image motion, dense paginated review timelines, multi-mode crest periodicity,
+near/mid/far transect evidence, foam persistence/run-up candidates with specular-glare rejection,
+camera and appearance diagnostics, and a confidence-labelled Unity shader brief without inventing
+metric scale.
+**Check:** `analyze-wave-video.ps1 -SelfTest` passes all 15 ground-truth checks - synthetic clips with
+known spacing, period, crest speed, camera behaviour, and foam duty cycle are recovered within
+tolerance, stabilization engages on the shaken clip and is refused on the locked one, and no false cut
+candidates are raised; each supplied shore clip writes and passes visual review of 96 source, ROI, and
+mask samples; rejected foam, conflicting periodicity, unreliable crest speed, and an unresolved
+apparent-speed consensus do not become shader inputs; metric wave inputs remain unresolved until
+calibration is supplied.
+
 ---
 
 ## Key risks (keep in mind)
@@ -1102,3 +1116,4 @@ and report the changed player pose with no console errors.
 - [x] T21 Grass interaction bend and presentation polish
 - [x] T22 Wave profile assets and procedural wave editor
 - [x] T23 In-world water settings wall with crosshair interaction
+- [x] T24 Reference wave video analyzer for Codex and Claude

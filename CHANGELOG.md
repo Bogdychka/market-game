@@ -14,6 +14,57 @@ their historical agent attributions (Claude / Codex / user); new entries don't n
 
 ## [Unreleased]
 
+### Added
+- **Reference wave video analyzer for Codex and Claude** - the shared `analyze-wave-video` skill
+  processes MP4/MOV/AVI/MKV references into dense paginated source, ROI, and mask timelines (72 review
+  frames by default, up to 144), camera/stabilization diagnostics, optical-flow direction spread,
+  multi-peak ACF/FFT spectra, propagation kymographs, filtered crest-track candidates, near/mid/far
+  transect comparisons, display-referred appearance, and a confidence-labelled Unity shader brief.
+  White-water measurements are rejected instead of exported when recurrence, spatial concentration,
+  or weak color separation indicates sun glitter. Conflicting period/spacing methods and unreliable
+  crest speeds are review-only. The CLI bootstraps a pinned OpenCV/FFmpeg runtime outside the repository
+  and keeps world wavelength, speed, amplitude, depth, and direction unresolved until calibration is
+  defensible. Verified on all three supplied shore references with 96-frame review sets and on a
+  synthetic 2.0 s / 42 px wave clip, which recovered 2.0 s and 42.35 px.
+- **Wave analyzer self-test** - `scripts/selftest_wave_analyzer.py`, reachable as
+  `analyze-wave-video.ps1 -SelfTest`, builds synthetic clips with exact known spacing, period, crest
+  speed, camera behaviour, and foam duty cycle, then asserts the analyzer recovers each one. 15 checks,
+  about 20 seconds. Run it after any change under the skill's `scripts/`.
+
+### Fixed
+- **Wave analyzer reported optical-flow speed as the crest speed, several times too low.** Coarse-to-fine
+  optical flow aliases on a repeating crest pattern: a synthetic clip travelling at a known 20 px/s was
+  reported as 8.4 px/s at *high* confidence, because the confidence score only measured directional
+  coherence and never the magnitude. Apparent speed is now cross-checked across three independent
+  methods (`apparent_speed_cross_check`), the consensus is built only from the two geometric ones and
+  only from values that passed their own acceptance tests, and it is left `null` when they disagree by
+  more than 25 percent. Direction and speed now carry separate confidence labels. Verify: the self-test
+  recovers 19.8 px/s against a 20 px/s truth on both the static and shaken clips.
+- **Wave analyzer stabilization drifted itself into rejection.** Warping every frame back onto frame
+  zero accumulated without bound whenever the tracked features sat on moving water, so valid image area
+  collapsed (0.12 on a synthetic clip, 0.65 on a real reference) and a solve with a 0.96 inlier ratio was
+  discarded while a 0.31 one was accepted. Stabilization now smooths the solved camera trajectory and
+  warps by the difference, so corrections stay bounded; acceptance additionally requires that measured
+  jitter actually falls. Verify: the shaken self-test clip goes from 5.33 to 2.08 px/pair of jitter,
+  keeps 96 percent of the frame, and is accepted; both real handheld references now keep over 99 percent.
+- **Wave analyzer mislabelled a locked-off camera as a failed camera solve.** A fixed camera produced
+  "camera solve was rejected" because there was nothing to track. `camera_motion` now reports `locked`,
+  `handheld_or_moving`, or `solve_latched_onto_moving_water`, and rejection reasons are listed explicitly
+  instead of a single generic warning.
+- **Wave analyzer flagged recurring surges as camera cuts.** A fixed frame-difference threshold produced
+  7 false cut candidates on a synthetic clip with a periodic foam pulse. Cuts are now outliers against
+  the clip's own p90 combined with a collapsed feature solve; the self-test asserts zero false positives.
+- **Wave analyzer derived crest speed from rejected inputs.** Spacing-over-period was computed from raw
+  autocorrelation peaks even when the accepted spacing was `null`, and an unreliable crest-track speed
+  could veto a clean estimate. Both are now gated on their own acceptance flags.
+- **Wave analyzer review sheets showed different pixels than it measured.** `roi_timeline_*`,
+  `foam_mask_review_*`, and `foam_event_sheet` rendered raw frames while the metrics ran on stabilized
+  ones, so a stabilized run was reviewed against a misaligned ROI. They now use the analyzed frames.
+- **Wave analyzer reported a run-up proxy built on an unreliable direction.** The foam front is projected
+  onto the optical-flow direction, so it is now `null` with a `runup_proxy_status` when that direction is
+  low confidence or conflicts with the transect axis. Report tables replaced the raw Python dict dump of
+  spectral modes, and a duplicated foam-confidence block was removed.
+
 ## [1.11.0] - 2026-08-02
 
 ### Added
