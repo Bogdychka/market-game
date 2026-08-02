@@ -37,8 +37,17 @@ for shared/risky logic).
 - **Conventional Commits**, and update `CHANGELOG.md [Unreleased]` in the same push.
 - The exclusion list is `.gitignore` (it already covers `Library/`, `Temp/`, `Logs/`, `obj/`,
   `Artifacts/`), plus: never commit secrets, credentials, or `.env` files even if unignored.
-- **Still ask first for:** merging, tagging, `git reset --hard`, force-push, history rewrites,
-  reverting someone else's commit, or committing when the user said they were mid-edit.
+- **Merge the branch into `main` yourself and finish the release**, without being asked. There is no
+  human checkpoint left before `main`, so the green gate IS the protection: re-run
+  `verify-unity.ps1` **after** the merge, and if it is red, `git reset --hard` the merge off `main`
+  and report. Never merge a red or unverified branch.
+  Order: `git switch main && git pull --ff-only` -> `git merge --no-ff <branch>` -> verify green ->
+  bump `VERSION` + move `CHANGELOG.md [Unreleased]` into a `## [X.Y.Z] - YYYY-MM-DD` section ->
+  `git tag vX.Y.Z` -> `git push origin main --follow-tags` -> delete the branch local and remote.
+  PATCH = fixes/chores/docs - MINOR = feature / completed plan step - MAJOR = milestone / breaking.
+- **Still ask first for:** force-push, history rewrites (rebase/amend of pushed commits),
+  `git reset --hard` on anything other than backing out your own failed merge, reverting someone
+  else's commit, or committing when the user said they were mid-edit.
 - If a commit fails a hook, fix the cause - never `--no-verify`.
 
 ## Git process
