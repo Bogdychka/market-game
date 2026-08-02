@@ -31,27 +31,33 @@ Material:
     m_Ints: []
     m_Floats:
     - _BladeTipHeight: 0.002
+    - _ColorSaturation: 0.74
+    - _ColorVariation: 0.82
     - _Cutoff: 0.35
-    - _NormalSoftness: 0.85
+    - _NormalSoftness: 0.4
+    - _PatchVariation: 0.17
     - _RimPower: 3
-    - _RimStrength: 0.35
+    - _RimStrength: 0.15
+    - _RootDarkening: 0.32
     - _Smoothness: 0.12
     - _SquashAmount: 0.15
-    - _ToonBands: 2
+    - _ToonBands: 3
     - _ToonSoftness: 0.35
     - _Translucency: 1.1
     - _VertexColorTint: 0
     - _WindMaskFromUV: 1
+    - _WindResponse: 1
     - _WindScale: 1.2
     - _WindSpeed: 1.6
     - _WindStrength: 0.05
     - _WobbleAmount: 0.03
     - _WobbleFrequency: 0.8
     - _WobbleSpeed: 2.4
+    - _WrapLighting: 0.24
     m_Colors:
-    - _BaseColor: {r: 0.72, g: 0.86, b: 0.62, a: 1}
+    - _BaseColor: {r: 0.68, g: 0.8, b: 0.5, a: 1}
     - _RimColor: {r: 0.85, g: 1, b: 0.9, a: 1}
-    - _TipColor: {r: 1, g: 1, b: 0.86, a: 1}
+    - _TipColor: {r: 0.88, g: 0.94, b: 0.6, a: 1}
     - _WindDirection: {r: 1, g: 0, b: 0, a: 0}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

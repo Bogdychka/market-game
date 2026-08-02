@@ -1093,3 +1093,10 @@ and report the changed player pose with no console errors.
 - [x] T12 Realistic water R7 world-space caustic projection
 - [x] T13 Realistic water R8 underwater surface and volume transition
 - [x] T14 Realistic water R9 quality tiers, optimization, and promotion gate
+- [x] T15 Realistic water optical-density material tuning
+- [x] T16 WaterShaderLab complete shader-feature showcase pass
+- [x] T17 Asset-based realistic caustic lookup and depth tuning
+- [x] T18 Weather-driven realistic water modes from calm to storm
+- [x] T19 Photon-traced caustic flipbook matching reference beach photography
+- [x] T20 GrassLab layered meadow visual showcase pass
+- [x] T21 Grass interaction bend and presentation polish

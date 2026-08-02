@@ -13,6 +13,16 @@ namespace Market.Core
     {
         private static readonly Dictionary<Type, object> _services = new();
 
+        /// <summary>
+        /// Play mode runs without a domain reload, so statics survive between sessions. Without
+        /// this, a second Play would find services pointing at destroyed objects from the first.
+        /// </summary>
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics()
+        {
+            _services.Clear();
+        }
+
         public static void Register<T>(T service) where T : class
         {
             var type = typeof(T);

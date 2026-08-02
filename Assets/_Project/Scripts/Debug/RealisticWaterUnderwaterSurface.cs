@@ -110,6 +110,16 @@ namespace Market.DebugTools
             ApplyRuntimeProperties(true);
         }
 
+        /// <summary>
+        /// Copies the current surface material state to the underwater renderer.
+        /// </summary>
+        public void SynchronizeFromWaterMaterial()
+        {
+            CacheComponents();
+            SynchronizeMaterialProperties();
+            ApplyRuntimeProperties(true);
+        }
+
         private void Awake()
         {
             RefreshSurface();

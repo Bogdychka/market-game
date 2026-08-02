@@ -1,0 +1,26 @@
+{
+  "runId": "",
+  "outputName": "water-foam-sweep",
+  "scene": "Assets/_Project/Scenes/WaterShaderLab.unity",
+  "width": 512,
+  "height": 288,
+  "columns": 3,
+  "freezeTime": true,
+  "time": 8.0,
+  "sun": { "apply": true, "yaw": -140.0, "pitch": 42.0, "intensity": -1.0 },
+  "material": "Assets/_Project/Art/Materials/Water/M_RealisticWaterLab.mat",
+  "views": [
+    {
+      "name": "shoreline",
+      "position": [-16.0, 3.0, -18.0],
+      "lookAt": [0.0, -0.5, 0.0],
+      "fov": 50.0
+    }
+  ],
+  "sweep": {
+    "property": "_ShoreBandWidth",
+    "type": "float",
+    "values": [0.5, 1.5, 2.5, 4.0, 6.0, 9.0],
+    "view": "shoreline"
+  }
+}

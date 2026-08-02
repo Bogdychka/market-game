@@ -16,6 +16,31 @@ namespace Market.DebugTools
 
         public static string LogPath => _logPath;
 
+        /// <summary>
+        /// Play mode runs without a domain reload, so statics survive between sessions. If the
+        /// previous session ended without <see cref="Shutdown"/>, <c>_initialized</c> would still
+        /// be true and <see cref="Initialize"/> would return early, leaving the run unlogged.
+        /// </summary>
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics()
+        {
+            Application.logMessageReceived -= OnLog;
+            Application.quitting -= Shutdown;
+
+            try
+            {
+                _writer?.Close();
+            }
+            catch (Exception)
+            {
+                // The previous session may already have closed it; nothing useful to report.
+            }
+
+            _writer = null;
+            _initialized = false;
+            _logPath = null;
+        }
+
         public static void Initialize()
         {
             if (_initialized) return;

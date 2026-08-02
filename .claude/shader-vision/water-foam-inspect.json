@@ -1,0 +1,28 @@
+{
+  "runId": "",
+  "outputName": "water-foam-inspect",
+  "scene": "Assets/_Project/Scenes/WaterShaderLab.unity",
+  "width": 960,
+  "height": 540,
+  "columns": 2,
+  "freezeTime": true,
+  "time": 8.0,
+  "timeSamples": 1,
+  "timeStep": 0.35,
+  "compareRun": "",
+  "sun": { "apply": true, "yaw": -140.0, "pitch": 42.0, "intensity": -1.0 },
+  "views": [
+    {
+      "name": "crest",
+      "position": [1.5, 1.1, -6.5],
+      "lookAt": [-0.5, 0.1, -1.0],
+      "fov": 30.0
+    },
+    {
+      "name": "waterline",
+      "position": [-9.0, 1.6, -14.0],
+      "lookAt": [-4.0, -0.4, -6.0],
+      "fov": 32.0
+    }
+  ]
+}

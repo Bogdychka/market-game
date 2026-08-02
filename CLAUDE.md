@@ -15,10 +15,40 @@ Claude is the only agent on this project: it implements, verifies, and records.
 
 Implement one plan step per request, record what changed in `CHANGELOG.md [Unreleased]`
 (what/why/how to verify), then verify via MCP: `recompile_scripts` -> `get_health_report` must be
-`ok` (0 errors, 0 dirty scenes). Report green/red to the user. **Do not commit, merge, tag, or
-push** - wait for explicit instruction. If MCP can't run, state exactly what was NOT verified.
+`ok` (0 errors, 0 dirty scenes). Report green/red to the user. **Commit the work yourself once it
+is green** - see "Committing" below. **Merging, tagging and pushing still wait for an explicit
+instruction.** If MCP can't run, state exactly what was NOT verified - and don't commit.
 Fast path: run `.claude/tools/verify-unity.ps1` (add `-Refresh` after creating files, `-RunTests`
 for shared/risky logic).
+
+## Committing and pushing (automatic - no need to ask)
+- **Commit and push without being asked, once verification is green.** Don't end a turn leaving
+  finished, verified work uncommitted or unpushed. Green means `get_health_report` is `ok`:
+  compiles, 0 errors, 0 dirty scenes. Red or unverified -> report it and leave the work uncommitted.
+- **Commit on a `claude/<slug>` branch, never straight onto `main`**, and push that branch
+  (`git push -u origin <branch>`). If the current branch is `main`, branch first (see Git process).
+  This is what keeps it safe: nothing reaches `main` without the user merging it.
+- **Commit everything in the working tree, not just the files this task touched.** Claude and
+  Codex share this repo, so work left uncommitted on one side is work the other silently diverges
+  from or overwrites - `.unity`/`.prefab` merge badly enough that a stale tree is the expensive
+  failure, not an untidy commit. Include tool-rewritten files (re-serialized scenes, re-baked
+  textures) and new untracked assets. Separate anything clearly unrelated into its own commit
+  where practical; a mixed commit still beats leaving it on disk.
+- **Conventional Commits**, and update `CHANGELOG.md [Unreleased]` in the same push.
+- The exclusion list is `.gitignore` (it already covers `Library/`, `Temp/`, `Logs/`, `obj/`,
+  `Artifacts/`), plus: never commit secrets, credentials, or `.env` files even if unignored.
+- **Merge the branch into `main` yourself and finish the release**, without being asked. There is no
+  human checkpoint left before `main`, so the green gate IS the protection: re-run
+  `verify-unity.ps1` **after** the merge, and if it is red, `git reset --hard` the merge off `main`
+  and report. Never merge a red or unverified branch.
+  Order: `git switch main && git pull --ff-only` -> `git merge --no-ff <branch>` -> verify green ->
+  bump `VERSION` + move `CHANGELOG.md [Unreleased]` into a `## [X.Y.Z] - YYYY-MM-DD` section ->
+  `git tag vX.Y.Z` -> `git push origin main --follow-tags` -> delete the branch local and remote.
+  PATCH = fixes/chores/docs - MINOR = feature / completed plan step - MAJOR = milestone / breaking.
+- **Still ask first for:** force-push, history rewrites (rebase/amend of pushed commits),
+  `git reset --hard` on anything other than backing out your own failed merge, reverting someone
+  else's commit, or committing when the user said they were mid-edit.
+- If a commit fails a hook, fix the cause - never `--no-verify`.
 
 ## Git process
 - **`main` is always green** - compiles, health `ok`. Never leave broken code on `main`.

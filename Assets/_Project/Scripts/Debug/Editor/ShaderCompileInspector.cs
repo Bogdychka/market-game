@@ -12,11 +12,41 @@ namespace Market.DebugTools.Editor
     public static class ShaderCompileInspector
     {
         private const string ShaderPath = "Assets/_Project/Art/Shaders/GrassWind.shader";
+        private static readonly string[] RealisticWaterShaderPaths =
+        {
+            "Assets/_Project/Art/Materials/Water/RealisticWater.shader",
+            "Assets/_Project/Art/Shaders/RealisticWaterProjectedCaustics.shader",
+        };
 
         [MenuItem("Market/Debug/Inspect GrassWind Shader Errors")]
         public static void Inspect()
         {
             InspectShader(ShaderPath);
+        }
+
+        /// <summary>Same dump for whatever shader (or shader of a material) is selected in the Project window.</summary>
+        [MenuItem("Market/Debug/Inspect Selected Shader Errors")]
+        public static void InspectSelection()
+        {
+            foreach (Object selected in Selection.objects)
+            {
+                Shader shader = selected as Shader
+                    ?? (selected as Material)?.shader;
+                if (shader == null)
+                    continue;
+
+                InspectShader(AssetDatabase.GetAssetPath(shader));
+            }
+        }
+
+        /// <summary>
+        /// Dumps compiler messages for the realistic-water surface and projected-caustic shaders.
+        /// </summary>
+        [MenuItem("Market/Debug/Water/Inspect Realistic Water Shader Errors")]
+        public static void InspectRealisticWater()
+        {
+            foreach (string shaderPath in RealisticWaterShaderPaths)
+                InspectShader(shaderPath);
         }
 
         private static void InspectShader(string shaderPath)

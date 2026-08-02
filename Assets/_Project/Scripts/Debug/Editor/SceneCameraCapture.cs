@@ -41,10 +41,10 @@ namespace Market.DebugTools
             Directory.CreateDirectory(dir);
             string path = Path.Combine(dir, "scene_camera.png");
 
-            RenderTexture rt = new RenderTexture(Width, Height, 24, RenderTextureFormat.ARGB32)
-            {
-                antiAliasing = 4
-            };
+            // HDR target: the project renders HDR and tonemaps in post, so an LDR ARGB32 target
+            // clips bright scenes to white and misrepresents anything with a strong sun or bloom.
+            // No MSAA - the PC renderer is Deferred, where it does nothing (AGENTS.md).
+            RenderTexture rt = new RenderTexture(Width, Height, 24, RenderTextureFormat.DefaultHDR);
             RenderTexture previousTarget = cam.targetTexture;
             RenderTexture previousActive = RenderTexture.active;
             Texture2D shot = new Texture2D(Width, Height, TextureFormat.RGB24, false);
