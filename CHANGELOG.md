@@ -14,6 +14,23 @@ their historical agent attributions (Claude / Codex / user); new entries don't n
 
 ## [Unreleased]
 
+## [1.9.1] - 2026-08-02
+
+### Changed
+- **RealisticWater is no longer see-through at depth.** `_AbsorptionCoefficients` was
+  `(0.65, 0.32, 0.18)`, which over `WaterShaderLab`'s seabed (shelves at -0.6 / -2.5 / -6 / -14 m)
+  left green transmittance at 45% on the 2.5 m shelf and 15% at 6 m - the lit seabed and its
+  caustics read straight through as a bright green floor under glass, worst in any downward-looking
+  pose. Retuned to `(1.6, 0.62, 0.34)`: ~0.5 m of shore water stays clear, the 2.5 m shelf drops to
+  a tinted ghost, and by 6 m the bottom is gone, so transparency now falls off with distance from
+  shore instead of switching off at a terrace edge. Red is pulled 2.6x harder than blue (was 3.6:1
+  overall but far too weak absolutely) so the body colour stays blue-green rather than grey. The
+  shader default moves with it - it was `(0.22, 0.10, 0.04)`, clear enough to be useless as a
+  starting point. Caustics dim automatically, since `causticVisibility` is the luminance of the same
+  transmittance.
+  Verify: `shader-vision.ps1 water-lab` - topdown mean luminance 0.086 -> 0.061 with 60% of pixels
+  changed; grazing/deck unchanged in character (they were already opaque).
+
 ## [1.9.0] - 2026-08-02
 
 ### Added

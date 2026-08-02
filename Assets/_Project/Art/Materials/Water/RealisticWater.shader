@@ -53,7 +53,10 @@ Shader "Market/World/RealisticWater"
         _RefractionEdgeFade("Refraction Edge Fade", Range(0.001, 0.25)) = 0.08
         _RefractionDepthScale("Refraction Full Strength Depth", Range(0.1, 10)) = 2
         _DepthFadeDistance("Open Water Optical Path", Range(0.5, 60)) = 6
-        _AbsorptionCoefficients("Absorption Coefficients (R, G, B)", Vector) = (0.22, 0.10, 0.04, 0)
+        // Per-metre Beer-Lambert extinction of the view path through the water column. Red must die
+        // far faster than blue or the body reads as neutral grey haze instead of water; these are
+        // tuned so a ~0.5 m shore is still clear, ~2.5 m is tinted, and ~6 m hides the seabed.
+        _AbsorptionCoefficients("Absorption Coefficients (R, G, B)", Vector) = (1.6, 0.62, 0.34, 0)
         _ScatteringColor("In-Scattering Color", Color) = (0.015, 0.18, 0.32, 1)
         _ScatteringStrength("In-Scattering Strength", Range(0, 1)) = 0.4
 

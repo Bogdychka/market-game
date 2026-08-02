@@ -111,7 +111,7 @@ Material:
     - _Wave4Steepness: 0.25
     - _WindSpread: 0.55
     m_Colors:
-    - _AbsorptionCoefficients: {r: 0.65, g: 0.32, b: 0.18, a: 0}
+    - _AbsorptionCoefficients: {r: 1.6, g: 0.62, b: 0.34, a: 0}
     - _CausticAtlasFrame: {r: 0.12109375, g: 0.2421875, b: 0.001953125, a: 0.00390625}
     - _CausticAtlasLayout: {r: 8, g: 4, b: 32, a: 1.6}
     - _CausticColor: {r: 1, g: 0.97, b: 0.9, a: 1}
