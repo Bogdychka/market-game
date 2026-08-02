@@ -32,6 +32,19 @@
 *.mat        text eol=lf merge=unityyamlmerge whitespace=-trailing-space
 *.anim       text eol=lf merge=unityyamlmerge whitespace=-trailing-space
 *.controller text eol=lf merge=unityyamlmerge whitespace=-trailing-space
+
+# TerrainData is stored as a binary heightmap payload behind a .asset extension, so the generic
+# `*.asset text eol=lf` rule above applies line-ending conversion to binary bytes. Git reports
+# these files as `Bin`, the clean filter strips a CR out of the payload (index is one byte
+# smaller than the working copy), and the smudge filter writes it straight back on checkout - so
+# the working copy can never match the index. The practical symptom is a file that is *permanently*
+# "modified": `git checkout --`, `git stash` and `git switch` all fail to clear it, which blocks
+# every merge and branch switch. Store these byte-for-byte instead.
+# The pattern is quoted because the path contains a space; unquoted, git parses everything after
+# the space as an attribute name ("Terrain*.asset is not a valid attribute name").
+"Assets/New Terrain*.asset"                     -text
+Assets/_Project/Art/Terrain/Backups/*.asset     -text
+Assets/_Project/Art/Terrain/*_TerrainData.asset -text
 *.physicMaterial text eol=lf merge=unityyamlmerge whitespace=-trailing-space
 
 # Windows scripts must stay CRLF
