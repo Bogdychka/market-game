@@ -15,19 +15,22 @@ Claude is the only agent on this project: it implements, verifies, and records.
 
 Implement one plan step per request, record what changed in `CHANGELOG.md [Unreleased]`
 (what/why/how to verify), then verify via MCP: `recompile_scripts` -> `get_health_report` must be
-`ok` (0 errors, 0 dirty scenes). Report green/red to the user. **Commit the work yourself once it
-is green** - see "Committing" below. **Merging, tagging and pushing still wait for an explicit
-instruction.** If MCP can't run, state exactly what was NOT verified - and don't commit.
+`ok` (0 errors, 0 dirty scenes). Report green/red to the user. **Commit, push and release the work
+yourself once it is green** - see "Committing and pushing" below. If MCP can't run, state exactly
+what was NOT verified - and don't commit.
 Fast path: run `.claude/tools/verify-unity.ps1` (add `-Refresh` after creating files, `-RunTests`
 for shared/risky logic).
 
 ## Committing and pushing (automatic - no need to ask)
-- **Commit and push without being asked, once verification is green.** Don't end a turn leaving
-  finished, verified work uncommitted or unpushed. Green means `get_health_report` is `ok`:
-  compiles, 0 errors, 0 dirty scenes. Red or unverified -> report it and leave the work uncommitted.
-- **Commit on a `claude/<slug>` branch, never straight onto `main`**, and push that branch
-  (`git push -u origin <branch>`). If the current branch is `main`, branch first (see Git process).
-  This is what keeps it safe: nothing reaches `main` without the user merging it.
+- **Work directly on `main`** - commit and push there. No feature branch, no merge step. Branch only
+  when there is a concrete reason (a spike you expect to throw away, or work that must sit
+  unfinished across sessions); otherwise `main` is the working branch.
+- **Verify BEFORE every commit, and treat that as the hard gate.** With no branch and no merge,
+  nothing stands between a commit and `main` except this check, and pushing publishes it
+  immediately. Green means `get_health_report` is `ok`: compiles, 0 errors, 0 dirty scenes.
+  Red or unverified -> report it and leave the work uncommitted. Never commit on a guess that it
+  "should still be fine" because the last check was green - re-run it.
+- If something broken does reach `main`, **fix forward** and say so; don't rewrite pushed history.
 - **Commit everything in the working tree, not just the files this task touched.** Claude and
   Codex share this repo, so work left uncommitted on one side is work the other silently diverges
   from or overwrites - `.unity`/`.prefab` merge badly enough that a stale tree is the expensive
@@ -37,29 +40,28 @@ for shared/risky logic).
 - **Conventional Commits**, and update `CHANGELOG.md [Unreleased]` in the same push.
 - The exclusion list is `.gitignore` (it already covers `Library/`, `Temp/`, `Logs/`, `obj/`,
   `Artifacts/`), plus: never commit secrets, credentials, or `.env` files even if unignored.
-- **Merge the branch into `main` yourself and finish the release**, without being asked. There is no
-  human checkpoint left before `main`, so the green gate IS the protection: re-run
-  `verify-unity.ps1` **after** the merge, and if it is red, `git reset --hard` the merge off `main`
-  and report. Never merge a red or unverified branch.
-  Order: `git switch main && git pull --ff-only` -> `git merge --no-ff <branch>` -> verify green ->
-  bump `VERSION` + move `CHANGELOG.md [Unreleased]` into a `## [X.Y.Z] - YYYY-MM-DD` section ->
-  `git tag vX.Y.Z` -> `git push origin main --follow-tags` -> delete the branch local and remote.
+- **Finish the release yourself**, without being asked, once the work is committed:
+  `git pull --ff-only` -> verify green -> commit -> bump `VERSION` + move `CHANGELOG.md
+  [Unreleased]` into a `## [X.Y.Z] - YYYY-MM-DD` section -> `git tag vX.Y.Z` ->
+  `git push origin main --follow-tags`.
   PATCH = fixes/chores/docs - MINOR = feature / completed plan step - MAJOR = milestone / breaking.
+  Release once per coherent batch of work, not once per commit.
 - **Still ask first for:** force-push, history rewrites (rebase/amend of pushed commits),
-  `git reset --hard` on anything other than backing out your own failed merge, reverting someone
-  else's commit, or committing when the user said they were mid-edit.
+  `git reset --hard`, reverting someone else's commit, or committing when the user said they were
+  mid-edit.
 - If a commit fails a hook, fix the cause - never `--no-verify`.
 
 ## Git process
-- **`main` is always green** - compiles, health `ok`. Never leave broken code on `main`.
-- **Branch only from fresh `main`**: `git switch main && git pull --ff-only` -> then branch.
-  Never fork the next branch while a scene/prefab fix is still unmerged - `.unity`/`.prefab`
-  merge badly, so the fix gets silently lost when forking from a stale `main`.
-- Branch naming: `claude/<plan-step>-<slug>`, lowercase (e.g. `claude/e2-crop-watering`).
-  Keep **one active feature branch at a time**; delete it once merged.
-- Conventional Commits. No force-push to `main`; no rebasing merged history;
+- **`main` is always green** - compiles, health `ok`. Never leave broken code on `main`. This is the
+  whole safety model now that work goes straight onto `main`: the pre-commit check is the gate.
+- **Start from fresh `main`**: `git pull --ff-only` before starting, so you are not building on a
+  stale tree - Codex works in this repo too, and `.unity`/`.prefab` merge badly enough that
+  diverging is expensive.
+- If a branch is genuinely warranted, name it `claude/<plan-step>-<slug>`, lowercase, keep one at a
+  time, and delete it once merged. It is the exception, not the default.
+- Conventional Commits. No force-push to `main`; no rebasing pushed history;
   no committing build output / `Library/` / `node_modules/`.
-- **SemVer (v1.x line):** `VERSION` file holds the number; every merged change gets a
+- **SemVer (v1.x line):** `VERSION` file holds the number; every released batch gets a
   `CHANGELOG.md` entry and a `vX.Y.Z` tag on `main`. PATCH = fixes/chores/docs/no-behavior
   refactors - MINOR = feature / completed plan step - MAJOR = milestone / breaking save or
   architecture change.
