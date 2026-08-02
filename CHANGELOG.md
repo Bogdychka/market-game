@@ -14,6 +14,402 @@ their historical agent attributions (Claude / Codex / user); new entries don't n
 
 ## [Unreleased]
 
+### Added
+- **RealisticWater crest subsurface scattering** (`_SubsurfaceColor`, `_SubsurfaceStrength`,
+  `_SubsurfacePower`, `_SubsurfaceHeight`). Sunlight transmitted through the thin water at the top
+  of a wave, strongest looking into the sun, faded by wave height so troughs stay dark and scaled
+  by `(1 - Fresnel)` so it vanishes at grazing angles where the surface becomes a mirror. This is
+  what gives real swell its turquoise glow on the sun side; without it the surface only ever
+  reflects and deep water reads as flat dark paint no matter how the reflection is tuned.
+
+### Fixed
+- **RealisticWater: the whitecap system never fired.** Crest foam was driven solely by the Gerstner
+  horizontal Jacobian, which only departs from 1 near a *folding* wave. At `WaterShaderLab`'s wave
+  settings it never does, so `_FoamCrestBias 0.12` (requiring `J < 0.88`) meant zero whitecaps
+  anywhere - the lab renders a sign reading "WAVES + WHITECAPS" over water that had none. Verified
+  by rendering the driver to screen: the Jacobian channel was black across every pose, and sweeping
+  `_FoamCrestBias` all the way to 0 moved mean luminance by 0.006. Added a second driver -
+  displacement above still water (`_FoamCrestHeight` / `_FoamCrestHeightFalloff`) gated by surface
+  gradient (`_FoamCrestSlopeGain`), combined with the Jacobian via `max` so a genuinely breaking
+  wave still saturates. Slope uses `tan(tilt)`, not `1 - n.y`: on long low swells the macro normal
+  tilts a few degrees and `1 - n.y` peaks near 0.05, leaving any sane gain at nil.
+  Verify: `shader-vision.ps1 water-lab` - crests carry foam; `detail` rises at all six poses.
+
+### Changed
+- **RealisticWater foam reads as foam instead of airbrushed haze.** The coverage mask was broken up
+  by a single 0.3-tiling noise at +/-20% (`0.6 + 0.4 * n`), whose features are ~3 m across, so a
+  foam patch was one near-uniform pale blob with a soft gradient rim. Now: `FoamBreakupNoise`
+  returns two octaves (clump placement + bubble structure), and `FoamDissolve` thresholds the mask
+  against that noise so the patch interior stays solid and only its rim dissolves into speckle.
+  The mask is treated as a coverage *fraction* (threshold at `1 - mask`), not as a brightness - an
+  earlier revision centred the threshold at 0.5 and silently erased every mask that never reached
+  0.5, which is all of them. `_FoamBreakup` (0 = old soft mask, 1 = full speckle) defaults to 0.7;
+  contact foam gets 0.6x that so the thin ring around objects survives. The dissolve now runs
+  *after* the foam-history blend, so Play Mode's temporal path gets the same breakup rather than
+  coming back smooth. Foam colour is modulated by the bubble octave so a patch is not one flat tone.
+  Verify: `water-lab` topdown foam has torn, irregular edges instead of soft blobs; `detail` 0.0110
+  -> 0.0122 there, up at every pose, with mean luminance held within 0.007.
+- **Foam no longer appears on water that has no foam mask.** `FoamDissolve` thresholded the noise
+  with a window *centred* on `1 - mask`, so its upper edge sat at `1 - mask + width`. At `mask = 0`
+  that edge is below 1, and every peak of the breakup noise cleared it - spraying pale patches
+  across open water in all four foam channels at once (crest, shoreline, contact, waterline),
+  identically, because the noise field is shared. No strength property could switch them off:
+  `contactAmount` has no strength multiplier at all, so zeroing every exposed foam control still
+  left the patches. Found by rendering each foam channel to screen and seeing the same speckle in
+  all of them, which pointed at the one function they share. The window is now one-sided, anchored
+  AT `1 - mask`, so `mask = 0` yields `[1, 1 + width]` - unreachable by a saturated noise field -
+  while coverage still tracks the mask above it.
+  Verify: `water-lab` topdown - foam only as contact rings around the rocks and along the
+  waterline; `black` 13.6% -> 18.3% as the false foam stops lifting dark pixels.
+- **Whitecap and shoreline foam no longer print the breakup noise onto the water.** The crest
+  threshold was low enough to hold the mask near 0.5 across roughly half the surface; a mask that
+  flat makes the dissolve show its own threshold field, so the metre-wide clump octave appeared as
+  big soft blobs scattered without regard to where the crests were. `_FoamCrestHeight` 0.2 -> 0.45
+  with falloff 0.2 keeps whitecaps to the few percent of a moderate sea that actually breaks, and
+  the dissolve's threshold field is reweighted towards the bubble octave (0.3 clump / 0.7 bubble)
+  so its visible grain is bubble-scale. Shoreline foam now takes half the breakup the open-water
+  crests do and `_ShoreBandWidth` drops 2.5 -> 1.2: it is a band hugging the waterline, and at full
+  breakup a wide band stopped reading as a band and scattered into detached patches over open
+  water. `T_ShoreDepth` re-baked (the previous bake predated seabed edits).
+  Verify: `shader-vision.ps1 water-lab` - no large foam patches away from the waterline.
+- **Shader Vision** - an Editor capture rig that gives an off-Editor agent something to look at
+  when it works on a shader. A JSON job (`Artifacts/ShaderVision/job.json`, presets in
+  `.claude/shader-vision/`) describes camera poses, a turntable around a named object, a sun
+  override, material overrides, or a parameter sweep; the run writes per-shot PNGs, a labelled
+  contact sheet, measured statistics and an optional pixel diff against an earlier run to
+  `Artifacts/ShaderVision/<outputName>/` (git-ignored). Menu: `Market/Debug/Shader Vision/Run Job`
+  and `.../Capture Scene View`. Driver: `.claude/tools/shader-vision.ps1 <preset> [-CompareRun x]`.
+  Captures are repeatable because the shader clock is pinned: URP rewrites `_Time`/`_SinTime`/
+  `_CosTime`/`_TimeParameters` inside the render graph (twice per camera, from
+  `Time.realtimeSinceStartup` in Edit mode), so `ShaderVisionTimePass` re-injects the frozen values
+  at three injection points on the capture camera only. Without it, two captures of the same
+  unchanged scene differed by 5% of pixels on the animated grass; with it they are bit-identical,
+  which is what makes a before/after diff mean anything.
+  Every shot is measured - luminance mean/percentiles/contrast, RGB means, a neighbour-pixel
+  `detail` figure, plus `nonFinitePct` (NaN output) and `magentaPct` (Unity's error shader) as
+  explicit failure tells.
+  *Verify:* `powershell -File .claude/tools/shader-vision.ps1 water-lab`, then read
+  `Artifacts/ShaderVision/water-lab/sheet.png`. Running the same preset twice with
+  `-CompareRun water-lab` must report `changed 0.0%`.
+
+### Fixed
+- MCP bridge no longer fails calls made while Unity enters Play mode. The drop is by design in the
+  package (clients closed with code 4001, then the play-mode domain reload takes the server
+  instance with it) and lasts ~4.8 s; the bridge works normally *during* Play mode and exiting has
+  no gap at all. `unity-ws-call.mjs` now waits the window out (`UNITY_RECONNECT_WINDOW_MS`,
+  default 30 s) instead of erroring, and only while the request is still unsent - a request that
+  was already sent is reported as "may or may not have run" rather than silently re-executed, so
+  `execute_menu_item` can never fire twice. `McpUnityAutoStart` retries until the socket actually
+  listens instead of making one attempt after a fixed 2 s wait; the package's own restart hooks
+  (`DidReloadScripts`, `afterAssemblyReload`) only cover compilation reloads, so without it the
+  bridge could stay down for a whole play session.
+  *Verify:* start Play mode, then immediately
+  `node .claude/tools/unity-ws-call.mjs get_play_mode_status '{}'` - it blocks a few seconds and
+  returns `Play mode` instead of `ECONNREFUSED`.
+
+### Fixed
+- **MCP bridge no longer drops when entering Play Mode.** Measured before: the Editor closed every
+  client with code 4001, the play-mode domain reload took the server instance with it, and the
+  bridge was unreachable for ~4.8 s - dominated by the reload, not by the restart delay. Now the
+  project enters Play Mode without a domain reload, so the server object and its socket survive:
+  play + status round trip is 713 ms with no disconnect.
+  Three parts: `Market/Debug/MCP/Enable Fast Play Mode (no domain reload)` sets the Enter Play Mode
+  Options (menu item rather than a hand-edited `EditorSettings.asset`, which the running Editor
+  would overwrite); `McpUnityServer.OnPlayModeStateChanged` only closes clients when a reload is
+  actually coming (local patch to the vendored package); `McpUnityAutoStart` retries until the
+  socket listens instead of firing once after a fixed 2 s.
+  **Consequence: statics survive between Play sessions.** `ServiceLocator`, `FileLogger`,
+  `GameBootstrap` and `GrassTrample` now reset at `SubsystemRegistration`; any new static state
+  must do the same.
+  *Verify:* `Market/Debug/MCP/Log Play Mode Options` reports `domainReloadOnPlay=False`; two
+  consecutive Play sessions from `Bootstrap.unity` produced 0 errors and 0 warnings, with
+  `game.log` rewritten by the second run. `.../Restore Domain Reload On Play` reverts the setting.
+- `unity-ws-call.mjs` waits out a bridge restart (`UNITY_RECONNECT_WINDOW_MS`, default 30 s)
+  instead of failing on `ECONNREFUSED`, and only while the request is still unsent - a request sent
+  before the socket dropped is reported as "may or may not have run" rather than silently retried,
+  since re-running something like `execute_menu_item` is worse than an honest report.
+
+### Changed
+- GrassLab interaction and presentation polish (T21): grass now physically bends around the
+  player/NPC body in a blend of radial push and travel direction instead of only turning its local
+  wind. Engagement follows mover speed and releases after stopping, so clumps rise smoothly rather
+  than staying permanently flattened. The same deformation runs in forward, shadow, depth and
+  depth-normal passes. `GrassTrampleTests` covers movement direction and release.
+- Grass color now has a second, low-frequency world-space variation layer, creating broad warm/cool
+  meadow patches on top of per-clump randomness without material instances. GrassLab starts in a
+  clean presentation view: the card row and 1.8 m scale post are preserved but hidden, and F6
+  toggles both through `GrassLabPresentationToggle`. The field sign documents the key, while a
+  slightly lower exposure/ambient balance restores Play Mode contrast.
+  *Verify:* enter GrassLab Play Mode, walk through a dense patch, stop, and press F6. Nearby blades
+  should yield then recover, and the reference diagnostics should toggle. EditMode tests pass
+  85/85; Unity compiles with 0 warnings and GrassWind reports 0 shader messages.
+- GrassLab received a complete meadow beauty pass (T20). The Player now starts with the prefab root
+  at ground level instead of 1.2 m above it, so the camera reads grass from a real 1.7 m eye line.
+  `GrassLabVisualUpgrade` (`Market/Debug/Grass Lab/Apply Visual Upgrade`) preserves hand-painted
+  `GrassScatter` content while rebuilding its own deterministic visual root: 960 mixed single/cross
+  card clumps, 260 GPU-instanced fine tufts built from one reusable 14-blade curved mesh, four
+  wildflower patches, a collider-free tree/bush/rock habitat frame, a physical field sign, bounded
+  terrain settings, neutral daylight, depth fog and a dedicated `GrassLabPostFX` profile.
+- `GrassWind.shader` now breaks up the uniform neon field with stable per-clump warm/cool variation,
+  controlled saturation, root contact darkening and soft wrapped foliage light. Wind gained a
+  coherent travelling gust band plus a small stable phase offset per clump; cards and procedural
+  blades share the same global `GrassWindController`, shadow, depth and depth-normal deformation.
+  Grass card materials keep instancing, disable useless per-object motion vectors and expose the
+  new look controls through `GrassCardBuilder`.
+  *Verify:* open GrassLab, run Apply Visual Upgrade, enter Play Mode and walk forward. The field
+  should show broad clumps, fine moving blades, flowers and a framed horizon at eye level. Unity
+  compilation is 0 warnings, GrassWind reports 0 shader messages, and health is `ok` with 0 console
+  errors/warnings and 0 dirty scenes.
+- Water caustics are now traced instead of drawn. `RealisticWaterCausticBaker`
+  (`Market/Debug/Water/Bake Caustic Flipbook`) builds a synthetic wind-wave surface from waves
+  picked off the tile's integer lattice, refracts one downward sun photon per surface sample
+  through it and accumulates where each photon lands on a flat seabed. The result is a real
+  refraction caustic - a network of thin bright filaments around darker cells, the pattern the
+  reference beach photo shows - rather than the painted cell texture that was used before.
+  Output is `T_WaterCausticFlipbook.png`: 32 frames in a 4096x2048 atlas, seamless in space
+  (lattice wave vectors) and in time (frequencies quantised to the loop), with per-channel
+  dispersion in RGB and a wrap border per cell so tiling survives mip filtering. A stored 1.0
+  equals 8x the average seabed irradiance, so the shaders receive a metered light field.
+  *Verify:* re-run the bake, then look at the depth/caustics station in WaterShaderLab.
+- `RealisticWaterProjectedCaustics.shader` and the surface-composite fallback in
+  `RealisticWater.shader` were reworked around that field. Both cross-fade consecutive flipbook
+  frames so the network boils in place instead of sliding, add only the light above the mean
+  seabed irradiance, grow the cells with water depth, tint the light per channel by the sun's
+  actual path length through the water (shallow reads warm-white, deep reads teal), and relax
+  the sharpening once a pixel covers more than a filament - without that, distant caustics
+  degrade into crawling dots. New tuning: `_CausticScale` (tile size in metres, replaces the
+  two tiling factors), `_CausticDepthSpread`, `_CausticPedestal`, `_CausticContrast`,
+  `_CausticSoften`, `_CausticAbsorption`, `_CausticFlow`, `_CausticWarp`.
+- `_CausticSpeedA/B` and `SurfaceCausticSpeed` changed meaning from UV scroll rates to flipbook
+  boil rate (loops per second) and drift speed; the calm-to-storm ladder in
+  `RealisticWaterWeatherProfiles` was re-scaled to match. The ladder runs at 0.18/0.28/0.38/0.52
+  loops per second - roughly 6 to 17 frames per second out of the 32-frame loop, slow enough to
+  read as water rather than a flickering texture.
+
+### Fixed
+- `GrassWind.shader` ShadowCaster wrote raw clip positions - no `ApplyShadowBias`, no near-plane
+  clamp, no normal in the vertex input. Every card shadow-mapped onto itself and the patch stippled
+  with acne. It now applies the standard URP bias (including the punctual-light variant) and clamps
+  to the near plane.
+- The jelly squash scaled the wrong axis on grass cards. Cards are baked standing (height along
+  object Y) while the older geometry tufts lie flat (height along Z), and the shared code scaled Y
+  for both - so cards pumped up and down by +-15% instead of fattening sideways, and the two quads
+  of an X-cross sheared against each other. The squash is now picked per mesh family off the same
+  `_WINDMASK_UV` branch that already knows which axis is up.
+- `GrassWind.shader` had no `DepthOnly` or `DepthNormals` pass, so grass was absent from
+  `_CameraDepthTexture` and `_CameraNormalsTexture` - and `PC_Renderer` runs SSAO with the
+  DepthNormals source, which therefore could not see a single blade. Both passes added, animated by
+  the same wind so depth matches the visible silhouette. No `UniversalGBuffer` pass on purpose: this
+  shader does its own toon/translucency/rim lighting, and a G-buffer pass would hand the pixels to
+  URP's deferred PBR and discard all of it. Custom-lit materials belong in the forward-only pass.
+- Card materials were built with `_NormalSoftness` 0.85, which bends the card normal so far toward
+  world-up that every card ends up with the same normal. That collapsed the toon ramp to a single
+  saturated band, zeroed the backlight term (`_Translucency` 1.1 had no effect at all) and turned
+  the Fresnel rim into a flat ~0.2 wash over the whole field - the "washed out and flat" look.
+  Now 0.4, with `_ToonBands` 3, `_RimStrength` 0.15 and a tip tint that is light green instead of
+  near-white, which used to bleach the top of every card.
+
+### Changed
+- Wind is now one field for the whole scene instead of a per-material constant. All wind properties
+  left `UnityPerMaterial`; `GrassWindController` (`Market/World`) pushes direction, sway, gusts and
+  jelly into shader globals once per frame, and a material only says how hard it answers
+  (`_WindResponse`). This is how wind is normally modelled - one global source per world, as with
+  Unity's WindZone or Unreal's Wind Directional Source - and it means the grass can follow the same
+  weather ladder the water already has. Materials had already drifted apart under the old scheme:
+  `Grass_1.mat` swayed at 0.06 while every card swayed at 0.05.
+  The shader falls back to a default breeze when a scene has no controller, so grass is never
+  frozen solid. `UnityPerMaterial` and the wind functions moved into `GrassWindCommon.hlsl` so all
+  four passes share one declaration - the SRP Batcher needs them identical, and four hand-copied
+  blocks drift.
+  *Verify:* open GrassLab, change Heading on the `Grass Wind` object, watch the whole field turn.
+- The grass lab lights with Unity's procedural sky, not `M_SkyboxLab`. That material is tuned live
+  by the skybox lab and was parked on a night blend, and grass colour judged under a coloured sky is
+  judged wrong. `Market/Debug/Grass Lab/Reset Lighting To Daylight` re-applies it to an already-open
+  lab without rebuilding, so painted clumps survive.
+
+### Added
+- `GrassLabSceneBuilder` (`Market/Debug/Build Grass Lab`) builds `Scenes/GrassLab.unity`: a 100 m
+  terrain with a flat middle to paint on, rolling ground around it, one ~24 deg hillside to check
+  Align To Slope and the random lean against, and a winding dirt path - grass reads very
+  differently where it meets bare ground. Plus a reference row holding one of every built card
+  (singles in front, X-crosses behind, each labelled with its source PNG), a post banded every
+  30 cm up to 1.8 m so clump height can be judged against something of a known size, the project
+  post-processing volume, and the Player prefab for walking the patch at eye level.
+  *Verify:* run the menu item, then paint with the Grass Scatter Brush.
+- Grass brush: six painted grass cards instead of three, and every clump now exists in two
+  flavours. `Grass_6.1`..`Grass_9.1` joined `Grass_4.1`/`Grass_5.1` in the `GrassCardBuilder`
+  variant table; `Grass_3.1` stays buildable but is off the brush palette because it is painted a
+  full stop darker than the rest of the set. Each variant bakes a single-quad `*_Clump.prefab` and
+  an X-cross `*_Clump_Cross.prefab` (two quads at 90 deg in one mesh, so a cross still costs one
+  renderer) - the cross never goes edge-on invisible, the single quad is half the fill rate.
+  *Verify:* `Market/Debug/Grass Card/2. Build Material + Clump Prefab` logs 7 variants; the
+  `_Cross` meshes have 8 verts against the singles' 4.
+- `GrassScatterBrush` randomises each painted clump: variant, yaw over a full turn (a flat card
+  seen from behind is its own mirror, so this doubles the silhouettes for free), width and height
+  jittered separately, and a random lean. New controls: Cross Chance (share of X-clumps,
+  default 0.35), Width/Height Jitter, Max Lean, Sink Into Ground (scaled by height, so leaning
+  cards do not hover). Shift+drag erases inside the brush disc.
+  *Verify:* open `Market/Debug/Grass Scatter Brush`, Reload grass cards -> 6 single + 6 cross
+  sources, enable painting and drag over a terrain.
+- `RealisticWaterWeatherController` adds a weather-ready calm-to-storm ladder with four coordinated
+  states: Calm, Breeze, Windy, and Storm. `SetWeather(...)` performs a smooth three-second blend on
+  a runtime material instance while keeping Gerstner waves, wind spread, micro normals, refraction,
+  roughness, temporal whitecaps, projected/surface caustics, and the underwater surface in sync.
+  WaterShaderLab starts at Breeze and exposes bracket-key cycling with a live world-space label.
+  Calm, Breeze, Windy, and both wide/close Storm views were visually checked from the same scene;
+  EditMode tests passed 84/84 and Unity compiled with 0 warnings. The final health report had no
+  compile or scene errors; its only console exception was the expected test-suite negative case.
+- `WaterShaderLabSceneBuilder` now produces a deliberate walk-through showcase instead of an empty
+  terrace test: an elevated observation deck and entry frame lead to labelled stations for shore
+  shoaling/contact foam, depth absorption and projected caustics, striped refraction columns,
+  emissive planar-reflection beacons, wave/whitecap gauges, and a lit deep-water gallery for the
+  underwater surface transition. Neutral calibration tiles span four known depths, the contact
+  rocks use deterministic irregular silhouettes, and the project post-processing profile plus
+  bounded surface fog make regenerated lab scenes visually consistent.
+  *Verify:* build `Market/Debug/Build Water Shader Lab`, Play from the observation deck, walk the
+  stations, then use F4 and Left Ctrl to inspect the underwater gallery.
+- `RealisticWater.shader` now reasons about the geometry it touches, driven by a baked shore map
+  (`Market/Debug/Water/Bake Shore Depth Map`, `ShoreDepthBaker`). The map is a top-down
+  `T_ShoreDepth.asset` over the water bounds: red is the water column depth, green is the
+  horizontal distance to the waterline. It is baked with downward raycasts rather than a depth
+  render - no render-pass plumbing, and it reads the colliders objects actually stand on. Same
+  world-rect convention as the foam history. Re-bake whenever the seabed moves; a stale map
+  silently misplaces the shoreline instead of failing.
+  - **Wave shoaling.** `Vert` scales the whole Gerstner result - offset *and* the derivatives
+    behind the macro normal - by depth. Previously the full offset was applied everywhere, so
+    crests lifted the surface above the beach and troughs sank it through the seabed; that is the
+    water visibly passing through the terrain. Scaling the offset alone would have left a lit,
+    sloped surface on geometrically flat water, hence lerping the tangents too.
+  - **Contact softening.** The pass composites opaquely, so the mesh used to simply stop where it
+    met a rock. The final colour now dissolves into the already-sampled scene colour as the view-ray
+    distance to the geometry behind it goes to zero.
+  - **Shoreline in metres of beach, not metres of depth.** The band is read straight from the
+    distance field. The first attempt derived it at runtime as `depth / slope`, which is only valid
+    on a monotonic slope - on the lab's terraced seabed every vertical riser has a near-infinite
+    slope and got its own false shoreline. Plus a narrow high-contrast waterline on top.
+  - **Object reaction.** Contact foam and ripples come from the view-ray distance to the scene, not
+    from the vertical column, so they wrap anything sticking out of the water including vertical
+    faces where the column depth is discontinuous. The ripple axis is the world-space gradient of
+    that distance, reconstructed from screen derivatives, because the obstacle is only known
+    through the depth buffer.
+  An unbaked material takes the old code paths unchanged.
+- `WaterShaderLab` gains a sloped beach over the Beach/Shallows step. The terraces are good for
+  reading effects at known depths but their risers are vertical, so the waterline sat behind a lip
+  where no camera could see it and a surf band had nowhere to sit.
+
+### Fixed
+- `ShoreDepthBaker` now uses Unity 6.5's current parameterless `FindObjectsByType` overload, removing
+  the two obsolete-API compile warnings without changing renderer selection.
+- The new shore band was invisible: `RealisticWaterTemporalFoam` runs in edit mode, so
+  `_FoamHistoryAvailable` was 1 and the history's own shoreline channel overwrote it. With a baked
+  map the shore term now bypasses the history, which keeps owning the crest channel.
+- `ShoreDepthBaker` picked the caustic projector instead of the water: it matched the shader name
+  by substring, and `RealisticWaterProjectedCaustics` contains `RealisticWater`. Exact match now.
+
+### Removed
+- WaterWorks evaluated and rejected; `Scenes/WaterWorksLab.unity`, its generated materials in
+  `Art/WaterWorksLab/` and `Settings/WaterWorksLab_Renderer.asset` are deleted and the extra
+  renderer is unregistered from `PC_RPAsset`, so the pipeline asset is back to a single renderer.
+  `RealisticWater.shader` beats it on every overlapping feature - 4 Gerstner waves vs one vertex
+  displacement, per-channel absorption plus in-scattering vs a flat colour, thickness-scaled
+  edge-faded refraction vs a flat screen-UV offset, planar reflection vs screen-space (which loses
+  everything past the screen edge), and Jacobian whitecaps with a temporal history vs a depth edge.
+  Its shimmer at range is the direct result of having no distance fade on its micro normals, which
+  `RealisticWater` already does via `_DetailFadeStart/End` - a useful confirmation that the
+  existing design is right.
+  Worth keeping in mind if underwater gameplay ever appears: the package's `rayBoxDst` slab
+  intersection plus clamping the march to scene depth, and the trick of sliding the volume box with
+  the camera in XZ so a small box reads as endless. Not the ray march itself - up to 250 steps per
+  pixel at a 0.5 step. Games with underwater gameplay (Subnautica, ABZU) pay for volumetrics; games
+  that only glance below the surface use analytic fog, which is what `UnderwaterFogController`
+  already does here.
+  The builder and the F6 panel are kept so the evaluation can be reproduced in one menu click; the
+  imported package itself is left in place with its Unity 6 port.
+
+### Fixed
+- Imported "WaterWorks" (GapperGames) did not compile on Unity 6 / URP 17 and left `main` red.
+  `Water_Volume.cs` used the URP 12 pass API (`RenderTargetHandle`, `renderer.cameraColorTarget`,
+  `Configure`/`Execute`) - ported to Render Graph (`RecordRenderGraph` + `RenderGraphUtils
+  .AddBlitPass`, `requiresIntermediateTexture`, `ConfigureInput(Depth)`), and it now skips
+  reflection/preview cameras and the backbuffer instead of blitting blindly.
+  `Volumetric_Water.shader` imitated a Shader Graph unlit pass and included URP's internal
+  `Varyings.hlsl` / `UnlitPass.hlsl`, whose `BuildVaryings` signature changed in URP 17 - rewritten
+  as a plain full-screen blit pass. The ray march in `Water_Volume.hlsl` is unchanged apart from
+  its inputs: the colour source is `_BlitTexture` (was `_MainTex`), depth is `SampleSceneDepth`
+  (was `SHADERGRAPH_SAMPLE_SCENE_DEPTH`), and the box centre is a local copy instead of a write to
+  a cbuffer uniform. `Water_Settings.cs` no longer runs a `Resources.Load` plus a shared-material
+  write every editor frame. Added `Assets/WaterWorks/WaterWorks.asmdef` - without it the package
+  lives in `Assembly-CSharp`, which an asmdef like `Market.Editor` can never reference.
+  *Verify:* `recompile_scripts` -> `get_health_report` is `ok`.
+
+### Fixed
+- The lab rendered as a flat teal fog with no sky: `Water_Settings` wrote the volume box position
+  into the package material in `Resources`, while the renderer feature was pointed at the project
+  copy. The copy kept the author's `pos.y = -245` against `bounds.y = 500`, which puts the top of
+  the box at `+5` - above the camera - so the underwater pass fogged the entire above-water view.
+  `Water_Settings` now takes an explicit volume material (`SetVolumeMaterial`), the builder hands
+  it the same copy the feature uses and records the prefab-instance override, and the builder also
+  writes `pos` itself instead of waiting for the `[ExecuteAlways]` tick that may not run before the
+  scene is saved.
+- `SceneCameraCapture` rendered to an LDR `ARGB32` target while the project renders HDR and
+  tonemaps in post, so any bright scene clipped to white - it reported the WaterWorks demo scene as
+  a blown-out blank. Now `DefaultHDR`, and without MSAA (the PC renderer is Deferred).
+
+### Added
+- `WaterWorksLabSceneBuilder.UseAuthorDemoLook` reproduces the package's own demo conditions so the
+  asset can be judged the way its store page shows it: the package ocean plane at demo scale (no
+  horizon edge), untouched author material values, the demo sun (intensity 5 - four times the
+  project sun, and most of what makes this water sparkle rather than shimmer), the demo post
+  profile (ACES + bloom with lens dirt), and a spawn standing in the shallows rather than up on the
+  beach, because this water only reads from about a metre above the surface. Set the flag to false
+  for the project-lit variant on the dense water grid, which is the only way vertex displacement is
+  visible at all - the package plane is an 11x11 quad scaled to 10000 units, which is why the
+  package ships with `_Displacement_Amount` at 0.
+- WaterWorks lab: `Market/Debug/Water/Build WaterWorks Lab` (`WaterWorksLabSceneBuilder`) builds
+  `Assets/_Project/Scenes/WaterWorksLab.unity` - one pool whose seabed steps from a dry beach down
+  to a -34 trench, plus four stations that isolate one shader feature each: A depth fade (submerged
+  staircase at known depths), B refraction (striped poles crossing the waterline, so the stripe
+  offset *is* the refraction), C screen-space reflection (pillars and emissive beacons), D waves
+  (fixed-height gauges marching away from shore, showing where `_MaxWaveDist` kills the amplitude).
+  Water is the existing 200x200 `RealisticWaterGrid` mesh, not the package's 10x10 ocean quad -
+  vertex displacement is invisible on the shipped plane, which is why the package ships with
+  `_Displacement_Amount` at 0.
+  Package materials are copied into `Art/WaterWorksLab/` and tuned there; the imported originals
+  stay untouched.
+- `WaterWorksLabController` (F6, in-game): one on/off button per shader feature - SSR, shoreline
+  foam, wave displacement, caustics, refraction - plus the underwater volume and a water-material
+  switch, so each feature can be A/B compared without leaving the view.
+- The underwater volumetric pass is a full-screen blit every frame, so it runs on its own
+  `Assets/Settings/WaterWorksLab_Renderer.asset` (a copy of `PC_Renderer` with the feature and
+  `Intermediate Texture = Always`), registered as renderer index 1 on `PC_RPAsset`; only the lab
+  camera opts into it. Market stays on renderer 0 and pays nothing - per the `AGENTS.md` rule
+  against adding a global full-screen effect without a measurement.
+- `Market/Debug/Inspect Selected Shader Errors`: the existing GrassWind-only dump now also works on
+  whatever shader or material is selected. Shader compiler messages don't reach the MCP console
+  bridge on their own, which is what hid the WaterWorks shader break at import time.
+  *Verify:* run the builder, then Play in `WaterWorksLab` - console stays clean, F6 opens the panel.
+
+### Changed
+- Realistic-water caustics now use the downloaded project-owned `WaterCaustics.png` lookup instead
+  of repeating sine lattices. Both the High projected-receiver path and the Low surface-composite
+  fallback sample two counter-moving world-space layers, convert the source's baked chromatic
+  fringes into one neutral intensity, and share the same material-installed texture. The lookup is
+  imported as linear, uncompressed data so the thin focus lines do not acquire gamma or block
+  artifacts. Projected caustics now use a slower scale-appropriate drift and stronger
+  depth/turbidity attenuation: crisp cellular lines in the shallows, subtle light at the mid shelf,
+  and none in the deep trench. WaterWorks was inspected as the other downloaded candidate, but its
+  caustics are generated from Voronoi/Gradient Noise inside the full nine-pass Shader Graph and
+  provide no reusable texture advantage.
+  `Market/Debug/Water/Inspect Realistic Water Shader Errors` checks both affected shaders directly.
+  *Verify:* rebuild and Play `WaterShaderLab`; compare the shallow calibration floor with the mid
+  shelf, then switch quality tiers to confirm both paths keep the same non-repeating pattern.
+- `M_RealisticWaterLab` now reads as a body of water instead of clear glass: stronger wavelength-
+  dependent absorption and in-scattering hide the seabed progressively with depth while preserving
+  readable shallows. The open-water path is longer, caustics and refraction are restrained, and
+  slightly broader surface reflections remove the razor-sharp synthetic sheen.
+  *Verify:* Play `WaterShaderLab` from the shoreline; the shallow terrace still shows the bottom,
+  while the deeper shelves become dense blue water instead of exposing the full seabed.
+
 ## [1.8.0] - 2026-07-27
 
 ### Added
