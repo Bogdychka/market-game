@@ -14,6 +14,33 @@ their historical agent attributions (Claude / Codex / user); new entries don't n
 
 ## [Unreleased]
 
+### Added
+- **Water settings wall in WaterShaderLab** - a physical panel beside the player spawn with 16
+  labelled sliders (waves, surface, depth, foam, caustics), a `<` / `>` arrow pair per row for a
+  5%-of-range step, and footer steppers for WEATHER, WAVE PROFILE and QUALITY plus RESET ALL.
+  Rows come from one table (`WaterWallFields`), so exposing another property is a line of data,
+  not a hand-wired widget. The wave rows drive `WaveProfileBinder.BankScale`, so they scale the
+  bound profile without writing to the asset; RESET ALL re-applies the current weather state
+  rather than the values captured at load, which would otherwise leave the wall reading BREEZE
+  while the water showed something else. Built by `Market/Debug/Water/Build Water Settings Wall`
+  and by the lab scene builder, so a rebuild keeps it.
+- **Crosshair and gaze pointer** (`CrosshairView`, `GazeUiPointer`) - a screen-centre dot that
+  grows and turns cyan over an interactive control, and a pointer that drives world-space uGUI
+  from the centre of the screen so the FPS player can use real buttons and sliders with the cursor
+  locked, LMB (the Player map's Attack action) as the click. Sliders drag by aiming along them:
+  the pointer stays at screen centre while the camera turns, which walks the hit point along the
+  rect. While the cursor is unlocked for a menu the pointer stands down and hands the EventSystem
+  back to the mouse input module, so the F6/F7/F8 tuner panels keep working.
+  Verify (done live in Play Mode via `player_agent` plus an injected click): aiming at the Wave
+  Height slider highlights the dot, clicking sets it 0.56 -> 2.52 and the sea visibly builds,
+  RESET ALL restores the weather baseline.
+- `UiFactory.PlaceTopLeft` - top-left placement for panels laid out from a table of rows rather
+  than by a layout group.
+
+### Changed
+- `Market.Editor` asmdef references `Unity.InputSystem` (the wall builder ensures an EventSystem
+  with `InputSystemUIInputModule`).
+
 ## [1.10.0] - 2026-08-02
 
 ### Added

@@ -1101,3 +1101,4 @@ and report the changed player pose with no console errors.
 - [x] T20 GrassLab layered meadow visual showcase pass
 - [x] T21 Grass interaction bend and presentation polish
 - [x] T22 Wave profile assets and procedural wave editor
+- [x] T23 In-world water settings wall with crosshair interaction

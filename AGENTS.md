@@ -241,6 +241,11 @@ Water look tuning: `Market/Debug/Water/Stylized Water Tuner` (editor window) and
 on **F7** (`StylizedWaterRuntimeTuner`) - same labelled sliders and the same JSON presets under
 `Art/Materials/Water/Presets`; the property table lives once in `StylizedWaterShaderCatalog`.
 Tune a project copy of the material, never the imported package material.
+In-world tuning: `Market/Debug/Water/Build Water Settings Wall` puts a panel of sliders/steppers
+next to the lab spawn, operated with the crosshair and LMB (`CrosshairView` + `GazeUiPointer`, a
+screen-centre pointer for world-space uGUI). Add a property by adding a row to `WaterWallFields`.
+A world-space canvas is read from its **-Z** side - point its forward away from the reader or the
+text renders mirrored.
 Wave shape for `RealisticWater` is an asset, not shader properties: `WaveProfile` under
 `Art/Materials/Water/Profiles` (presets rebuilt by `Market/Debug/Water/Create Preset Wave
 Profiles`), authored in `Market/Debug/Water/Wave Creation Wizard`, uploaded by `WaveProfileBinder`

@@ -92,6 +92,8 @@ namespace Market.DebugTools.Editor
             BuildWeatherController(water, weatherStatus);
             BuildPostProcessing();
             BuildPlayer();
+            // After the player: the wall is hung relative to the spawn and turned to face it.
+            WaterSettingsWallBuilder.Build();
 
             EditorSceneManager.SaveScene(scene, ScenePath);
             AssetDatabase.SaveAssets();

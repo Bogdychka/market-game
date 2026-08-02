@@ -85,6 +85,23 @@ namespace Market.UI
             rect.offsetMax = Vector2.zero;
         }
 
+        /// <summary>
+        /// Place a rect by top-left corner and size, in the parent's pixel space. For panels laid
+        /// out from a table of rows rather than by a layout group, where "row 3 sits 96 px down"
+        /// is the natural way to express the position.
+        /// Anchors and pivot are set to the parent's top-left before the offsets, per the same
+        /// rule as <see cref="StretchToParent"/>.
+        /// </summary>
+        public static void PlaceTopLeft(
+            RectTransform rect, float left, float top, float width, float height)
+        {
+            rect.anchorMin = new Vector2(0f, 1f);
+            rect.anchorMax = new Vector2(0f, 1f);
+            rect.pivot = new Vector2(0f, 1f);
+            rect.sizeDelta = new Vector2(width, height);
+            rect.anchoredPosition = new Vector2(left, -top);
+        }
+
         /// <summary>Pin min/preferred height for a layout-group child.</summary>
         public static LayoutElement AddLayoutHeight(GameObject obj, float height)
         {
