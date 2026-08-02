@@ -14,6 +14,8 @@ their historical agent attributions (Claude / Codex / user); new entries don't n
 
 ## [Unreleased]
 
+## [1.12.0] - 2026-08-02
+
 ### Added
 - **Reference wave video analyzer for Codex and Claude** - the shared `analyze-wave-video` skill
   processes MP4/MOV/AVI/MKV references into dense paginated source, ROI, and mask timelines (72 review
