@@ -15,10 +15,28 @@ Claude is the only agent on this project: it implements, verifies, and records.
 
 Implement one plan step per request, record what changed in `CHANGELOG.md [Unreleased]`
 (what/why/how to verify), then verify via MCP: `recompile_scripts` -> `get_health_report` must be
-`ok` (0 errors, 0 dirty scenes). Report green/red to the user. **Do not commit, merge, tag, or
-push** - wait for explicit instruction. If MCP can't run, state exactly what was NOT verified.
+`ok` (0 errors, 0 dirty scenes). Report green/red to the user. **Commit the work yourself once it
+is green** - see "Committing" below. **Merging, tagging and pushing still wait for an explicit
+instruction.** If MCP can't run, state exactly what was NOT verified - and don't commit.
 Fast path: run `.claude/tools/verify-unity.ps1` (add `-Refresh` after creating files, `-RunTests`
 for shared/risky logic).
+
+## Committing (automatic - no need to ask)
+- **Commit without being asked, once verification is green.** Don't end a turn leaving finished,
+  verified work uncommitted. Green means `get_health_report` is `ok`: compiles, 0 errors,
+  0 dirty scenes. Red or unverified -> report it and leave the work uncommitted.
+- **Commit on a `claude/<slug>` branch, never straight onto `main`.** If the current branch is
+  `main`, branch first (see Git process). This is what keeps auto-commit safe: nothing lands on
+  `main` without the user merging it.
+- **One logical change per commit**, Conventional Commits, and update `CHANGELOG.md [Unreleased]`
+  in the same commit. Several unrelated fixes in one turn -> several commits.
+- **Stage deliberately - never `git add -A`.** Add the files the change actually touched. Anything
+  a tool rewrote as a side effect (re-serialized `.unity`/`.prefab`, re-baked textures, `Library/`,
+  build output) stays out unless it IS the change; if unsure whether a rewrite belongs, leave it
+  unstaged and say so.
+- **Still ask first for:** merging, tagging, pushing, `git reset --hard`, force-push, history
+  rewrites, reverting someone else's commit, or committing when the user said they were mid-edit.
+- If a commit fails a hook, fix the cause - never `--no-verify`.
 
 ## Git process
 - **`main` is always green** - compiles, health `ok`. Never leave broken code on `main`.
