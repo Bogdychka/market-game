@@ -1,15 +1,14 @@
 {
-    "name": "Market.Runtime",
-    "rootNamespace": "Market",
+    "name": "OceanURP.Editor",
+    "rootNamespace": "OceanSystem.Editor",
     "references": [
         "OceanURP.Runtime",
-        "Unity.InputSystem",
         "Unity.RenderPipelines.Core.Runtime",
-        "Unity.RenderPipelines.Universal.Runtime",
-        "Unity.TextMeshPro",
-        "UnityEngine.UI"
+        "Unity.RenderPipelines.Universal.Runtime"
     ],
-    "includePlatforms": [],
+    "includePlatforms": [
+        "Editor"
+    ],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,

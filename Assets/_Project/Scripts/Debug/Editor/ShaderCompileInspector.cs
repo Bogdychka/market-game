@@ -15,6 +15,7 @@ namespace Market.DebugTools.Editor
         private static readonly string[] RealisticWaterShaderPaths =
         {
             "Assets/_Project/Art/Materials/Water/RealisticWater.shader",
+            "Assets/_Project/Art/Shaders/RealisticWetSand.shader",
             "Assets/_Project/Art/Shaders/RealisticWaterProjectedCaustics.shader",
             "Assets/_Project/Art/Shaders/RealisticWaterUnderwaterSurface.shader",
         };
@@ -25,6 +26,23 @@ namespace Market.DebugTools.Editor
         private static readonly string[] RealisticWaterComputePaths =
         {
             "Assets/_Project/Art/Shaders/RealisticWaterFoamUpdate.compute",
+        };
+
+        // Vendored gasgiant Ocean-URP: the surface shader and the two hidden fullscreen shaders,
+        // plus the FFT/foam kernels the simulation drives them with.
+        private static readonly string[] OceanUrpShaderPaths =
+        {
+            "Assets/OceanURP/Shaders/Ocean.shader",
+            "Assets/OceanURP/Shaders/Resources/UnderwaterEffect.shader",
+            "Assets/OceanURP/Shaders/Resources/StereographicSky.shader",
+        };
+
+        private static readonly string[] OceanUrpComputePaths =
+        {
+            "Assets/OceanURP/Shaders/Resources/ComputeShaders/FFT.compute",
+            "Assets/OceanURP/Shaders/Resources/ComputeShaders/InitialSpectrum.compute",
+            "Assets/OceanURP/Shaders/Resources/ComputeShaders/TimeDependentSpectrum.compute",
+            "Assets/OceanURP/Shaders/Resources/ComputeShaders/FoamSimulation.compute",
         };
 
         [MenuItem("Market/Debug/Inspect GrassWind Shader Errors")]
@@ -58,6 +76,19 @@ namespace Market.DebugTools.Editor
                 InspectShader(shaderPath);
 
             foreach (string computePath in RealisticWaterComputePaths)
+                InspectComputeShader(computePath);
+        }
+
+        /// <summary>
+        /// Dumps compiler messages for the vendored Ocean URP shaders and compute kernels.
+        /// </summary>
+        [MenuItem("Market/Debug/Water/Inspect Ocean URP Shader Errors")]
+        public static void InspectOceanUrp()
+        {
+            foreach (string shaderPath in OceanUrpShaderPaths)
+                InspectShader(shaderPath);
+
+            foreach (string computePath in OceanUrpComputePaths)
                 InspectComputeShader(computePath);
         }
 

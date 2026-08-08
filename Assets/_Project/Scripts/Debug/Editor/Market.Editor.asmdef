@@ -3,6 +3,7 @@
     "rootNamespace": "Market",
     "references": [
         "Market.Runtime",
+        "OceanURP.Runtime",
         "McpUnity.Editor",
         "Unity.InputSystem",
         "Unity.RenderPipelines.Core.Runtime",

@@ -14,6 +14,98 @@ their historical agent attributions (Claude / Codex / user); new entries don't n
 
 ## [Unreleased]
 
+### Added
+- **Ocean URP water in its own lab scene** - vendored gasgiant's MIT-licensed FFT ocean
+  (github.com/gasgiant/Ocean-URP) into `Assets/OceanURP` and built `OceanURPLab.unity` around it,
+  rebuildable from `Market/Debug/Build Ocean URP Lab`. Upstream targets Unity 2020.3 / URP 10.7, so
+  the render passes were ported to the Unity 6 Render Graph API: the three original passes all ran
+  at `BeforeRenderingTransparents` and now record from one `OceanRenderPass`, which lets the camera
+  submergence texture reach the surface shader as a graph global and puts the inverse view/projection
+  matrices in place before the underwater pass instead of one frame late. The MarkupAttributes
+  package dependency was dropped rather than added - its `__ApplyMarkupAttributes.cs` registers a
+  `[CustomEditor]` for every MonoBehaviour and ScriptableObject in the project - so the four affected
+  editors now use the default inspector plus their own extras; serialized fields and all preset
+  assets are untouched. Also fixed an upstream bug where `PopulateInputs` overwrote its wind-force
+  argument with the inspector preview value, dropped the unreferenced dead `ShoreMap` code, and
+  removed a `_CameraDepthTexture_TexelSize` redeclaration that URP 17 already provides.
+  The lab camera renders through a new `Assets/Settings/Ocean_Renderer.asset` appended at index 1 of
+  both pipeline assets, so gameplay scenes (index 0) render exactly as before; that renderer copies
+  depth after opaques because the ocean samples the depth copy before transparents. `PC_RPAsset` now
+  has Depth Texture and Opaque Texture on with Opaque Downsampling None, which refraction requires.
+  Scene controls: `OceanLabFlyCamera` (RMB look, WASD, Space/Ctrl, Shift boost) and
+  `OceanLabController` (wind force `[`/`]`, wind direction `,`/`.`, swell direction `;`/`'`, `H`
+  toggles the legend). Verified by capture: FFT surface with sun glitter and contact foam above
+  water, the volumetric underwater effect below it, all three shaders and four compute kernels at 0
+  compiler messages, 0 console errors in Play Mode, and WaterShaderLab unchanged. Origin, license,
+  every deviation from upstream and the known limitations are recorded in `Assets/OceanURP/README.md`.
+- **Realistic ocean foam mask texture** - added a neutral-grayscale, repeat-wrapped foam texture
+  matching the supplied dense ocean-foam reference, with linear sampling and mipmaps for shader use.
+
+### Changed
+- **Reference-driven open-water appearance** - retuned the shared ocean-swell preset after reviewing
+  all 288 timeline frames from the three downloaded water references. The six wave directions now
+  stay inside a coherent 42-degree family instead of a 130-degree crossing fan, with lower amplitude
+  and steepness so the surface reads as wind-driven swell rather than intersecting hills. The lab
+  material now uses a lighter teal-green scattering color, 0.95 scattering strength, and balanced
+  0.22 roughness selected from fixed Shader Vision sweeps. Separate caustic, micro-normal, and
+  whitecap controls proved they were not the source of the repeated surface streaks. Final six-pose
+  A/B output changed the intended water pixels, the 12-cell three-view/four-time motion sheet has 0%
+  clipping, magenta, and non-finite pixels, all realistic-water shaders report 0 compiler messages,
+  C# compiled with 0 warnings, and Project Health is green in a clean WaterShaderLab scene.
+- **Island surf front now follows the measured shoreline field** - temporal foam injection now reads
+  the signed horizontal shore-distance bake when available instead of reducing a shallow Terrain
+  slope to an almost one-pixel physics-gradient line. The static mask is broken into curved lobes and
+  phased by the same crest/breaker source as the water surface, while the Island preset uses a six
+  metre surf band, stronger residual visibility, a sweep-selected 0.68 breakup, and brighter diffuse
+  foam lighting. A six-value width sweep first proved the material control was inert behind temporal
+  history; a second six-value breakup sweep selected the final coverage. A 512 history candidate made
+  the mask smoother but was rejected after the camera turn rose to 10.97 ms p95 / 26.76 ms max and
+  9/1720 frames over budget. The accepted 256 history uses 0.563 MiB and measured 3.16 ms average,
+  8.90 ms p95, 19.74 ms max, and 2/1896 frames over 16.67 ms. Final nine-cell Shader Vision output has
+  0% magenta/non-finite pixels and no visible clipping; C# compiled with 0 warnings, every realistic
+  water shader/compute reports 0 compiler messages, Project Health is green, and Island is clean.
+- **Realistic shore water installed in Island** - replaced the scene's flat stylized surface with a
+  project-owned 193x193 displaced ocean grid, `WP_OceanSwell`, reference-tuned depth/scattering, and
+  the existing two-channel temporal foam. The shore baker now stores signed distance on both sides of
+  the actual curved coastline; foam history is focused on the playable 516x516 region; and a clipped,
+  Terrain-following wet-sand mesh consumes the same shore field and foam history for run-up and slower
+  retreat. Island uses sky-only reflection so the effect adds no planar reflection render texture.
+  The scene now references a deterministically restored TerrainData asset; the corrupt, unreferenced
+  original was removed after its GUID was confirmed unused. Final Shader Vision sampled three shore
+  views at three fixed times with 0% magenta/non-finite pixels and at most 0.04% clipping. C# compiled
+  with 0 warnings, the realistic-water shader/compute inspectors report 0 messages, Project Health is
+  green with a clean Island scene, and the repeatable camera turn measured 3.26 ms average, 9.26 ms
+  p95, 18.68 ms max, with only 2/1845 frames over 16.67 ms (down from 51/1090 before sky-only
+  reflection).
+- **Reference-matched swash and wet-sand memory** - added an opaque `RealisticWetSand` shore shader
+  and an edit-safe binder that projects the existing fresh/residual foam history onto the lab beach
+  without another render texture or an opaque-texture copy. Fresh breaker events form a bounded,
+  broken run-up front while the residual channel leaves a continuous, slower dark and smooth retreat
+  region below the authored maximum waterline. The scene builder now restores the beach material,
+  history source, water renderer, and both target renderers. Missing-property guards keep the binder
+  safe when the R9 profiler temporarily swaps in the stylized water material. Shader Vision control
+  A/B changed 10.8-13.1% of the oblique view, 27.1-28.8% of the close swash view, and 15.0-15.6% of
+  the top-down wetness view with 0% clipping, magenta, or non-finite pixels. Unity compiled with 0
+  warnings and every realistic-water shader/compute compiler message count was 0. A clean post-fix
+  R9 run measured High at 0.71 ms GPU average/p95 and the camera turn at 0.74/0.76 ms with no frames
+  over 16.67 ms. Health remains attention only for the pre-existing Play Mode exit
+  `InputSystemUIInputModule` MissingReference error; the scene is clean and compilation passes.
+- **Realistic water foam now uses the authored mask** - `RealisticWater.shader` samples the new foam
+  texture in wind-aligned world space at independent clump and bubble scales instead of drawing the
+  visible breakup from crossed procedural sine waves.
+- **Reference-matched shore breaker vertical slice** - the existing RealisticWater wave bank now
+  applies a bounded pre-break shoal ramp before flattening at the beach. The surface and temporal
+  compute share one shallow-water crest source; the fixed RGHalf history stores fast fresh foam and
+  slower residual foam with limited backwash, while low-frequency shoreline lobes break the surf
+  front into gaps instead of a uniform stripe. The lab material and scene retain the authored foam
+  texture and explicitly serialize the new tuning values. Shader Vision A/B changed 7.3-11.0% of
+  the distant oblique view and 46.3-48.0% of the targeted top-down surf view with 0% clipping,
+  magenta, or non-finite pixels. Unity compiled with 0 warnings and all realistic-water shader and
+  compute compiler message counts were 0. R9 profiling measured temporal history at +0.01 ms GPU
+  average, High GPU p95 at 0.84 ms, camera-turn GPU p95 at 0.87 ms, and unchanged 0.563 MiB foam
+  memory at 256x256. Health remains attention only for the pre-existing Play Mode exit
+  `InputSystemUIInputModule` MissingReference error; the scene is clean and compilation passes.
+
 ## [1.12.0] - 2026-08-02
 
 ### Added
