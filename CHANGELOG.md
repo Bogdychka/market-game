@@ -14,6 +14,8 @@ their historical agent attributions (Claude / Codex / user); new entries don't n
 
 ## [Unreleased]
 
+## [1.13.0] - 2026-08-08
+
 ### Added
 - **Ocean URP water in its own lab scene** - vendored gasgiant's MIT-licensed FFT ocean
   (github.com/gasgiant/Ocean-URP) into `Assets/OceanURP` and built `OceanURPLab.unity` around it,
