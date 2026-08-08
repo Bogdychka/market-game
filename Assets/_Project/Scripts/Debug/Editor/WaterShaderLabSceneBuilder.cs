@@ -25,6 +25,7 @@ namespace Market.DebugTools.Editor
         private const string PlayerPrefabPath = "Assets/_Project/Art/Prefabs/Player/Player.prefab";
         private const string RealisticWaterMeshPath = "Assets/_Project/Art/Meshes/Water/RealisticWaterGrid.asset";
         private const string RealisticWaterMaterialPath = "Assets/_Project/Art/Materials/Water/M_RealisticWaterLab.mat";
+        private const string WetSandShaderName = "Market/World/RealisticWetSand";
         private const string TemporalFoamComputePath =
             "Assets/_Project/Art/Shaders/RealisticWaterFoamUpdate.compute";
         private const string GeneratedFolder = "Assets/_Project/Art/WaterShaderLab";
@@ -82,6 +83,7 @@ namespace Market.DebugTools.Editor
             BuildFeatureStations();
             RealisticWaterMaterialInstaller.CreateMaterial();
             GameObject water = BuildRealisticWater();
+            BuildWetSandBinding(scene, water);
             BuildProjectedCaustics(scene, water);
             BuildUnderwaterSurface(water);
             BuildQualityController(water);
@@ -98,6 +100,38 @@ namespace Market.DebugTools.Editor
             EditorSceneManager.SaveScene(scene, ScenePath);
             AssetDatabase.SaveAssets();
             Debug.Log($"[WaterShaderLabSceneBuilder] Built {ScenePath}. Edit RealisticWater.shader / M_RealisticWaterLab.mat and use Scene view or Play to iterate.");
+        }
+
+        /// <summary>
+        /// Installs the reference-driven run-up material and binding without rebuilding the lab.
+        /// </summary>
+        [MenuItem("Market/Debug/Water/Install Reference Wet Sand")]
+        public static void InstallReferenceWetSand()
+        {
+            Scene scene = SceneManager.GetActiveScene();
+            if (scene.path != ScenePath)
+            {
+                Debug.LogError(
+                    "[WaterShaderLabSceneBuilder] Open WaterShaderLab before installing wet sand.");
+                return;
+            }
+
+            GameObject water = FindRoot(scene, "Water");
+            if (water == null)
+            {
+                Debug.LogError(
+                    "[WaterShaderLabSceneBuilder] The Water root is missing.");
+                return;
+            }
+
+            EnsureGeneratedFolder();
+            AssignWetSandMaterial(scene);
+            BuildWetSandBinding(scene, water);
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene);
+            AssetDatabase.SaveAssets();
+            Debug.Log(
+                "[WaterShaderLabSceneBuilder] Installed reference wet sand and run-up binding.");
         }
 
         private static void BuildSeabed()
@@ -180,6 +214,62 @@ namespace Market.DebugTools.Editor
                 rock.transform.localRotation =
                     Quaternion.Euler(8f, rotations[i], 5f);
             }
+        }
+
+        private static void AssignWetSandMaterial(Scene scene)
+        {
+            GameObject seabed = FindRoot(scene, "Seabed");
+            if (seabed == null)
+                return;
+
+            Material material = GetOrCreateMaterial(
+                "Terrace_Beach", Terraces[0].Color);
+            AssignChildMaterial(seabed.transform, "Beach", material);
+            AssignChildMaterial(seabed.transform, "Beach Slope", material);
+        }
+
+        private static void AssignChildMaterial(
+            Transform parent, string childName, Material material)
+        {
+            Transform child = parent.Find(childName);
+            Renderer renderer = child != null ? child.GetComponent<Renderer>() : null;
+            if (renderer != null)
+                renderer.sharedMaterial = material;
+        }
+
+        private static void BuildWetSandBinding(Scene scene, GameObject water)
+        {
+            GameObject seabed = FindRoot(scene, "Seabed");
+            if (seabed == null || water == null)
+                return;
+
+            Transform beach = seabed.transform.Find("Beach");
+            Transform slope = seabed.transform.Find("Beach Slope");
+            Renderer[] targets =
+            {
+                beach != null ? beach.GetComponent<Renderer>() : null,
+                slope != null ? slope.GetComponent<Renderer>() : null,
+            };
+
+            RealisticWaterWetSand binding =
+                water.GetComponent<RealisticWaterWetSand>();
+            if (binding == null)
+                binding = water.AddComponent<RealisticWaterWetSand>();
+
+            var serializedObject = new SerializedObject(binding);
+            serializedObject.FindProperty("foamSource").objectReferenceValue =
+                water.GetComponent<RealisticWaterTemporalFoam>();
+            serializedObject.FindProperty("waterRenderer").objectReferenceValue =
+                water.GetComponent<Renderer>();
+            SerializedProperty targetProperty =
+                serializedObject.FindProperty("targetRenderers");
+            targetProperty.arraySize = targets.Length;
+            for (int i = 0; i < targets.Length; i++)
+            {
+                targetProperty.GetArrayElementAtIndex(i).objectReferenceValue =
+                    targets[i];
+            }
+            serializedObject.ApplyModifiedPropertiesWithoutUndo();
         }
 
         private static void BuildLabArchitecture()
@@ -661,10 +751,12 @@ namespace Market.DebugTools.Editor
                 compute;
             serializedObject.FindProperty("quality").enumValueIndex =
                 (int)WaterFoamHistoryQuality.History256;
-            serializedObject.FindProperty("whitecapDecayRate").floatValue = 1f;
+            serializedObject.FindProperty("freshFoamDecayRate").floatValue = 1.2f;
             serializedObject.FindProperty("whitecapInjectionStrength").floatValue = 1f;
-            serializedObject.FindProperty("shorelineDecayRate").floatValue = 0.9f;
+            serializedObject.FindProperty("residualFoamDecayRate").floatValue = 0.22f;
             serializedObject.FindProperty("shorelineInjectionStrength").floatValue = 1f;
+            serializedObject.FindProperty("residualTransfer").floatValue = 0.55f;
+            serializedObject.FindProperty("residualAdvectionScale").floatValue = -0.15f;
             serializedObject.ApplyModifiedPropertiesWithoutUndo();
         }
 
@@ -1164,18 +1256,58 @@ namespace Market.DebugTools.Editor
         {
             string path = $"{GeneratedFolder}/{name}.mat";
             Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
+            bool isWetSand = name == "Terrace_Beach";
+            Shader shader = Shader.Find(isWetSand
+                ? WetSandShaderName
+                : "Universal Render Pipeline/Lit");
+            if (shader == null)
+                throw new InvalidOperationException(
+                    $"Required shader is missing for material '{name}'.");
             if (material == null)
             {
-                Shader shader = Shader.Find("Universal Render Pipeline/Lit");
                 material = new Material(shader) { name = name };
                 AssetDatabase.CreateAsset(material, path);
             }
+            else if (material.shader != shader)
+            {
+                material.shader = shader;
+            }
 
-            material.SetColor("_BaseColor", color);
-            material.SetFloat("_Smoothness", smoothness);
-            material.SetFloat("_Metallic", metallic);
+            if (isWetSand)
+                ConfigureWetSandMaterial(material, color);
+            else
+            {
+                material.SetColor("_BaseColor", color);
+                material.SetFloat("_Smoothness", smoothness);
+                material.SetFloat("_Metallic", metallic);
+            }
             EditorUtility.SetDirty(material);
             return material;
+        }
+
+        private static void ConfigureWetSandMaterial(
+            Material material, Color dryColor)
+        {
+            material.SetColor("_DryColor", dryColor);
+            material.SetColor(
+                "_WetColor", new Color(0.34f, 0.25f, 0.13f, 1f));
+            material.SetColor(
+                "_SwashColor", new Color(0.78f, 0.82f, 0.76f, 1f));
+            material.SetFloat("_DrySmoothness", 0.1f);
+            material.SetFloat("_WetSmoothness", 0.62f);
+            material.SetFloat("_WaterLevel", 0f);
+            material.SetFloat("_RunupHeight", 0.85f);
+            material.SetFloat("_RunupDistance", 6.5f);
+            material.SetFloat("_RetreatWidth", 0.8f);
+            material.SetFloat("_HistoryProbeOffset", 2f);
+            material.SetFloat("_EventGain", 2.2f);
+            material.SetFloat("_BreakupScale", 0.18f);
+            material.SetFloat("_BreakupStrength", 0.35f);
+            material.SetFloat("_FallbackEventStrength", 0.35f);
+            material.SetVector(
+                "_ShoreDirection", new Vector4(0f, 0f, 1f, 0f));
+            material.SetVector(
+                "_ShoreOriginXZ", new Vector4(0f, -20f, 0f, 0f));
         }
 
         private static Material GetOrCreateEmissiveMaterial(

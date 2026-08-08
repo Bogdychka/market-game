@@ -1,0 +1,43 @@
+{
+  "runId": "",
+  "outputName": "water-micro-strength-sweep",
+  "scene": "Assets/_Project/Scenes/WaterShaderLab.unity",
+  "width": 512,
+  "height": 288,
+  "columns": 3,
+  "freezeTime": true,
+  "time": 8.0,
+  "sun": { "apply": true, "yaw": -140.0, "pitch": 42.0, "intensity": -1.0 },
+  "material": "Assets/_Project/Art/Materials/Water/M_RealisticWaterLab.mat",
+  "overrides": [
+    {
+      "property": "_ScatteringColor",
+      "type": "color",
+      "vector": [0.05, 0.34, 0.32, 1.0]
+    },
+    {
+      "property": "_ScatteringStrength",
+      "type": "float",
+      "value": 0.95
+    },
+    {
+      "property": "_Roughness",
+      "type": "float",
+      "value": 0.22
+    }
+  ],
+  "views": [
+    {
+      "name": "topdown-surface",
+      "position": [0.0, 24.0, -4.0],
+      "lookAt": [0.0, 0.0, 6.0],
+      "fov": 55.0
+    }
+  ],
+  "sweep": {
+    "property": "_MicroWaveStrength",
+    "type": "float",
+    "values": [0.0, 0.05, 0.10, 0.15, 0.20, 0.30],
+    "view": "topdown-surface"
+  }
+}

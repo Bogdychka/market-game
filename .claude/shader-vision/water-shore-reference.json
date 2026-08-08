@@ -1,0 +1,34 @@
+{
+  "runId": "",
+  "outputName": "water-shore-reference",
+  "scene": "Assets/_Project/Scenes/WaterShaderLab.unity",
+  "width": 640,
+  "height": 360,
+  "columns": 3,
+  "freezeTime": true,
+  "time": 8.0,
+  "timeSamples": 3,
+  "timeStep": 1.2,
+  "compareRun": "",
+  "sun": { "apply": true, "yaw": -140.0, "pitch": 42.0, "intensity": -1.0 },
+  "views": [
+    {
+      "name": "surf-oblique",
+      "position": [35.0, 3.0, -25.0],
+      "lookAt": [20.0, -0.1, -5.0],
+      "fov": 42.0
+    },
+    {
+      "name": "runup-close",
+      "position": [35.0, 1.2, -18.0],
+      "lookAt": [25.0, -0.1, -8.0],
+      "fov": 32.0
+    },
+    {
+      "name": "foam-topdown",
+      "position": [35.0, 30.0, -8.0],
+      "lookAt": [35.0, 0.0, -8.0],
+      "fov": 42.0
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "runId": "",
+  "outputName": "island-foam-breakup-sweep",
+  "scene": "Assets/_Project/Scenes/Island.unity",
+  "width": 640,
+  "height": 360,
+  "columns": 3,
+  "freezeTime": true,
+  "time": 9.2,
+  "sun": { "apply": true, "yaw": -140.0, "pitch": 42.0, "intensity": -1.0 },
+  "material": "Assets/_Project/Art/Materials/Water/M_RealisticWaterIsland.mat",
+  "views": [
+    {
+      "name": "south-swash-close",
+      "position": [250.0, 16.0, 92.0],
+      "lookAt": [250.0, 12.0, 118.0],
+      "fov": 34.0
+    }
+  ],
+  "sweep": {
+    "property": "_FoamBreakup",
+    "type": "float",
+    "values": [0.3, 0.45, 0.55, 0.65, 0.75, 0.85],
+    "view": "south-swash-close"
+  }
+}

@@ -3,6 +3,7 @@
 Texture2D<float2> _FoamHistorySource;
 RWTexture2D<float2> _FoamHistoryDestination;
 Texture2D<float> _ShorelineMask;
+Texture2D<float2> _ShoreDepthTexture;
 
 int _FoamBufferResolution;
 float4 _FoamUpdateWorldRect;
@@ -18,11 +19,22 @@ float _Wave3Steepness;
 float _Wave4Steepness;
 float _FoamCrestGain;
 float _FoamCrestBias;
+float _FoamCrestHeight;
+float _FoamCrestHeightFalloff;
+float _FoamCrestSlopeGain;
 float _FoamNoiseTiling;
 float _FoamNoiseSpeed;
 float2 _FoamDecayRates;
 float2 _FoamInjectionStrengths;
 float2 _FoamAdvectionVelocity;
+float _FoamResidualAdvectionScale;
+float _FoamResidualTransfer;
+float _ShoreDepthAvailable;
+float4 _ShoreDepthWorldRect;
+float _ShoreDepthMaximum;
+float _ShoreWaveDepth;
+float _ShoreShoalStrength;
+float _ShoreBreakStrength;
 float _FoamDeltaTime;
 float _FoamTime;
 
@@ -32,6 +44,25 @@ float _FoamTime;
 // crest-tracking bug.
 #include "Assets/_Project/Art/Shaders/RealisticWaterWaves.hlsl"
 
+float2 SampleShoreMap(float2 worldXZ)
+{
+    if (_ShoreDepthAvailable < 0.5)
+        return _ShoreDepthMaximum.xx;
+
+    float2 uv = (worldXZ - _ShoreDepthWorldRect.xy) *
+        _ShoreDepthWorldRect.zw;
+    if (any(uv < 0.0) || any(uv > 1.0))
+        return _ShoreDepthMaximum.xx;
+
+    uint width;
+    uint height;
+    _ShoreDepthTexture.GetDimensions(width, height);
+    int2 maximumPixel = int2(width, height) - 1;
+    int2 pixel = clamp(
+        int2(uv * float2(width, height)), int2(0, 0), maximumPixel);
+    return _ShoreDepthTexture.Load(int3(pixel, 0));
+}
+
 float WhitecapSource(float2 worldXZ)
 {
     float3 offset = float3(0.0, 0.0, 0.0);
@@ -39,9 +70,24 @@ float WhitecapSource(float2 worldXZ)
     float3 tangentZ = float3(0.0, 0.0, 1.0);
     RealisticWaterAccumulateWaves(
         worldXZ, _FoamTime, offset, tangentX, tangentZ);
-    float jacobian = RealisticWaterJacobian(tangentX, tangentZ);
-    return saturate(
-        (1.0 - jacobian - _FoamCrestBias) * _FoamCrestGain);
+    float shoreDepth = SampleShoreMap(worldXZ).x;
+    float waveScale = RealisticWaterShoreWaveScale(
+        shoreDepth, _ShoreWaveDepth, _ShoreShoalStrength);
+    RealisticWaterApplyWaveScale(
+        waveScale, offset, tangentX, tangentZ);
+    float breakEnvelope = RealisticWaterShoreBreakEnvelope(
+        shoreDepth, _ShoreWaveDepth);
+    return RealisticWaterCrestFoamSource(
+        offset,
+        tangentX,
+        tangentZ,
+        _FoamCrestGain,
+        _FoamCrestBias,
+        _FoamCrestHeight,
+        _FoamCrestHeightFalloff,
+        _FoamCrestSlopeGain,
+        breakEnvelope,
+        _ShoreBreakStrength);
 }
 
 float FoamBreakupNoise(float2 worldXZ)
@@ -92,26 +138,43 @@ void UpdateFoam(uint3 dispatchId : SV_DispatchThreadID)
         (float2(dispatchId.xy) + 0.5) / _FoamBufferResolution;
     float2 worldSize = max(
         _FoamUpdateWorldRect.zw, float2(0.001, 0.001));
-    float2 previousUV = uv -
+    float2 previousFreshUV = uv -
         _FoamAdvectionVelocity * _FoamDeltaTime / worldSize;
-    float historyInside =
-        step(0.0, previousUV.x) *
-        step(previousUV.x, 1.0) *
-        step(0.0, previousUV.y) *
-        step(previousUV.y, 1.0);
-    float whitecapHistory =
-        LoadHistoryBilinear(saturate(previousUV)).r * historyInside;
-    float shorelineHistory = _FoamHistorySource.Load(
-        int3(dispatchId.xy, 0)).g;
-    float2 history = float2(whitecapHistory, shorelineHistory);
+    float2 previousResidualUV = uv -
+        _FoamAdvectionVelocity * _FoamResidualAdvectionScale *
+        _FoamDeltaTime / worldSize;
+    float freshInside =
+        step(0.0, previousFreshUV.x) *
+        step(previousFreshUV.x, 1.0) *
+        step(0.0, previousFreshUV.y) *
+        step(previousFreshUV.y, 1.0);
+    float residualInside =
+        step(0.0, previousResidualUV.x) *
+        step(previousResidualUV.x, 1.0) *
+        step(0.0, previousResidualUV.y) *
+        step(previousResidualUV.y, 1.0);
+    float2 history = float2(
+        LoadHistoryBilinear(saturate(previousFreshUV)).r * freshInside,
+        LoadHistoryBilinear(saturate(previousResidualUV)).g * residualInside);
     history *= exp(-max(_FoamDecayRates, 0.0) * _FoamDeltaTime);
 
     float2 worldXZ = _FoamUpdateWorldRect.xy + uv * worldSize;
     float breakup = 0.55 + 0.45 * FoamBreakupNoise(worldXZ);
-    float whitecap = WhitecapSource(worldXZ) * breakup;
+    float breakerSource = WhitecapSource(worldXZ);
+    float whitecap = breakerSource * breakup;
     float shoreline = _ShorelineMask.Load(int3(dispatchId.xy, 0));
-    float2 injection =
-        float2(whitecap, shoreline) * _FoamInjectionStrengths;
-    _FoamHistoryDestination[dispatchId.xy] =
-        saturate(max(history, injection));
+    float alongshoreLobes = smoothstep(
+        0.3, 0.78, FoamBreakupNoise(
+            worldXZ * float2(0.32, 0.18) + 17.0));
+    shoreline *= lerp(0.18, 1.0, alongshoreLobes);
+    float breakerPulse = smoothstep(0.08, 0.55, breakerSource);
+    shoreline *= lerp(0.35, 1.0, breakerPulse);
+    float freshInjection = max(
+        whitecap * _FoamInjectionStrengths.x,
+        shoreline * _FoamInjectionStrengths.y);
+    float residualInjection = max(
+        history.x, freshInjection) * max(_FoamResidualTransfer, 0.0);
+    _FoamHistoryDestination[dispatchId.xy] = saturate(float2(
+        max(history.x, freshInjection),
+        max(history.y, residualInjection)));
 }

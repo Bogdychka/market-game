@@ -20,25 +20,38 @@ namespace Market.DebugTools.Editor
         [MenuItem("Market/Debug/Water/Generate Realistic Water Mesh")]
         public static void GenerateMesh()
         {
-            EnsureFolders();
-            Mesh mesh = BuildGridMesh(Resolution, Size);
-
-            Mesh existing = AssetDatabase.LoadAssetAtPath<Mesh>(MeshPath);
-            if (existing != null)
-            {
-                EditorUtility.CopySerialized(mesh, existing);
-                Object.DestroyImmediate(mesh);
-                AssetDatabase.SaveAssets();
-                LogResult(existing);
-                return;
-            }
-
-            AssetDatabase.CreateAsset(mesh, MeshPath);
+            Mesh mesh = EnsureGridMesh(
+                MeshPath, Resolution, Size, "RealisticWaterGrid");
             AssetDatabase.SaveAssets();
             LogResult(mesh);
         }
 
-        private static Mesh BuildGridMesh(int resolution, float size)
+        /// <summary>
+        /// Creates or deterministically refreshes a project-owned water grid asset.
+        /// </summary>
+        public static Mesh EnsureGridMesh(
+            string meshPath, int resolution, float size, string meshName)
+        {
+            EnsureFolders();
+            resolution = Mathf.Max(2, resolution);
+            size = Mathf.Max(1f, size);
+            Mesh mesh = BuildGridMesh(resolution, size, meshName);
+
+            Mesh existing = AssetDatabase.LoadAssetAtPath<Mesh>(meshPath);
+            if (existing != null)
+            {
+                EditorUtility.CopySerialized(mesh, existing);
+                Object.DestroyImmediate(mesh);
+                EditorUtility.SetDirty(existing);
+                return existing;
+            }
+
+            AssetDatabase.CreateAsset(mesh, meshPath);
+            return mesh;
+        }
+
+        private static Mesh BuildGridMesh(
+            int resolution, float size, string meshName)
         {
             var vertices = new Vector3[resolution * resolution];
             var uvs = new Vector2[vertices.Length];
@@ -76,7 +89,7 @@ namespace Market.DebugTools.Editor
 
             var mesh = new Mesh
             {
-                name = "RealisticWaterGrid",
+                name = meshName,
                 indexFormat = IndexFormat.UInt32
             };
             mesh.SetVertices(vertices);
@@ -84,6 +97,8 @@ namespace Market.DebugTools.Editor
             mesh.SetNormals(normals);
             mesh.SetTriangles(triangles, 0);
             mesh.RecalculateBounds();
+            mesh.bounds = new Bounds(
+                Vector3.zero, new Vector3(size, 10f, size));
             mesh.RecalculateTangents();
             return mesh;
         }

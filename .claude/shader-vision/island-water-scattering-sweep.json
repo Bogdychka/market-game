@@ -1,0 +1,33 @@
+{
+  "runId": "",
+  "outputName": "island-water-scattering-sweep",
+  "scene": "Assets/_Project/Scenes/Island.unity",
+  "width": 512,
+  "height": 288,
+  "columns": 3,
+  "freezeTime": true,
+  "time": 9.2,
+  "sun": { "apply": true, "yaw": -140.0, "pitch": 42.0, "intensity": -1.0 },
+  "material": "Assets/_Project/Art/Materials/Water/M_RealisticWaterIsland.mat",
+  "views": [
+    {
+      "name": "south-water",
+      "position": [250.0, 20.0, 70.0],
+      "lookAt": [250.0, 12.0, 125.0],
+      "fov": 42.0
+    }
+  ],
+  "sweep": {
+    "property": "_ScatteringColor",
+    "type": "color",
+    "vectorValues": [
+      0.018, 0.15, 0.22, 1.0,
+      0.025, 0.20, 0.32, 1.0,
+      0.030, 0.24, 0.38, 1.0,
+      0.040, 0.28, 0.42, 1.0,
+      0.055, 0.32, 0.45, 1.0,
+      0.070, 0.36, 0.48, 1.0
+    ],
+    "view": "south-water"
+  }
+}

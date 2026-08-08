@@ -71,6 +71,7 @@ Shader "Market/World/RealisticWater"
 
         [Header(Foam)]
         _FoamColor("Foam Color", Color) = (0.95, 0.98, 1.0, 1)
+        [NoScaleOffset] _FoamTexture("Foam Pattern", 2D) = "gray" {}
         _FoamCrestGain("Whitecap Gain", Range(0, 12)) = 4.0
         _FoamCrestBias("Whitecap Bias", Range(0, 1)) = 0.12
         // The Jacobian above only detects a folding crest, so it stays silent on anything short of
@@ -95,6 +96,7 @@ Shader "Market/World/RealisticWater"
         _FoamBubbleTiling("Foam Bubble Tiling Multiplier", Range(1, 12)) = 4.7
         _FoamCrestStrength("Whitecap Visual Strength", Range(0, 2)) = 1
         _FoamShoreStrength("Shoreline Visual Strength", Range(0, 2)) = 1
+        _FoamResidualStrength("Residual Foam Strength", Range(0, 2)) = 0.65
         [HideInInspector] [NoScaleOffset] _FoamHistoryTexture("Foam History", 2D) = "black" {}
         [HideInInspector] _FoamHistoryAvailable("Foam History Available", Float) = 0
         [HideInInspector] _FoamHistoryWorldRect("Foam History World Rect", Vector) = (0, 0, 0, 0)
@@ -104,6 +106,8 @@ Shader "Market/World/RealisticWater"
         // applied everywhere, so crests lift the surface above the beach and troughs sink it
         // through the seabed - the water visibly passes through the terrain.
         _ShoreWaveDepth("Wave Shoaling Depth", Range(0.05, 12)) = 2.5
+        _ShoreShoalStrength("Pre-Break Shoal Strength", Range(0, 1.5)) = 0.6
+        _ShoreBreakStrength("Shallow Break Strength", Range(0, 3)) = 1.6
         // Shore band measured in horizontal metres, not in metres of depth: a depth-based band
         // smears over a shallow slope and collapses to a line on a steep one.
         _ShoreBandWidth("Shoreline Band Width", Range(0.05, 12)) = 2.5
@@ -185,6 +189,8 @@ Shader "Market/World/RealisticWater"
             SAMPLER(sampler_NormalMapB);
             TEXTURE2D(_PlanarReflectionTexture);
             SAMPLER(sampler_PlanarReflectionTexture);
+            TEXTURE2D(_FoamTexture);
+            SAMPLER(sampler_FoamTexture);
             TEXTURE2D(_FoamHistoryTexture);
             SAMPLER(sampler_FoamHistoryTexture);
             TEXTURE2D(_ShoreDepthTexture);
@@ -237,6 +243,7 @@ Shader "Market/World/RealisticWater"
                 float _FoamBubbleTiling;
                 float _FoamCrestStrength;
                 float _FoamShoreStrength;
+                float _FoamResidualStrength;
                 float _FoamHistoryAvailable;
                 float4 _FoamHistoryWorldRect;
                 half4 _CausticColor;
@@ -259,6 +266,8 @@ Shader "Market/World/RealisticWater"
                 float _PlanarReflectionAvailable;
                 float _PlanarReflectionFlipY;
                 float _ShoreWaveDepth;
+                float _ShoreShoalStrength;
+                float _ShoreBreakStrength;
                 float _ShoreBandWidth;
                 float _ShoreLineWidth;
                 float _ShoreLineStrength;
@@ -296,15 +305,6 @@ Shader "Market/World/RealisticWater"
                 return SampleShoreMap(worldXZ).x;
             }
 
-            // How much of the wave motion survives at this point. Waves flatten as the water
-            // shallows, which is both what real shoaling does and what stops the surface from
-            // punching through the beach.
-            float ShoalingFactor(float2 worldXZ)
-            {
-                float depth = SampleShoreDepth(worldXZ);
-                return saturate(depth / max(_ShoreWaveDepth, 0.001));
-            }
-
             struct Attributes
             {
                 float4 positionOS : POSITION;
@@ -315,7 +315,7 @@ Shader "Market/World/RealisticWater"
                 float4 positionCS : SV_POSITION;
                 float3 worldPos : TEXCOORD0;
                 float3 macroNormal : TEXCOORD1;
-                float foamJacobian : TEXCOORD2;
+                float crestFoam : TEXCOORD2;
                 float baseWaterY : TEXCOORD3;
                 float2 baseWorldXZ : TEXCOORD4;
                 half fogFactor : TEXCOORD5;
@@ -340,26 +340,34 @@ Shader "Market/World/RealisticWater"
                 RealisticWaterAccumulateWaves(
                     worldPos.xz, t, offset, tangentX, tangentZ);
 
-                // Shoaling: fade the whole wave - offset and the derivatives that build the macro
-                // normal - back to still water as the column shallows. Scaling the offset alone
-                // would leave a lit, sloped surface on geometrically flat water.
-                float shoaling = ShoalingFactor(baseWorldXZ);
-                offset *= shoaling;
-                tangentX = lerp(float3(1, 0, 0), tangentX, shoaling);
-                tangentZ = lerp(float3(0, 0, 1), tangentZ, shoaling);
+                float shoreDepth = SampleShoreDepth(baseWorldXZ);
+                float waveScale = RealisticWaterShoreWaveScale(
+                    shoreDepth, _ShoreWaveDepth, _ShoreShoalStrength);
+                RealisticWaterApplyWaveScale(
+                    waveScale, offset, tangentX, tangentZ);
+                float breakEnvelope = RealisticWaterShoreBreakEnvelope(
+                    shoreDepth, _ShoreWaveDepth);
+                float crestFoam = RealisticWaterCrestFoamSource(
+                    offset,
+                    tangentX,
+                    tangentZ,
+                    _FoamCrestGain,
+                    _FoamCrestBias,
+                    _FoamCrestHeight,
+                    _FoamCrestHeightFalloff,
+                    _FoamCrestSlopeGain,
+                    breakEnvelope,
+                    _ShoreBreakStrength);
 
                 worldPos += offset;
 
-                // The horizontal Jacobian is taken directly from the same derivatives as the
-                // macro normal.
-                float jacobian = RealisticWaterJacobian(tangentX, tangentZ);
                 float3 macroNormal = cross(tangentZ, tangentX);
                 if (dot(macroNormal, macroNormal) < 0.000001)
                     macroNormal = float3(0, 1, 0);
 
                 OUT.worldPos = worldPos;
                 OUT.macroNormal = normalize(macroNormal);
-                OUT.foamJacobian = jacobian;
+                OUT.crestFoam = crestFoam;
                 OUT.baseWaterY = baseWaterY;
                 OUT.baseWorldXZ = baseWorldXZ;
                 OUT.positionCS = TransformWorldToHClip(worldPos);
@@ -476,29 +484,32 @@ Shader "Market/World/RealisticWater"
                 return smoothstep(0.0, max(fadeWidth, 0.0001), nearestEdge);
             }
 
-            // Same breakup noise technique as MarketWater.shader's FoamNoise - three crossed sine
-            // waves, cheap and seamless, no texture dependency - but evaluated at two scales.
-            // One octave can either place foam patches or texture them, never both: at the clump
-            // tiling its features are metres wide, so on its own it just dims a large patch
-            // uniformly and the whitecap reads as airbrushed haze. x = clump scale (which part of
-            // the crest is foaming), y = bubble scale (the structure inside that patch).
+            // The authored mask is sampled in wind-aligned world space at two scales. The first
+            // sample places the large broken patches; the rotated second sample preserves the
+            // cellular froth inside them without locking both layers into the same visible repeat.
             half2 FoamBreakupNoise(float2 worldXZ, float time)
             {
-                float2 uv = worldXZ * _FoamNoiseTiling;
-                float t = time * _FoamNoiseSpeed;
-                half a = sin(dot(uv, float2(0.9, 0.35)) + t);
-                half b = sin(dot(uv, float2(-0.35, 0.95)) - t * 0.7 + a * 0.8);
-                half c = sin(dot(uv, float2(0.6, -0.8)) + t * 0.5 + b * 0.6);
-                half clump = saturate((a * 0.5 + b * 0.3 + c * 0.2) * 0.5 + 0.5);
+                float2 windDirection = _WindDirection.xz;
+                float windLengthSq = dot(windDirection, windDirection);
+                windDirection = windLengthSq > 0.0001
+                    ? windDirection * rsqrt(windLengthSq)
+                    : float2(1.0, 0.0);
+                float2 crossWind = float2(-windDirection.y, windDirection.x);
+                float2 uv = float2(
+                    dot(worldXZ, windDirection),
+                    dot(worldXZ, crossWind)) * _FoamNoiseTiling;
+                uv.x -= time * _FoamNoiseSpeed;
+                half clump = SAMPLE_TEXTURE2D(
+                    _FoamTexture, sampler_FoamTexture, uv).r;
 
-                // Bubble octave. It drifts against the clump layer so the two never lock into a
-                // visible repeat, and faster, because fine foam churns quicker than it travels.
-                float2 bubbleUv = uv * _FoamBubbleTiling;
-                float bubbleT = t * -1.6;
-                half d = sin(dot(bubbleUv, float2(0.8, -0.6)) + bubbleT);
-                half e = sin(dot(bubbleUv, float2(0.45, 0.89)) + bubbleT * 0.8 + d * 0.9);
-                half f = sin(dot(bubbleUv, float2(-0.7, -0.72)) - bubbleT * 0.6 + e * 0.7);
-                half bubbles = saturate((d * 0.45 + e * 0.35 + f * 0.2) * 0.5 + 0.5);
+                float2 bubbleUv = float2(
+                    dot(uv, float2(0.8, -0.6)),
+                    dot(uv, float2(0.6, 0.8))) * _FoamBubbleTiling;
+                bubbleUv -= float2(
+                    time * _FoamNoiseSpeed * -1.6,
+                    time * _FoamNoiseSpeed * 0.18);
+                half bubbles = SAMPLE_TEXTURE2D(
+                    _FoamTexture, sampler_FoamTexture, bubbleUv).r;
 
                 return half2(clump, bubbles);
             }
@@ -821,26 +832,9 @@ Shader "Market/World/RealisticWater"
                 color += mainLight.color * directSpecular *
                     shadow * detail * saturate(_SpecStrength);
 
-                // Instantaneous Jacobian and shoreline terms remain the no-history fallback.
-                // The default R6 path samples a camera-independent RG world-space history:
-                // red stores advected/decaying whitecaps, green stores the broken shoreline band.
-                half foldFoam = saturate((1.0 - IN.foamJacobian - _FoamCrestBias) * _FoamCrestGain);
-
-                // Height-over-still-water gated by surface tilt. Both factors are required: the
-                // height alone would paint the whole broad top of a swell, and the slope alone
-                // would foam the troughs' flanks just as readily as the crests'. Combined they
-                // land on the upper windward face, which is where spray actually sits. Taken as a
-                // max with the folding term so a genuinely breaking wave still saturates.
-                half heightTerm = saturate(
-                    ((IN.worldPos.y - IN.baseWaterY) - _FoamCrestHeight) /
-                    max(_FoamCrestHeightFalloff, 0.001));
-                // Surface gradient, not (1 - n.y): on the long, low swells a calm sea uses, the
-                // macro normal tilts only a few degrees, so 1 - n.y peaks around 0.05 and any
-                // sane gain leaves the term at nil. tan(tilt) keeps a usable range on gentle
-                // water and still grows without bound as a crest steepens.
-                half slopeTerm = saturate(
-                    (length(macroNormal.xz) / max(macroNormal.y, 0.001h)) * _FoamCrestSlopeGain);
-                half crestFoam = max(foldFoam, heightTerm * slopeTerm);
+                // The vertex and compute paths use the same source function. This interpolated
+                // fallback remains available when temporal history is disabled.
+                half crestFoam = saturate(IN.crestFoam);
 
                 // Horizontal distance to the waterline, read straight out of the baked map. It is a
                 // distance field, not a local gradient estimate, so a terraced seabed does not put
@@ -865,7 +859,9 @@ Shader "Market/World/RealisticWater"
                 // Raw masks - the dissolve is applied after the history blend below, so the
                 // temporal path in Play Mode gets the same breakup as this Edit Mode fallback
                 // instead of coming back smooth.
-                half2 instantFoam = half2(crestFoam, shoreFoam);
+                half2 instantFoam = half2(
+                    max(crestFoam, shoreFoam),
+                    shoreFoam * 0.35h);
                 float2 historyUV =
                     (IN.baseWorldXZ - _FoamHistoryWorldRect.xy) *
                     _FoamHistoryWorldRect.zw;
@@ -882,25 +878,17 @@ Shader "Market/World/RealisticWater"
                     saturate(_FoamHistoryAvailable) * historyInside;
                 half2 foamTerms = lerp(
                     instantFoam, historyFoam, historyWeight);
-                half crestAmount = saturate(
+                half freshStrength = max(
+                    _FoamCrestStrength, _FoamShoreStrength);
+                half freshAmount = saturate(
                     FoamDissolve(foamTerms.r, foamNoise, _FoamBreakup) *
-                    _FoamCrestStrength);
-                // With a baked shore map the band comes from the map, not from the history: the
-                // history's shoreline channel is injected by its own screen-independent scan and
-                // would otherwise overwrite the geometry-accurate band computed above. The history
-                // keeps owning the crest channel, which is what it is actually good at.
-                // Shoreline foam gets roughly half the breakup the open-water crests do. It is a
-                // BAND hugging the waterline, so it wants a ragged edge, not the full stochastic
-                // dissolve - at full breakup a wide band stops reading as a band at all and
-                // scatters into detached blobs across open water.
-                half shoreBreakup = _FoamBreakup * 0.5h;
-                half shoreAmount = _ShoreDepthAvailable > 0.5
-                    ? saturate(
-                        FoamDissolve(shoreFoam, foamNoise, shoreBreakup) * _FoamShoreStrength)
-                    : saturate(
-                        FoamDissolve(foamTerms.g, foamNoise, shoreBreakup) * _FoamShoreStrength);
-                half foamAmount =
-                    1.0h - (1.0h - crestAmount) * (1.0h - shoreAmount);
+                    freshStrength);
+                half residualAmount = saturate(
+                    FoamDissolve(
+                        foamTerms.g, foamNoise, _FoamBreakup * 0.35h) *
+                    _FoamResidualStrength);
+                half foamAmount = 1.0h -
+                    (1.0h - freshAmount) * (1.0h - residualAmount);
 
                 // Contact foam and the waterline are applied after the history blend on purpose:
                 // the history texture only carries the crest and broken-shore channels, so mixing
@@ -923,10 +911,11 @@ Shader "Market/World/RealisticWater"
 
                 // Foam is not one flat tone: the bubble octave shades it so the patch keeps
                 // internal structure instead of reading as a solid decal once it is opaque.
-                half foamShade = 0.72h + 0.28h * breakupNoise.y;
+                half foamShade = 0.82h + 0.18h * breakupNoise.y;
+                half foamLighting = saturate(ndotl * 0.22h + 0.78h);
                 color = lerp(
                     color,
-                    _FoamColor.rgb * saturate(ndotl * 0.5 + 0.5) * foamShade,
+                    _FoamColor.rgb * foamLighting * foamShade,
                     foamAmount);
 
                 // Dissolve the surface into the scene as the water column between it and the

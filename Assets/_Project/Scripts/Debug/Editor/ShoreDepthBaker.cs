@@ -1,7 +1,9 @@
 using System;
 using System.IO;
+using System.Text;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Market.DebugTools.Editor
 {
@@ -24,7 +26,7 @@ namespace Market.DebugTools.Editor
         /// silently puts the shoreline in the wrong place rather than failing loudly.
         /// </summary>
         private const string TextureFolder = "Assets/_Project/Art/Textures/Water";
-        private const string TexturePath = TextureFolder + "/T_ShoreDepth.asset";
+        private const string TextureNamePrefix = "T_ShoreDepth_";
 
         private const int Resolution = 512;
 
@@ -65,7 +67,8 @@ namespace Market.DebugTools.Editor
                     bounds.size.x + Margin * 2f, bounds.size.z + Margin * 2f);
 
                 Texture2D map = BakeDepthTexture(water, waterY, min, size);
-                Texture2D saved = SaveTexture(map);
+                string texturePath = GetTexturePath();
+                Texture2D saved = SaveTexture(map, texturePath);
 
                 material.SetTexture(ShoreDepthTextureId, saved);
                 material.SetVector(
@@ -82,7 +85,7 @@ namespace Market.DebugTools.Editor
                 Debug.Log(
                     $"[ShoreDepthBaker] Baked {Resolution}x{Resolution} shore map for '{water.name}' " +
                     $"over {size.x:0.#}x{size.y:0.#} world units " +
-                    $"({size.x / Resolution:0.##} m/texel) at water level {waterY:0.##} -> {TexturePath}.");
+                    $"({size.x / Resolution:0.##} m/texel) at water level {waterY:0.##} -> {texturePath}.");
             }
             catch (Exception exception)
             {
@@ -94,7 +97,9 @@ namespace Market.DebugTools.Editor
         private static Texture2D BakeDepthTexture(
             Renderer water, float waterY, Vector2 min, Vector2 size)
         {
-            // R = water column depth, G = horizontal distance to the waterline.
+            // R = water column depth, G = signed horizontal distance to the waterline.
+            // Positive G is water and negative G is dry land. The sign lets shore consumers
+            // recover both inland distance and the local direction into the water.
             // The distance is baked rather than derived at runtime from the depth gradient:
             // depth/slope is only valid on a monotonic slope, and on a terraced seabed every
             // vertical riser has an near-infinite slope, which puts a false shoreline on each step.
@@ -138,26 +143,50 @@ namespace Market.DebugTools.Editor
                     waterCollider.enabled = true;
             }
 
-            WriteShoreDistance(pixels, size.x / Resolution, size.y / Resolution);
+            WriteSignedShoreDistance(
+                pixels, size.x / Resolution, size.y / Resolution);
             map.SetPixels(pixels);
             map.Apply(false, false);
             return map;
         }
 
         /// <summary>
-        /// Fills the green channel with the horizontal distance in metres from each texel to the
-        /// nearest dry one, using a two-pass chamfer distance transform. Dry texels get 0, so the
-        /// shader can build the waterline and the surf band from a single subtraction instead of
-        /// guessing at the shore from a local gradient.
+        /// Fills the green channel with signed horizontal distance in metres. Water is positive
+        /// distance to dry land and land is negative distance to water. The existing water shader
+        /// only samples the positive half, while wet-sand receivers use the negative half and its
+        /// gradient to follow curved shorelines.
         /// </summary>
-        private static void WriteShoreDistance(Color[] pixels, float texelX, float texelZ)
+        private static void WriteSignedShoreDistance(
+            Color[] pixels, float texelX, float texelZ)
+        {
+            float[] distanceToDry = BuildDistanceField(
+                pixels, false, texelX, texelZ);
+            float[] distanceToWater = BuildDistanceField(
+                pixels, true, texelX, texelZ);
+            for (int index = 0; index < pixels.Length; index++)
+            {
+                Color pixel = pixels[index];
+                bool isWater = pixel.r > 0.0001f;
+                float distance = isWater
+                    ? distanceToDry[index]
+                    : -distanceToWater[index];
+                pixel.g = Mathf.Clamp(
+                    distance, -MaximumDepth, MaximumDepth);
+                pixels[index] = pixel;
+            }
+        }
+
+        private static float[] BuildDistanceField(
+            Color[] pixels, bool seedWater, float texelX, float texelZ)
         {
             const float Far = 1e9f;
             float diagonalStep = Mathf.Sqrt(texelX * texelX + texelZ * texelZ);
-
             var distance = new float[pixels.Length];
             for (int index = 0; index < pixels.Length; index++)
-                distance[index] = pixels[index].r <= 0.0001f ? 0f : Far;
+            {
+                bool isWater = pixels[index].r > 0.0001f;
+                distance[index] = isWater == seedWater ? 0f : Far;
+            }
 
             for (int y = 0; y < Resolution; y++)
             {
@@ -195,12 +224,7 @@ namespace Market.DebugTools.Editor
                 }
             }
 
-            for (int index = 0; index < pixels.Length; index++)
-            {
-                Color pixel = pixels[index];
-                pixel.g = Mathf.Min(distance[index], MaximumDepth);
-                pixels[index] = pixel;
-            }
+            return distance;
         }
 
         /// <summary>
@@ -222,15 +246,15 @@ namespace Market.DebugTools.Editor
             return Mathf.Clamp(waterY - hit.point.y, 0f, MaximumDepth);
         }
 
-        private static Texture2D SaveTexture(Texture2D map)
+        private static Texture2D SaveTexture(Texture2D map, string texturePath)
         {
             if (!AssetDatabase.IsValidFolder(TextureFolder))
                 Directory.CreateDirectory(TextureFolder);
 
-            var existing = AssetDatabase.LoadAssetAtPath<Texture2D>(TexturePath);
+            var existing = AssetDatabase.LoadAssetAtPath<Texture2D>(texturePath);
             if (existing == null)
             {
-                AssetDatabase.CreateAsset(map, TexturePath);
+                AssetDatabase.CreateAsset(map, texturePath);
                 return map;
             }
 
@@ -243,6 +267,21 @@ namespace Market.DebugTools.Editor
             EditorUtility.SetDirty(existing);
             UnityEngine.Object.DestroyImmediate(map);
             return existing;
+        }
+
+        private static string GetTexturePath()
+        {
+            string sceneName = SceneManager.GetActiveScene().name;
+            var safeName = new StringBuilder(sceneName.Length);
+            foreach (char character in sceneName)
+            {
+                safeName.Append(char.IsLetterOrDigit(character) ||
+                    character == '_' || character == '-'
+                    ? character
+                    : '_');
+            }
+
+            return $"{TextureFolder}/{TextureNamePrefix}{safeName}.asset";
         }
 
         /// <summary>

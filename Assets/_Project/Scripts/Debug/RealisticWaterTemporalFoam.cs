@@ -1,6 +1,7 @@
 using Market.World;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.Serialization;
 
 namespace Market.DebugTools
 {
@@ -15,7 +16,7 @@ namespace Market.DebugTools
     }
 
     /// <summary>
-    /// Maintains bounded world-space whitecap and shoreline foam history for WaterShaderLab.
+    /// Maintains bounded world-space fresh and residual foam history for WaterShaderLab.
     /// </summary>
     [ExecuteAlways]
     [DisallowMultipleComponent]
@@ -31,13 +32,23 @@ namespace Market.DebugTools
         [SerializeField] private WaterFoamHistoryQuality quality =
             WaterFoamHistoryQuality.History256;
 
-        [Header("Whitecaps")]
-        [SerializeField, Min(0f)] private float whitecapDecayRate = 1f;
+        [Header("Coverage")]
+        [Tooltip("Use a focused world rectangle instead of the full water mesh bounds.")]
+        [SerializeField] private bool useCustomWorldRect;
+        [Tooltip("Minimum XZ followed by width and depth in world units.")]
+        [SerializeField] private Vector4 customWorldRect =
+            new(0f, 0f, 100f, 100f);
+
+        [Header("Foam Lifecycle")]
+        [FormerlySerializedAs("whitecapDecayRate")]
+        [SerializeField, Min(0f)] private float freshFoamDecayRate = 1.2f;
         [SerializeField, Min(0f)] private float whitecapInjectionStrength = 1f;
+        [FormerlySerializedAs("shorelineDecayRate")]
+        [SerializeField, Min(0f)] private float residualFoamDecayRate = 0.22f;
+        [SerializeField, Min(0f)] private float shorelineInjectionStrength = 1f;
+        [SerializeField, Range(0f, 1f)] private float residualTransfer = 0.55f;
 
         [Header("Shoreline")]
-        [SerializeField, Min(0f)] private float shorelineDecayRate = 0.9f;
-        [SerializeField, Min(0f)] private float shorelineInjectionStrength = 1f;
         [SerializeField, Min(0.1f)] private float shorelineWidth = 1.25f;
         [SerializeField] private LayerMask shorelineLayers = ~0;
         [SerializeField, Min(1f)] private float scanHeight = 24f;
@@ -45,6 +56,7 @@ namespace Market.DebugTools
 
         [Header("Flow")]
         [SerializeField, Min(0f)] private float advectionSpeed = 0.65f;
+        [SerializeField, Range(-1f, 1f)] private float residualAdvectionScale = -0.15f;
 
         private static readonly int HistoryTextureId =
             Shader.PropertyToID("_FoamHistoryTexture");
@@ -68,6 +80,10 @@ namespace Market.DebugTools
             Shader.PropertyToID("_FoamInjectionStrengths");
         private static readonly int FoamAdvectionVelocityId =
             Shader.PropertyToID("_FoamAdvectionVelocity");
+        private static readonly int FoamResidualAdvectionScaleId =
+            Shader.PropertyToID("_FoamResidualAdvectionScale");
+        private static readonly int FoamResidualTransferId =
+            Shader.PropertyToID("_FoamResidualTransfer");
         private static readonly int FoamDeltaTimeId =
             Shader.PropertyToID("_FoamDeltaTime");
         private static readonly int FoamTimeId =
@@ -96,10 +112,30 @@ namespace Market.DebugTools
             Shader.PropertyToID("_FoamCrestGain");
         private static readonly int FoamCrestBiasId =
             Shader.PropertyToID("_FoamCrestBias");
+        private static readonly int FoamCrestHeightId =
+            Shader.PropertyToID("_FoamCrestHeight");
+        private static readonly int FoamCrestHeightFalloffId =
+            Shader.PropertyToID("_FoamCrestHeightFalloff");
+        private static readonly int FoamCrestSlopeGainId =
+            Shader.PropertyToID("_FoamCrestSlopeGain");
         private static readonly int FoamNoiseTilingId =
             Shader.PropertyToID("_FoamNoiseTiling");
         private static readonly int FoamNoiseSpeedId =
             Shader.PropertyToID("_FoamNoiseSpeed");
+        private static readonly int ShoreDepthTextureId =
+            Shader.PropertyToID("_ShoreDepthTexture");
+        private static readonly int ShoreDepthAvailableId =
+            Shader.PropertyToID("_ShoreDepthAvailable");
+        private static readonly int ShoreDepthWorldRectId =
+            Shader.PropertyToID("_ShoreDepthWorldRect");
+        private static readonly int ShoreDepthMaximumId =
+            Shader.PropertyToID("_ShoreDepthMaximum");
+        private static readonly int ShoreWaveDepthId =
+            Shader.PropertyToID("_ShoreWaveDepth");
+        private static readonly int ShoreShoalStrengthId =
+            Shader.PropertyToID("_ShoreShoalStrength");
+        private static readonly int ShoreBreakStrengthId =
+            Shader.PropertyToID("_ShoreBreakStrength");
 
         private Renderer _targetRenderer;
         private MaterialPropertyBlock _propertyBlock;
@@ -120,6 +156,14 @@ namespace Market.DebugTools
         public long EstimatedMemoryBytes =>
             (long)_bufferResolution * _bufferResolution * 9L;
         public RenderTexture HistoryTexture => _historyRead;
+        /// <summary>World-to-UV transform used by renderers that consume the foam history.</summary>
+        public Vector4 HistoryWorldRect => _worldRect.z > 0f && _worldRect.w > 0f
+            ? new Vector4(
+                _worldRect.x,
+                _worldRect.y,
+                1f / _worldRect.z,
+                1f / _worldRect.w)
+            : Vector4.zero;
         public Texture ShorelineMaskTexture => _shorelineMask;
         public int ResourceGeneration => _resourceGeneration;
         public string HistoryTextureEntityId =>
@@ -169,16 +213,21 @@ namespace Market.DebugTools
 
         private void OnValidate()
         {
-            whitecapDecayRate = Mathf.Max(0f, whitecapDecayRate);
+            freshFoamDecayRate = Mathf.Max(0f, freshFoamDecayRate);
             whitecapInjectionStrength = Mathf.Max(
                 0f, whitecapInjectionStrength);
-            shorelineDecayRate = Mathf.Max(0f, shorelineDecayRate);
+            residualFoamDecayRate = Mathf.Max(0f, residualFoamDecayRate);
             shorelineInjectionStrength = Mathf.Max(
                 0f, shorelineInjectionStrength);
+            residualTransfer = Mathf.Clamp01(residualTransfer);
+            customWorldRect.z = Mathf.Max(1f, customWorldRect.z);
+            customWorldRect.w = Mathf.Max(1f, customWorldRect.w);
             shorelineWidth = Mathf.Max(0.1f, shorelineWidth);
             scanHeight = Mathf.Max(1f, scanHeight);
             scanDepth = Mathf.Max(1f, scanDepth);
             advectionSpeed = Mathf.Max(0f, advectionSpeed);
+            residualAdvectionScale = Mathf.Clamp(
+                residualAdvectionScale, -1f, 1f);
             ReleaseHistoryTextures();
         }
 
@@ -283,6 +332,15 @@ namespace Market.DebugTools
 
         private Vector4 CalculateWorldRect()
         {
+            if (useCustomWorldRect)
+            {
+                return new Vector4(
+                    customWorldRect.x,
+                    customWorldRect.y,
+                    Mathf.Max(customWorldRect.z, 1f),
+                    Mathf.Max(customWorldRect.w, 1f));
+            }
+
             Bounds bounds = _targetRenderer.bounds;
             float sizeX = Mathf.Max(bounds.size.x, 1f);
             float sizeZ = Mathf.Max(bounds.size.z, 1f);
@@ -336,14 +394,16 @@ namespace Market.DebugTools
         {
             Physics.SyncTransforms();
             int pixelCount = _bufferResolution * _bufferResolution;
-            var depths = new float[pixelCount];
             var pixels = new byte[pixelCount];
             float cellX = _worldRect.z / _bufferResolution;
             float cellZ = _worldRect.w / _bufferResolution;
-            float waterY = transform.position.y;
-
-            ScanWaterDepths(depths, cellX, cellZ, waterY);
-            BuildShorelinePixels(depths, pixels, cellX, cellZ);
+            if (!TryBuildShorelinePixelsFromDistanceField(pixels))
+            {
+                var depths = new float[pixelCount];
+                ScanWaterDepths(
+                    depths, cellX, cellZ, transform.position.y);
+                BuildShorelinePixels(depths, pixels, cellX, cellZ);
+            }
 
             _shorelineMask = new Texture2D(
                 _bufferResolution,
@@ -359,6 +419,50 @@ namespace Market.DebugTools
             };
             _shorelineMask.SetPixelData(pixels, 0);
             _shorelineMask.Apply(false, true);
+        }
+
+        private bool TryBuildShorelinePixelsFromDistanceField(byte[] pixels)
+        {
+            Material material = _targetRenderer.sharedMaterial;
+            if (material == null ||
+                material.GetFloat(ShoreDepthAvailableId) < 0.5f ||
+                material.GetTexture(ShoreDepthTextureId) is not Texture2D shoreMap ||
+                !shoreMap.isReadable)
+            {
+                return false;
+            }
+
+            Vector4 shoreRect = material.GetVector(ShoreDepthWorldRectId);
+            if (shoreRect.z <= 0f || shoreRect.w <= 0f)
+                return false;
+
+            for (int y = 0; y < _bufferResolution; y++)
+            {
+                for (int x = 0; x < _bufferResolution; x++)
+                    WriteDistanceFieldShorePixel(pixels, x, y, shoreMap, shoreRect);
+            }
+
+            return true;
+        }
+
+        private void WriteDistanceFieldShorePixel(
+            byte[] pixels, int x, int y, Texture2D shoreMap, Vector4 shoreRect)
+        {
+            float worldX = _worldRect.x + (x + 0.5f) * _worldRect.z / _bufferResolution;
+            float worldZ = _worldRect.y + (y + 0.5f) * _worldRect.w / _bufferResolution;
+            var uv = new Vector2(
+                (worldX - shoreRect.x) * shoreRect.z,
+                (worldZ - shoreRect.y) * shoreRect.w);
+            if (uv.x < 0f || uv.x > 1f || uv.y < 0f || uv.y > 1f)
+                return;
+
+            float signedDistance = shoreMap.GetPixelBilinear(uv.x, uv.y).g;
+            if (signedDistance < 0f)
+                return;
+
+            float band = 1f - Mathf.Clamp01(signedDistance / shorelineWidth);
+            float source = band * EvaluateShoreBreakup(worldX, worldZ);
+            pixels[y * _bufferResolution + x] = (byte)Mathf.RoundToInt(source * 255f);
         }
 
         private void ScanWaterDepths(
@@ -434,14 +538,18 @@ namespace Market.DebugTools
 
             float worldX = _worldRect.x + (x + 0.5f) * cellX;
             float worldZ = _worldRect.y + (y + 0.5f) * cellZ;
+            return band * EvaluateShoreBreakup(worldX, worldZ);
+        }
+
+        private static float EvaluateShoreBreakup(float worldX, float worldZ)
+        {
             float broadNoise = Mathf.PerlinNoise(
                 worldX * 0.17f + 13.1f,
                 worldZ * 0.17f + 7.7f);
             float fineNoise = Mathf.Sin(worldX * 0.73f - worldZ * 0.51f) *
                 0.5f + 0.5f;
-            float breakup = Mathf.SmoothStep(
+            return Mathf.SmoothStep(
                 0.2f, 0.85f, broadNoise * 0.75f + fineNoise * 0.25f);
-            return band * breakup;
         }
 
         private float SampleDepth(float[] depths, int x, int y)
@@ -472,7 +580,8 @@ namespace Market.DebugTools
             _updateCompute.SetVector(UpdateWorldRectId, _worldRect);
             _updateCompute.SetVector(
                 FoamDecayRatesId,
-                new Vector4(whitecapDecayRate, shorelineDecayRate, 0f, 0f));
+                new Vector4(
+                    freshFoamDecayRate, residualFoamDecayRate, 0f, 0f));
             _updateCompute.SetVector(
                 FoamInjectionStrengthsId,
                 new Vector4(
@@ -483,6 +592,9 @@ namespace Market.DebugTools
             _updateCompute.SetVector(
                 FoamAdvectionVelocityId,
                 windDirection * advectionSpeed);
+            _updateCompute.SetFloat(
+                FoamResidualAdvectionScaleId, residualAdvectionScale);
+            _updateCompute.SetFloat(FoamResidualTransferId, residualTransfer);
             _updateCompute.SetFloat(FoamDeltaTimeId, deltaTime);
             _updateCompute.SetFloat(
                 FoamTimeId,
@@ -509,8 +621,22 @@ namespace Market.DebugTools
             WaveShaderBridge.ApplyTo(_updateCompute);
             CopyFloat(waterMaterial, FoamCrestGainId);
             CopyFloat(waterMaterial, FoamCrestBiasId);
+            CopyFloat(waterMaterial, FoamCrestHeightId);
+            CopyFloat(waterMaterial, FoamCrestHeightFalloffId);
+            CopyFloat(waterMaterial, FoamCrestSlopeGainId);
             CopyFloat(waterMaterial, FoamNoiseTilingId);
             CopyFloat(waterMaterial, FoamNoiseSpeedId);
+            CopyFloat(waterMaterial, ShoreDepthAvailableId);
+            CopyVector(waterMaterial, ShoreDepthWorldRectId);
+            CopyFloat(waterMaterial, ShoreDepthMaximumId);
+            CopyFloat(waterMaterial, ShoreWaveDepthId);
+            CopyFloat(waterMaterial, ShoreShoalStrengthId);
+            CopyFloat(waterMaterial, ShoreBreakStrengthId);
+            Texture shoreDepth = waterMaterial.GetTexture(ShoreDepthTextureId);
+            _updateCompute.SetTexture(
+                _updateKernel,
+                ShoreDepthTextureId,
+                shoreDepth != null ? shoreDepth : Texture2D.blackTexture);
         }
 
         private void CopyVector(Material source, int propertyId)

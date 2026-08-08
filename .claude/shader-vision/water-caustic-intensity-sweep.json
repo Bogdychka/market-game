@@ -1,0 +1,38 @@
+{
+  "runId": "",
+  "outputName": "water-caustic-intensity-sweep",
+  "scene": "Assets/_Project/Scenes/WaterShaderLab.unity",
+  "width": 512,
+  "height": 288,
+  "columns": 3,
+  "freezeTime": true,
+  "time": 8.0,
+  "sun": { "apply": true, "yaw": -140.0, "pitch": 42.0, "intensity": -1.0 },
+  "material": "Assets/_Project/Art/Materials/Water/M_RealisticWaterLab.mat",
+  "overrides": [
+    {
+      "property": "_ScatteringColor",
+      "type": "color",
+      "vector": [0.05, 0.34, 0.32, 1.0]
+    },
+    {
+      "property": "_ScatteringStrength",
+      "type": "float",
+      "value": 0.95
+    }
+  ],
+  "views": [
+    {
+      "name": "topdown-surface",
+      "position": [0.0, 24.0, -4.0],
+      "lookAt": [0.0, 0.0, 6.0],
+      "fov": 55.0
+    }
+  ],
+  "sweep": {
+    "property": "_CausticIntensity",
+    "type": "float",
+    "values": [0.0, 0.2, 0.4, 0.6, 0.9, 1.2],
+    "view": "topdown-surface"
+  }
+}

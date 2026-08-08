@@ -1,0 +1,57 @@
+{
+  "runId": "",
+  "outputName": "water-wet-sand-control",
+  "scene": "Assets/_Project/Scenes/WaterShaderLab.unity",
+  "width": 640,
+  "height": 360,
+  "columns": 3,
+  "freezeTime": true,
+  "time": 8.0,
+  "timeSamples": 3,
+  "timeStep": 1.2,
+  "compareRun": "",
+  "sun": { "apply": true, "yaw": -140.0, "pitch": 42.0, "intensity": -1.0 },
+  "material": "Assets/_Project/Art/WaterShaderLab/Terrace_Beach.mat",
+  "overrides": [
+    {
+      "property": "_WetColor",
+      "type": "color",
+      "vector": [0.8, 0.72, 0.5, 1.0]
+    },
+    {
+      "property": "_WetSmoothness",
+      "type": "float",
+      "value": 0.1
+    },
+    {
+      "property": "_EventGain",
+      "type": "float",
+      "value": 0.0
+    },
+    {
+      "property": "_FallbackEventStrength",
+      "type": "float",
+      "value": 0.0
+    }
+  ],
+  "views": [
+    {
+      "name": "beach-oblique",
+      "position": [35.0, 3.0, -25.0],
+      "lookAt": [20.0, -0.1, -5.0],
+      "fov": 42.0
+    },
+    {
+      "name": "swash-close",
+      "position": [35.0, 6.0, -31.0],
+      "lookAt": [35.0, -0.05, -20.0],
+      "fov": 34.0
+    },
+    {
+      "name": "wet-topdown",
+      "position": [35.0, 25.0, -18.0],
+      "lookAt": [35.0, 0.0, -18.0],
+      "fov": 42.0
+    }
+  ]
+}

@@ -920,6 +920,51 @@ mask samples; rejected foam, conflicting periodicity, unreliable crest speed, an
 apparent-speed consensus do not become shader inputs; metric wave inputs remain unresolved until
 calibration is supplied.
 
+### T27. Reference-matched shore breaker vertical slice `[assets: ready]`
+**Do:** Extend the existing RealisticWater shore-depth and temporal-foam path with a bounded
+shoaling crest ramp, shallow-water breaking source, alongshore lobe breakup, and separate fresh and
+residual foam history. Add fixed oblique, close run-up, and top-down Shader Vision evidence views.
+**Check:** WaterShaderLab shows a crest strengthening before the beach and a non-uniform surf band
+with gaps, lobes, and slower residual streaks; the shared wave bank stays intact, Shader Vision A/B
+changes the expected shore pixels without magenta or non-finite output, and Unity health is green.
+
+### T28. Reference-matched swash and wet-sand memory `[assets: ready]`
+**Do:** Add a bounded shoreline run-up field driven by the same breaker events, a slower retreating
+swash channel, and a wet-sand darkening/specular response on the beach material. Keep water history
+and terrain response separate so the transparent water pass does not require an opaque-texture copy.
+**Check:** Fixed run-up views show advancing and retreating wetness below the maximum waterline with
+no detached inland patches. Wetness decays more slowly than fresh foam, regenerated lab content keeps
+the bindings, and the outdoor GPU p95 remains below 16.67 ms.
+
+### T29. Curved Island shoreline integration `[assets: ready]`
+**Do:** Install the realistic water stack in Island with a project-owned displaced grid and material,
+the ocean-swell wave profile, a scene-local signed curved-shore field, focused temporal-foam coverage,
+and a Terrain-clipped wet-sand overlay. Keep planar reflections sky-only for the production scene and
+repair the Island TerrainData deterministically if its source asset cannot be imported.
+**Check:** Island serializes the realistic water, curved wet shoreline, restored TerrainData, and all
+bindings without package-material edits. Three fixed Shader Vision views across three times contain no
+magenta or non-finite pixels, Unity shader/C# compilation is clean, Project Health is green, and the
+Island camera-turn p95 remains below 16.67 ms without a visible sustained rotation spike.
+
+### T30. Reference-driven Island surf-front readability `[assets: ready]`
+**Do:** Build the temporal shoreline injection mask from the signed horizontal shore-distance field
+instead of a shallow-slope physics gradient, phase its strength with the shared breaker source, and
+tune Island-only foam breakup, lighting, width, and persistence from fixed Shader Vision sweeps. Keep
+the history resolution at the lowest setting that preserves the outdoor performance budget.
+**Check:** The curved shore produces a wider broken foam front and residual lobes instead of a thin
+uniform line; the six-value width and breakup sweeps expose the active controls; fixed oblique, close,
+and top-down time samples contain no magenta or non-finite pixels; shader/C# compilation and Project
+Health are clean; and the accepted history resolution keeps camera-turn p95 below 16.67 ms.
+
+### T31. Reference-driven open-water appearance `[assets: ready]`
+**Do:** Rebalance the shared ocean-swell profile and the core lab material from the complete three-video
+review, prioritizing the water body rather than shoreline effects: coherent crest directions, moderate
+height, teal-green depth scattering, balanced roughness, and stable fine detail.
+**Check:** Fixed sweeps isolate scattering, roughness, caustics, micro normals, and whitecap response;
+the selected profile replaces the 130-degree crossing fan with a lower 42-degree swell family; six-pose
+A/B captures change the intended water surface; three views across four fixed times contain no clipped,
+magenta, or non-finite pixels; shader/C# compilation and Project Health are clean in WaterShaderLab.
+
 ---
 
 ## Key risks (keep in mind)
@@ -1117,3 +1162,10 @@ calibration is supplied.
 - [x] T22 Wave profile assets and procedural wave editor
 - [x] T23 In-world water settings wall with crosshair interaction
 - [x] T24 Reference wave video analyzer for Codex and Claude
+- [x] T25 Reference-matched realistic ocean foam mask texture
+- [x] T26 Apply the authored foam mask to the realistic water shader
+- [x] T27 Reference-matched shore breaker vertical slice
+- [x] T28 Reference-matched swash and wet-sand memory
+- [x] T29 Curved Island shoreline integration
+- [x] T30 Reference-driven Island surf-front readability
+- [x] T31 Reference-driven open-water appearance

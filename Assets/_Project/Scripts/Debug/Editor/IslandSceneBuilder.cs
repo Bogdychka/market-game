@@ -22,10 +22,16 @@ namespace Market.DebugTools
 
         private const string ScenePath = "Assets/_Project/Scenes/Island.unity";
         private const string TerrainDir = "Assets/_Project/Art/Terrain";
+        private const string TerrainDataPath =
+            TerrainDir + "/Island_TerrainData.asset";
+        private const string RestoredTerrainDataPath =
+            TerrainDir + "/Island_TerrainData_Restored.asset";
         private const string WaterMeshDir = "Assets/_Project/Art/Meshes/Water";
         private const string WaterMeshPath =
             WaterMeshDir + "/IslandStylizedWaterGrid.asset";
         private const string WaterObjectName = "Island Stylized Water";
+        private const string RealisticWaterObjectName = "Island Realistic Water";
+        private const string WetSandShoreObjectName = "Island Wet Sand Shore";
         private const float WaterSize = 950f;
         private const int WaterGridResolution = 128;
         private const string LightingRootName = "Bitgem Lighting";
@@ -105,6 +111,8 @@ namespace Market.DebugTools
 
             DestroyRoot(scene, "Ocean");
             DestroyRoot(scene, WaterObjectName);
+            DestroyRoot(scene, RealisticWaterObjectName);
+            DestroyRoot(scene, WetSandShoreObjectName);
             Directory.CreateDirectory(WaterMeshDir);
             CreateWater();
 
@@ -323,6 +331,58 @@ namespace Market.DebugTools
 
         private static TerrainData BuildTerrainData()
         {
+            TerrainData data = CreateTerrainData();
+            AssetDatabase.CreateAsset(data, TerrainDataPath);
+            return data;
+        }
+
+        /// <summary>
+        /// Recreates the deterministic terrain data under a new asset while preserving the scene.
+        /// </summary>
+        public static TerrainData RestoreTerrainData(Terrain terrain)
+        {
+            if (terrain == null)
+                return null;
+
+            TerrainData generated = CreateTerrainData();
+            TerrainData restored = AssetDatabase.LoadAssetAtPath<TerrainData>(
+                RestoredTerrainDataPath);
+            if (restored == null)
+            {
+                AssetDatabase.CreateAsset(generated, RestoredTerrainDataPath);
+                restored = generated;
+            }
+            else
+            {
+                EditorUtility.CopySerialized(generated, restored);
+                Object.DestroyImmediate(generated);
+                EditorUtility.SetDirty(restored);
+            }
+
+            terrain.terrainData = restored;
+            TerrainCollider collider = terrain.GetComponent<TerrainCollider>();
+            if (collider != null)
+                collider.terrainData = restored;
+            ConfigureTerrain(terrain);
+            AssetDatabase.SaveAssets();
+            return restored;
+        }
+
+        /// <summary>
+        /// Removes the legacy terrain asset only when Unity cannot load it as TerrainData.
+        /// </summary>
+        public static bool RemoveBrokenLegacyTerrainData()
+        {
+            if (!File.Exists(TerrainDataPath))
+                return true;
+            if (AssetDatabase.LoadAssetAtPath<TerrainData>(TerrainDataPath) != null)
+                return false;
+
+            return AssetDatabase.DeleteAsset(TerrainDataPath);
+        }
+
+        private static TerrainData CreateTerrainData()
+        {
             var data = new TerrainData
             {
                 heightmapResolution = HeightmapRes,
@@ -337,8 +397,6 @@ namespace Market.DebugTools
 
             data.terrainLayers = BuildTerrainLayers();
             data.SetAlphamaps(0, 0, GenerateSplat(heights));
-
-            AssetDatabase.CreateAsset(data, $"{TerrainDir}/Island_TerrainData.asset");
             return data;
         }
 
@@ -431,6 +489,12 @@ namespace Market.DebugTools
 
         private static TerrainLayer MakeLayer(string name, Color a, Color b, float tile)
         {
+            string layerPath = $"{TerrainDir}/{name}.terrainlayer";
+            TerrainLayer existing =
+                AssetDatabase.LoadAssetAtPath<TerrainLayer>(layerPath);
+            if (existing != null)
+                return existing;
+
             const int size = 256;
             var tex = new Texture2D(size, size, TextureFormat.RGBA32, true) { name = name + "_Tex" };
             var rng = new System.Random(name.GetHashCode());
@@ -452,7 +516,7 @@ namespace Market.DebugTools
                 tileSize = new Vector2(tile, tile),
                 name = name
             };
-            AssetDatabase.CreateAsset(layer, $"{TerrainDir}/{name}.terrainlayer");
+            AssetDatabase.CreateAsset(layer, layerPath);
             return layer;
         }
 

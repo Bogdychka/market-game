@@ -1,0 +1,26 @@
+{
+  "runId": "",
+  "outputName": "water-wet-sand-event-sweep",
+  "scene": "Assets/_Project/Scenes/WaterShaderLab.unity",
+  "width": 512,
+  "height": 288,
+  "columns": 3,
+  "freezeTime": true,
+  "time": 9.2,
+  "sun": { "apply": true, "yaw": -140.0, "pitch": 42.0, "intensity": -1.0 },
+  "material": "Assets/_Project/Art/WaterShaderLab/Terrace_Beach.mat",
+  "views": [
+    {
+      "name": "wet-topdown",
+      "position": [35.0, 25.0, -15.0],
+      "lookAt": [35.0, 0.0, -15.0],
+      "fov": 42.0
+    }
+  ],
+  "sweep": {
+    "property": "_EventGain",
+    "type": "float",
+    "values": [0.0, 0.5, 1.0, 1.5, 2.5, 4.0],
+    "view": "wet-topdown"
+  }
+}

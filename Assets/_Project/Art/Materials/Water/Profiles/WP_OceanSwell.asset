@@ -15,50 +15,50 @@ MonoBehaviour:
   _layers:
   - _enabled: 1
     _mode: 0
-    _wavelength: 21.88568
-    _amplitude: 0.4199599
-    _steepness: 0.5786281
-    _directionAngle: -34.397446
+    _wavelength: 21.891542
+    _amplitude: 0.31996918
+    _steepness: 0.49878055
+    _directionAngle: -4.189944
     _origin: {x: 0, y: 0}
     _speedMultiplier: 0.9209667
   - _enabled: 1
     _mode: 0
-    _wavelength: 16.537916
-    _amplitude: 0.34534416
-    _steepness: 0.51445496
-    _directionAngle: -19.851717
+    _wavelength: 16.818024
+    _amplitude: 0.26257244
+    _steepness: 0.44173777
+    _directionAngle: 0.50944555
     _origin: {x: 0, y: 0}
     _speedMultiplier: 1.0525131
   - _enabled: 1
     _mode: 0
-    _wavelength: 16.133284
-    _amplitude: 0.33533838
-    _steepness: 0.5095994
-    _directionAngle: 10.699683
+    _wavelength: 16.434141
+    _amplitude: 0.25487566
+    _steepness: 0.43742168
+    _directionAngle: 10.379897
     _origin: {x: 0, y: 0}
     _speedMultiplier: 1.012191
   - _enabled: 1
     _mode: 0
-    _wavelength: 13.054334
-    _amplitude: 0.24907528
-    _steepness: 0.472652
-    _directionAngle: 47.57517
+    _wavelength: 13.513086
+    _amplitude: 0.18851945
+    _steepness: 0.40457955
+    _directionAngle: 22.293516
     _origin: {x: 0, y: 0}
     _speedMultiplier: 1.0884032
   - _enabled: 1
     _mode: 0
-    _wavelength: 8.064536
-    _amplitude: 0.10714904
-    _steepness: 0.41277444
-    _directionAngle: 66.54361
+    _wavelength: 8.779175
+    _amplitude: 0.07934542
+    _steepness: 0.35135505
+    _directionAngle: 28.421782
     _origin: {x: 0, y: 0}
     _speedMultiplier: 0.9723873
   - _enabled: 1
     _mode: 0
-    _wavelength: 3.6471586
-    _amplitude: 0.033890344
-    _steepness: 0.3597659
-    _directionAngle: 90.823044
+    _wavelength: 4.5883303
+    _amplitude: 0.022992574
+    _steepness: 0.30423635
+    _directionAngle: 36.265907
     _origin: {x: 0, y: 0}
     _speedMultiplier: 1.0774981
   _wavelengthMultiplier: 1
@@ -136,11 +136,11 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  _steepnessClamping: 0.95
+  _steepnessClamping: 0.85
   _generation:
     _seed: 24601
     _layerCount: 6
-    _minMaxWavelength: {x: 2.5, y: 22}
+    _minMaxWavelength: {x: 3.5, y: 22}
     _amplitudeByLength:
       serializedVersion: 2
       m_Curve:
@@ -165,7 +165,7 @@ MonoBehaviour:
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
-    _minMaxAmplitude: {x: 0.03, y: 0.42}
+    _minMaxAmplitude: {x: 0.02, y: 0.32}
     _steepnessByLength:
       serializedVersion: 2
       m_Curve:
@@ -190,9 +190,9 @@ MonoBehaviour:
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
-    _minMaxSteepness: {x: 0.22, y: 0.58}
-    _baseDirectionAngle: 25
-    _directionAngleVariation: 130
+    _minMaxSteepness: {x: 0.18, y: 0.5}
+    _baseDirectionAngle: 15
+    _directionAngleVariation: 42
     _wavelengthJitter: 0.15
     _mode: 0
     _origin: {x: 0, y: 0}

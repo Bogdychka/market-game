@@ -193,4 +193,67 @@ float RealisticWaterJacobian(float3 tangentX, float3 tangentZ)
     return jxx * jzz - jxz * jxz;
 }
 
+// Bounded near-shore post-process. It leaves deep water at scale 1, lifts a crest in the
+// pre-break band, then flattens the wave before it can pass through the beach.
+float RealisticWaterShoreWaveScale(
+    float depth,
+    float shoreWaveDepth,
+    float shoalStrength)
+{
+    float normalizedDepth = saturate(depth / max(shoreWaveDepth, 0.001));
+    float survival = smoothstep(0.05, 0.95, normalizedDepth);
+    float shoalBand = 4.0 * normalizedDepth * (1.0 - normalizedDepth);
+    return survival * (1.0 + max(shoalStrength, 0.0) * shoalBand);
+}
+
+void RealisticWaterApplyWaveScale(
+    float waveScale,
+    inout float3 offset,
+    inout float3 tangentX,
+    inout float3 tangentZ)
+{
+    offset *= waveScale;
+    tangentX = lerp(float3(1.0, 0.0, 0.0), tangentX, waveScale);
+    tangentZ = lerp(float3(0.0, 0.0, 1.0), tangentZ, waveScale);
+}
+
+// Breaking is strongest between deep swell and the final dry-beach flattening zone.
+float RealisticWaterShoreBreakEnvelope(float depth, float shoreWaveDepth)
+{
+    float normalizedDepth = saturate(depth / max(shoreWaveDepth, 0.001));
+    float shallowGate = smoothstep(0.08, 0.35, normalizedDepth);
+    float deepGate = 1.0 - smoothstep(0.72, 1.0, normalizedDepth);
+    return shallowGate * deepGate;
+}
+
+// Shared analytic source used by both the surface shader and temporal history compute.
+float RealisticWaterCrestFoamSource(
+    float3 offset,
+    float3 tangentX,
+    float3 tangentZ,
+    float crestGain,
+    float crestBias,
+    float crestHeight,
+    float crestHeightFalloff,
+    float crestSlopeGain,
+    float breakEnvelope,
+    float breakStrength)
+{
+    float jacobian = RealisticWaterJacobian(tangentX, tangentZ);
+    float foldFoam = saturate((1.0 - jacobian - crestBias) * crestGain);
+    float3 macroNormal = normalize(cross(tangentZ, tangentX));
+    float slope = length(macroNormal.xz) / max(macroNormal.y, 0.001);
+    float heightTerm = saturate(
+        (offset.y - crestHeight) / max(crestHeightFalloff, 0.001));
+    float slopeTerm = saturate(slope * crestSlopeGain);
+    float whitecap = max(foldFoam, heightTerm * slopeTerm);
+
+    float breakingHeight = saturate(
+        offset.y / max(crestHeight + crestHeightFalloff, 0.001));
+    float breakingSlope = saturate(slope * max(crestSlopeGain * 0.55, 0.001));
+    float breaker = breakingHeight * breakingSlope *
+        breakEnvelope * max(breakStrength, 0.0);
+    return saturate(max(whitecap, breaker));
+}
+
 #endif

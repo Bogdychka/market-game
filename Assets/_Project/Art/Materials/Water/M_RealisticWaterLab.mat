@@ -31,6 +31,10 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _FoamTexture:
+        m_Texture: {fileID: 2800000, guid: 18b1138823ccc014893c72aefdbf5690, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _NormalMapA:
         m_Texture: {fileID: 2800000, guid: 3f3c4f1df18b5914da37e60066c186f2, type: 3}
         m_Scale: {x: 1, y: 1}
@@ -75,6 +79,7 @@ Material:
     - _FoamHistoryAvailable: 0
     - _FoamNoiseSpeed: 0.4
     - _FoamNoiseTiling: 0.3
+    - _FoamResidualStrength: 0.65
     - _FoamShoreStrength: 1
     - _FoamShoreWidth: 1
     - _FresnelBase: 0.0204
@@ -93,13 +98,15 @@ Material:
     - _RefractionDepthScale: 2
     - _RefractionEdgeFade: 0.08
     - _RefractionStrength: 0.025
-    - _Roughness: 0.13
-    - _ScatteringStrength: 0.75
-    - _ShoreBandWidth: 1.2
+    - _Roughness: 0.22
+    - _ScatteringStrength: 0.95
+    - _ShoreBandWidth: 2.2
+    - _ShoreBreakStrength: 1.6
     - _ShoreDepthAvailable: 1
     - _ShoreDepthMaximum: 60
     - _ShoreLineStrength: 1
     - _ShoreLineWidth: 0.35
+    - _ShoreShoalStrength: 0.6
     - _ShoreWaveDepth: 2.5
     - _SpecStrength: 1
     - _SubsurfaceHeight: 0.5
@@ -117,7 +124,7 @@ Material:
     - _CausticColor: {r: 1, g: 0.97, b: 0.9, a: 1}
     - _FoamColor: {r: 0.95, g: 0.97999996, b: 1, a: 1}
     - _FoamHistoryWorldRect: {r: 0, g: 0, b: 0, a: 0}
-    - _ScatteringColor: {r: 0.018, g: 0.15, b: 0.22, a: 1}
+    - _ScatteringColor: {r: 0.05, g: 0.34, b: 0.32, a: 1}
     - _ShoreDepthTexelWorldSize: {r: 0.2265625, g: 0.2265625, b: 0, a: 0}
     - _ShoreDepthWorldRect: {r: -58, g: -58, b: 0.00862069, a: 0.00862069}
     - _SubsurfaceColor: {r: 0.08, g: 0.42, b: 0.36, a: 1}

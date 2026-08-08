@@ -21,20 +21,21 @@ namespace Market.DebugTools
         {
             EnsureFolder();
 
-            // Open water: a long swell carrying progressively shorter chop, fanned wide enough
-            // that the surface never reads as one repeating ridge.
+            // Open water: a coherent long swell with lower, slightly fanned supporting chop.
+            // Shore-video references keep most crests in one directional family; a wide fan makes
+            // the surface read as intersecting hills instead of water driven by one wind field.
             BuildProfile(
                 "WP_OceanSwell",
                 seed: 24601,
                 layerCount: 6,
-                minMaxWavelength: new Vector2(2.5f, 22f),
-                minMaxAmplitude: new Vector2(0.03f, 0.42f),
-                minMaxSteepness: new Vector2(0.22f, 0.58f),
-                baseDirectionAngle: 25f,
-                directionVariation: 130f,
+                minMaxWavelength: new Vector2(3.5f, 22f),
+                minMaxAmplitude: new Vector2(0.02f, 0.32f),
+                minMaxSteepness: new Vector2(0.18f, 0.5f),
+                baseDirectionAngle: 15f,
+                directionVariation: 42f,
                 mode: WaveLayerMode.Directional,
                 origin: Vector2.zero,
-                steepnessClamping: 0.95f);
+                steepnessClamping: 0.85f);
 
             // Sheltered water: short, low, closely aligned chop with no swell under it.
             BuildProfile(

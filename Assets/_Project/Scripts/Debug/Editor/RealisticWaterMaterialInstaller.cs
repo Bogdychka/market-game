@@ -17,6 +17,8 @@ namespace Market.DebugTools.Editor
             "Assets/_Project/Art/Textures/Water/T_RealisticWater_NormalA.png";
         private const string NormalMapBPath =
             "Assets/_Project/Art/Textures/Water/T_RealisticWater_NormalB.png";
+        private const string FoamMapPath =
+            "Assets/_Project/Art/Textures/Water/T_OceanFoam_Realistic.png";
         private static string CausticMapPath =>
             RealisticWaterCausticBaker.FlipbookAssetPath;
         private const string ShaderName = "Market/World/RealisticWater";
@@ -48,14 +50,23 @@ namespace Market.DebugTools.Editor
 
             AssignTextureIfAvailable(material, "_NormalMapA", NormalMapAPath);
             AssignTextureIfAvailable(material, "_NormalMapB", NormalMapBPath);
+            AssignTextureIfAvailable(material, "_FoamTexture", FoamMapPath);
             AssignTextureIfAvailable(material, "_CausticMap", CausticMapPath);
+            SetColorIfAvailable(
+                material, "_ScatteringColor", new Color(0.05f, 0.34f, 0.32f, 1f));
+            SetFloatIfAvailable(material, "_ScatteringStrength", 0.95f);
+            SetFloatIfAvailable(material, "_Roughness", 0.22f);
+            SetFloatIfAvailable(material, "_MicroWaveStrength", 0.2f);
             SetFloatIfAvailable(material, "_RefractionEdgeFade", 0.08f);
             SetFloatIfAvailable(material, "_RefractionDepthScale", 2f);
             SetFloatIfAvailable(material, "_PlanarReflectionStrength", 0.85f);
             SetFloatIfAvailable(material, "_ReflectionEdgeFade", 0.08f);
             SetFloatIfAvailable(material, "_FoamCrestStrength", 1f);
             SetFloatIfAvailable(material, "_FoamShoreStrength", 1f);
+            SetFloatIfAvailable(material, "_FoamResidualStrength", 0.65f);
             SetFloatIfAvailable(material, "_FoamCrestBias", 0.12f);
+            SetFloatIfAvailable(material, "_ShoreShoalStrength", 0.6f);
+            SetFloatIfAvailable(material, "_ShoreBreakStrength", 1.6f);
             SetFloatIfAvailable(material, "_CausticTiling", 0.222f);
             SetFloatIfAvailable(material, "_CausticSpeed", 0.28f);
             SetFloatIfAvailable(material, "_CausticIntensity", 0.9f);

@@ -1,0 +1,137 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: M_RealisticWaterIsland
+  m_Shader: {fileID: 4800000, guid: 6ee27af784686954ab1f59c58010f1dd, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _CausticMap:
+        m_Texture: {fileID: 2800000, guid: c9baf7ae0ab8a0f4cb0ebc26fbb2a5b0, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _FoamHistoryTexture:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _FoamTexture:
+        m_Texture: {fileID: 2800000, guid: 18b1138823ccc014893c72aefdbf5690, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _NormalMapA:
+        m_Texture: {fileID: 2800000, guid: 3f3c4f1df18b5914da37e60066c186f2, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _NormalMapB:
+        m_Texture: {fileID: 2800000, guid: d07932e5a2a2dd44b8b005c1e5710f7b, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _PlanarReflectionTexture:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _ShoreDepthTexture:
+        m_Texture: {fileID: 2800000, guid: 38e8362bc822a60419afb76704819bf8, type: 2}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _CausticContrast: 1.15
+    - _CausticEncodeRange: 8
+    - _CausticIntensity: 0.9
+    - _CausticPedestal: 1.28
+    - _CausticSoften: 30
+    - _CausticSpeed: 0.28
+    - _CausticTiling: 0.222
+    - _ContactFadeWidth: 0.3
+    - _ContactFoamWidth: 0.7
+    - _ContactRippleFrequency: 5
+    - _ContactRippleSpeed: 2.5
+    - _ContactRippleStrength: 0.35
+    - _DepthFadeDistance: 6
+    - _DetailFadeEnd: 180
+    - _DetailFadeStart: 30
+    - _FoamBreakup: 0.68
+    - _FoamBubbleTiling: 4.7
+    - _FoamCrestBias: 0.12
+    - _FoamCrestGain: 4
+    - _FoamCrestHeight: 0.45
+    - _FoamCrestHeightFalloff: 0.2
+    - _FoamCrestSlopeGain: 3
+    - _FoamCrestStrength: 1
+    - _FoamHistoryAvailable: 0
+    - _FoamNoiseSpeed: 0.4
+    - _FoamNoiseTiling: 0.3
+    - _FoamResidualStrength: 0.85
+    - _FoamShoreStrength: 1.5
+    - _FoamShoreWidth: 1
+    - _FresnelBase: 0.0204
+    - _MicroWaveStrength: 0.2
+    - _NormalLayerASpeed: 0.025
+    - _NormalLayerATiling: 0.18
+    - _NormalLayerBRotation: 32
+    - _NormalLayerBSpeed: 0.045
+    - _NormalLayerBTiling: 0.55
+    - _PlanarReflectionAvailable: 0
+    - _PlanarReflectionFlipY: 0
+    - _PlanarReflectionStrength: 0.75
+    - _ProjectedCausticsAvailable: 0
+    - _ReflectionEdgeFade: 0.08
+    - _ReflectionStrength: 1
+    - _RefractionDepthScale: 2
+    - _RefractionEdgeFade: 0.08
+    - _RefractionStrength: 0.025
+    - _Roughness: 0.16
+    - _ScatteringStrength: 0.9
+    - _ShoreBandWidth: 6
+    - _ShoreBreakStrength: 1.6
+    - _ShoreDepthAvailable: 1
+    - _ShoreDepthMaximum: 60
+    - _ShoreLineStrength: 0.8
+    - _ShoreLineWidth: 0.55
+    - _ShoreShoalStrength: 0.6
+    - _ShoreWaveDepth: 2.5
+    - _SpecStrength: 1
+    - _SubsurfaceHeight: 0.5
+    - _SubsurfacePower: 4
+    - _SubsurfaceStrength: 1.2
+    - _Wave1Steepness: 0.5
+    - _Wave2Steepness: 0.4
+    - _Wave3Steepness: 0.3
+    - _Wave4Steepness: 0.25
+    - _WindSpread: 0.55
+    m_Colors:
+    - _AbsorptionCoefficients: {r: 1.6, g: 0.62, b: 0.34, a: 0}
+    - _CausticAtlasFrame: {r: 0.12109375, g: 0.2421875, b: 0.001953125, a: 0.00390625}
+    - _CausticAtlasLayout: {r: 8, g: 4, b: 32, a: 1.6}
+    - _CausticColor: {r: 1, g: 0.97, b: 0.9, a: 1}
+    - _FoamColor: {r: 0.95, g: 0.97999996, b: 1, a: 1}
+    - _FoamHistoryWorldRect: {r: 0, g: 0, b: 0, a: 0}
+    - _ScatteringColor: {r: 0.04, g: 0.28, b: 0.42, a: 1}
+    - _ShoreDepthTexelWorldSize: {r: 1.8867188, g: 1.8867188, b: 0, a: 0}
+    - _ShoreDepthWorldRect: {r: -233, g: -233, b: 0.0010351967, a: 0.0010351967}
+    - _SubsurfaceColor: {r: 0.08, g: 0.42, b: 0.36, a: 1}
+    - _Wave1Params: {r: 25, g: 14, b: 0.35, a: 1}
+    - _Wave2Params: {r: 95, g: 8, b: 0.2, a: 1.4}
+    - _Wave3Params: {r: 200, g: 4.5, b: 0.1, a: 1.8}
+    - _Wave4Params: {r: 320, g: 2.2, b: 0.05, a: 2.4}
+    - _WindDirection: {r: 0.4226, g: 0, b: -0.9063, a: 0}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1

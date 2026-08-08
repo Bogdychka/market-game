@@ -1,0 +1,34 @@
+{
+  "runId": "",
+  "outputName": "island-realistic-shore",
+  "scene": "Assets/_Project/Scenes/Island.unity",
+  "width": 640,
+  "height": 360,
+  "columns": 3,
+  "freezeTime": true,
+  "time": 8.0,
+  "timeSamples": 3,
+  "timeStep": 1.2,
+  "compareRun": "",
+  "sun": { "apply": true, "yaw": -140.0, "pitch": 42.0, "intensity": -1.0 },
+  "views": [
+    {
+      "name": "south-shore-oblique",
+      "position": [250.0, 25.0, 70.0],
+      "lookAt": [250.0, 12.0, 130.0],
+      "fov": 42.0
+    },
+    {
+      "name": "south-swash-close",
+      "position": [250.0, 16.0, 92.0],
+      "lookAt": [250.0, 12.0, 118.0],
+      "fov": 34.0
+    },
+    {
+      "name": "south-shore-topdown",
+      "position": [250.0, 74.0, 105.0],
+      "lookAt": [250.0, 12.0, 125.0],
+      "fov": 42.0
+    }
+  ]
+}

@@ -6746,6 +6746,7 @@ GameObject:
   - component: {fileID: 654257934}
   - component: {fileID: 654257933}
   - component: {fileID: 654257941}
+  - component: {fileID: 654257942}
   m_Layer: 0
   m_Name: Water
   m_TagString: Untagged
@@ -6896,17 +6897,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: Market.Runtime::Market.DebugTools.RealisticWaterTemporalFoam
   foamUpdateCompute: {fileID: 7200000, guid: dfb6845d2f6f83e42a92eb58e73dc33a, type: 3}
   quality: 1
-  whitecapDecayRate: 1
+  freshFoamDecayRate: 1.2
   whitecapInjectionStrength: 1
-  shorelineDecayRate: 0.9
+  residualFoamDecayRate: 0.22
   shorelineInjectionStrength: 1
-  shorelineWidth: 1.25
+  residualTransfer: 0.55
+  shorelineWidth: 1.5
   shorelineLayers:
     serializedVersion: 2
     m_Bits: 4294967295
   scanHeight: 24
   scanDepth: 64
   advectionSpeed: 0.65
+  residualAdvectionScale: -0.15
 --- !u!23 &654257939
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -6981,6 +6984,23 @@ MonoBehaviour:
   _uploadEveryFrame: 1
   _useTransformAsWaterLevel: 1
   _waterLevel: 0
+--- !u!114 &654257942
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 654257930}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eb93a59b37ff95f4dab7174e033be19c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Market.Runtime::Market.DebugTools.RealisticWaterWetSand
+  foamSource: {fileID: 654257938}
+  waterRenderer: {fileID: 654257939}
+  targetRenderers:
+  - {fileID: 1787943349}
+  - {fileID: 1966817239}
 --- !u!1 &668647980
 GameObject:
   m_ObjectHideFlags: 0
