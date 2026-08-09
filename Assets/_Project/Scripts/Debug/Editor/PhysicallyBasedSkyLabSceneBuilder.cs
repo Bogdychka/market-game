@@ -10,14 +10,15 @@ using UnityEngine.SceneManagement;
 namespace Market.DebugTools.Editor
 {
     /// <summary>
-    /// Builds a standalone scene for the vendored jiaozi158 Physically Based Sky (Assets/PhysicallyBasedSkyURP)
-    /// over the vendored gasgiant Ocean-URP water (Assets/OceanURP), so the atmosphere can be judged
-    /// against the same water OceanURPLab uses.
+    /// Builds a standalone scene combining three vendored packages: jiaozi158's Physically Based
+    /// Sky (Assets/PhysicallyBasedSkyURP), jiaozi158's Volumetric Clouds (Assets/VolumetricCloudsURP),
+    /// and gasgiant's Ocean-URP water (Assets/OceanURP), so the atmosphere can be judged against
+    /// the same water OceanURPLab uses.
     ///
-    /// Needs its own URP renderer because both vendored packages inject renderer features that no
-    /// other scene wants; the renderer is appended to the existing pipeline assets and the lab
-    /// camera selects it by index, so gameplay scenes and OceanURPLab keep rendering exactly as
-    /// before (OceanURPLab shares the water code but not this renderer).
+    /// Needs its own URP renderer because all three vendored packages inject renderer features
+    /// that no other scene wants; the renderer is appended to the existing pipeline assets and the
+    /// lab camera selects it by index, so gameplay scenes and OceanURPLab keep rendering exactly
+    /// as before (OceanURPLab shares the water code but not this renderer).
     /// </summary>
     public static class PhysicallyBasedSkyLabSceneBuilder
     {
@@ -31,6 +32,7 @@ namespace Market.DebugTools.Editor
         private const string PbSkyShaderName = "Hidden/Skybox/PhysicallyBasedSky";
         private const string PbSkyLutShaderName = "Hidden/Sky/PhysicallyBasedSkyPrecomputation";
         private const string PbSkyFallbackMaterialPath = "Assets/PhysicallyBasedSkyURP/Shaders/Procedural Sky.mat";
+        private const string CloudsMaterialPath = "Assets/VolumetricCloudsURP/VolumetricClouds.mat";
 
         private static readonly string[] PipelineAssetPaths =
         {
@@ -65,43 +67,49 @@ namespace Market.DebugTools.Editor
             EditorSceneManager.SaveScene(scene, ScenePath);
             AssetDatabase.SaveAssets();
             Debug.Log($"[PhysicallyBasedSkyLabSceneBuilder] Built {ScenePath}. Enter Play Mode to see " +
-                "the sky and water together.");
+                "the sky, clouds and water together.");
         }
 
         // --- pipeline wiring -------------------------------------------------------------------
 
         private static ScriptableRendererData EnsureSkyOceanRenderer()
         {
-            var existing = AssetDatabase.LoadAssetAtPath<ScriptableRendererData>(RendererPath);
-            if (existing != null)
+            var data = AssetDatabase.LoadAssetAtPath<ScriptableRendererData>(RendererPath);
+            if (data == null)
             {
-                ConfigureOceanFeature(existing);
-                ConfigureSkyFeature(existing);
-                ConfigureRendererData(existing);
-                return existing;
+                data = ScriptableObject.CreateInstance<UniversalRendererData>();
+                data.name = "SkyOcean_Renderer";
+                AssetDatabase.CreateAsset(data, RendererPath);
             }
 
-            var data = ScriptableObject.CreateInstance<UniversalRendererData>();
-            data.name = "SkyOcean_Renderer";
-            AssetDatabase.CreateAsset(data, RendererPath);
-
-            var oceanFeature = ScriptableObject.CreateInstance<OceanRendererFeature>();
-            oceanFeature.name = "Ocean";
-            AssetDatabase.AddObjectToAsset(oceanFeature, data);
-            AddRendererFeature(data, oceanFeature);
-
-            var skyFeature = ScriptableObject.CreateInstance<PhysicallyBasedSkyURP>();
-            skyFeature.name = "Physically Based Sky URP";
-            AssetDatabase.AddObjectToAsset(skyFeature, data);
-            AddRendererFeature(data, skyFeature);
+            EnsureFeature<OceanRendererFeature>(data, "Ocean");
+            EnsureFeature<PhysicallyBasedSkyURP>(data, "Physically Based Sky URP");
+            EnsureFeature<VolumetricCloudsURP>(data, "Volumetric Clouds URP");
 
             ConfigureOceanFeature(data);
             ConfigureSkyFeature(data);
+            ConfigureCloudsFeature(data);
             ConfigureRendererData(data);
 
             AssetDatabase.SaveAssets();
             AssetDatabase.ImportAsset(RendererPath);
             return data;
+        }
+
+        // Idempotent so re-running the builder on an already-built renderer (e.g. after adding a
+        // new vendored feature) adds only what's missing instead of duplicating features.
+        private static void EnsureFeature<T>(ScriptableRendererData data, string displayName)
+            where T : ScriptableRendererFeature
+        {
+            foreach (ScriptableRendererFeature existingFeature in data.rendererFeatures)
+            {
+                if (existingFeature is T) return;
+            }
+
+            var feature = ScriptableObject.CreateInstance<T>();
+            feature.name = displayName;
+            AssetDatabase.AddObjectToAsset(feature, data);
+            AddRendererFeature(data, feature);
         }
 
         // URP keeps a parallel list of local file ids next to the feature list; writing both through
@@ -153,6 +161,20 @@ namespace Market.DebugTools.Editor
                 serializedFeature.FindProperty("m_LutShader").objectReferenceValue = Shader.Find(PbSkyLutShaderName);
                 serializedFeature.FindProperty("m_FallbackSkyMaterial").objectReferenceValue =
                     AssetDatabase.LoadAssetAtPath<Material>(PbSkyFallbackMaterialPath);
+                serializedFeature.ApplyModifiedProperties();
+                return;
+            }
+        }
+
+        private static void ConfigureCloudsFeature(ScriptableRendererData data)
+        {
+            foreach (ScriptableRendererFeature feature in data.rendererFeatures)
+            {
+                if (feature is not VolumetricCloudsURP) continue;
+
+                var serializedFeature = new SerializedObject(feature);
+                serializedFeature.FindProperty("material").objectReferenceValue =
+                    AssetDatabase.LoadAssetAtPath<Material>(CloudsMaterialPath);
                 serializedFeature.ApplyModifiedProperties();
                 return;
             }
@@ -326,6 +348,10 @@ namespace Market.DebugTools.Editor
             fog.enabled.overrideState = true;
             fog.enabled.value = true;
             AssetDatabase.AddObjectToAsset(fog, profile);
+
+            var clouds = profile.Add<VolumetricClouds>(true);
+            clouds.state.value = true;
+            AssetDatabase.AddObjectToAsset(clouds, profile);
 
             EditorUtility.SetDirty(profile);
             AssetDatabase.SaveAssets();

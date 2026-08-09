@@ -5,6 +5,7 @@
         "Market.Runtime",
         "OceanURP.Runtime",
         "PBSkyURP",
+        "VolumetricCloudsURP",
         "McpUnity.Editor",
         "Unity.InputSystem",
         "Unity.RenderPipelines.Core.Runtime",

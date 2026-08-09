@@ -18,6 +18,30 @@ MonoBehaviour:
     updateSkyMap: 1
     transparency: 1
     underwaterEffect: 1
+--- !u!114 &-832953123864532424
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: af24e90db4bf58443aff8888b8b7e207, type: 3}
+  m_Name: Volumetric Clouds URP
+  m_EditorClassIdentifier: VolumetricCloudsURP::VolumetricCloudsURP
+  m_Active: 1
+  material: {fileID: 2100000, guid: 3748131af20412e478461c6445c73923, type: 2}
+  renderingDebugger: 0
+  reflectionProbe: 0
+  resolutionScale: 0.5
+  upscaleMode: 0
+  preferredRenderMode: 1
+  ambientProbe: 1
+  sunAttenuation: 0
+  resetOnStart: 1
+  outputDepth: 1
+  depthTexture: 0
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -45,7 +69,8 @@ MonoBehaviour:
   m_RendererFeatures:
   - {fileID: -2282355884133673877}
   - {fileID: 6299892134726984025}
-  m_RendererFeatureMap: 6b9430736a7153e059e1adad84b66d57
+  - {fileID: -832953123864532424}
+  m_RendererFeatureMap: 6b9430736a7153e059e1adad84b66d5738aa80098cc170f4
   xrSystemData: {fileID: 0}
   postProcessData: {fileID: 11400000, guid: 41439944d30ece34e96484bdb6645b55, type: 2}
   m_AssetVersion: 3

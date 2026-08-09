@@ -14,6 +14,31 @@ their historical agent attributions (Claude / Codex / user); new entries don't n
 
 ## [Unreleased]
 
+## [1.15.0] - 2026-08-09
+
+### Added
+- **Volumetric clouds in the Physically Based Sky lab** - vendored jiaozi158's MIT-licensed
+  UnityVolumetricCloudsURP into `Assets/VolumetricCloudsURP`, same Unity 6000.4+ Render Graph patch
+  as `Assets/PhysicallyBasedSkyURP` (three passes' "Non Render Graph Pass" regions wrapped in
+  `#if !UNITY_6000_4_OR_NEWER`) plus the same Play Mode editor null-guard. `SkyOcean_Renderer.asset`
+  now carries all three renderer features (Ocean, Physically Based Sky URP, Volumetric Clouds URP),
+  and `PhysicallyBasedSkyLabSceneBuilder` adds the `Sky/Volumetric Clouds (URP)` volume override
+  with State enabled. `EnsureSkyOceanRenderer` was refactored to an idempotent
+  `EnsureFeature<T>`, so re-running the builder on an already-built renderer adds only what's
+  missing instead of duplicating features.
+
+### Fixed
+- **Did not enable `URP_PBSKY` cross-package integration - documented why.** Both vendored sky
+  and clouds packages gate shared code behind a `URP_PBSKY` symbol tied to a Package Manager
+  version-define; manually defining it project-wide once (since reverted) made the clouds code
+  request a shader pass (`Blitter.BlitCameraTexture(..., pass: 7)`) that ShaderLab always strips in
+  this vendoring setup, because `VolumetricClouds.shader`'s atmosphere-integrated passes carry
+  their own `PackageRequirements { "com.jiaozi158.unity-physically-based-sky-urp": "1.0.0" }`
+  directive - a check the C# define cannot satisfy. Requesting the stripped pass corrupted the
+  render command buffer and crashed the Unity Editor (access violation) on entering the scene.
+  Sky and clouds render together correctly without the define; only the one pixel-level
+  atmosphere/cloud blend pass is unavailable. Documented in both packages' `README.md`.
+
 ## [1.14.0] - 2026-08-09
 
 ### Added

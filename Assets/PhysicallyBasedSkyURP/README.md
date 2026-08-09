@@ -43,3 +43,15 @@ null, before any `serializedObject` access.
 
 - Everything else is unmodified upstream source (including its own `[Obsolete]` markers on the
   fallback passes) - only the two changes above were needed to compile and run cleanly here.
+- **No cross-package integration with `Assets/VolumetricCloudsURP`.** Both packages gate their
+  shared code behind a `URP_PBSKY` symbol - but on the clouds side that symbol also unlocks a
+  shader pass whose `.shader` file declares `PackageRequirements { "com.jiaozi158.unity-physically-
+  based-sky-urp": "1.0.0" }`, a ShaderLab directive that strips the pass unless that literal
+  package is installed via Package Manager. Since this sky is vendored into `Assets/` and not
+  installed as a package, that pass is always stripped regardless of any C# scripting define -
+  manually defining `URP_PBSKY` project-wide once made the clouds code *request* that stripped
+  pass by index, which corrupted the render command buffer and crashed the Editor. Do not add
+  `URP_PBSKY` to Scripting Define Symbols. Fixing this properly would mean re-vendoring this
+  package as an embedded Packages/ entry (`Packages/com.jiaozi158.unity-physically-based-sky-urp/`)
+  instead of a plain `Assets/` folder - not done here. See
+  `Assets/VolumetricCloudsURP/README.md` for the other half of this.
