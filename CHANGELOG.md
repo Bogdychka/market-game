@@ -14,6 +14,29 @@ their historical agent attributions (Claude / Codex / user); new entries don't n
 
 ## [Unreleased]
 
+## [1.14.0] - 2026-08-09
+
+### Added
+- **Physically Based Sky lab scene, combined with the URP ocean water** - vendored jiaozi158's
+  MIT-licensed atmosphere package (github.com/jiaozi158/UnityPhysicallyBasedSkyURP) into
+  `Assets/PhysicallyBasedSkyURP` and built `PhysicallyBasedSkyLab.unity` around it, rebuildable
+  from `Market/Debug/Build Physically Based Sky Lab`. Upstream targets Unity 2022.3 / URP 14, and
+  Unity 6000.4 removed the Render Graph Compatibility Mode its "Non Render Graph Pass" fallbacks
+  still override (marked `[Obsolete]` but not excluded from compilation) - each of the five passes
+  in `PhysicallyBasedSkyURP.cs` (`PBSkyPrePass`, `SkyViewLUTPass`, `AtmosphericScatteringPass`,
+  `PBSkyPostPass`, `AmbientProbePass`) now wraps that fallback region in
+  `#if !UNITY_6000_4_OR_NEWER`, leaving only the `RecordRenderGraph` path active. Also null-guarded
+  `OnEnable` in the three custom Volume editors against a Unity 6 Play Mode timing issue that threw
+  `SerializedObjectNotCreatableException` console spam. The lab renders through a new
+  `Assets/Settings/SkyOcean_Renderer.asset` carrying both the `Physically Based Sky URP` and
+  `Ocean` renderer features, appended at index 2 of both pipeline assets so gameplay scenes (index
+  0) and `OceanURPLab` (index 1, its own separate renderer) are unaffected. Scene wiring follows
+  the upstream README exactly: the renderer feature plus Visual Environment / Physically Based Sky
+  / Fog volume overrides, sun intensity 3.030782 and exposure 0 as the README's suggested starting
+  point, over the same `OceanSimulation`/`OceanRenderer` water setup `OceanURPLab` uses. Verified
+  via MCP: 0 compile errors/warnings, 0 console errors after building the scene, health report
+  `ok` with 0 dirty scenes.
+
 ## [1.13.0] - 2026-08-08
 
 ### Added
