@@ -14,6 +14,8 @@ their historical agent attributions (Claude / Codex / user); new entries don't n
 
 ## [Unreleased]
 
+## [1.16.6] - 2026-08-10
+
 ### Changed
 - **Volumetric clouds now raymarch at half resolution** (`resolutionScale` 1 -> 0.5 on the
   `Volumetric Clouds URP` feature in `SkyOcean_Renderer`, and in the lab builder so a rebuild keeps
