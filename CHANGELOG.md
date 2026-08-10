@@ -14,6 +14,8 @@ their historical agent attributions (Claude / Codex / user); new entries don't n
 
 ## [Unreleased]
 
+## [1.16.3] - 2026-08-10
+
 ### Fixed
 - **The ocean had no sky reflection at all - only the sun.** Two independent causes in the vendored
   `OceanURP`, both in `OceanRenderer.SetEnvironmentSpecCube`:
