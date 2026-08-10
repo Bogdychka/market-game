@@ -11,9 +11,9 @@ namespace Market.DebugTools.Editor
 {
     /// <summary>
     /// Builds a standalone scene combining three vendored packages: jiaozi158's Physically Based
-    /// Sky (Assets/PhysicallyBasedSkyURP), jiaozi158's Volumetric Clouds (Assets/VolumetricCloudsURP),
-    /// and gasgiant's Ocean-URP water (Assets/OceanURP), so the atmosphere can be judged against
-    /// the same water OceanURPLab uses.
+    /// Sky (Packages/com.jiaozi158.unity-physically-based-sky-urp), jiaozi158's Volumetric Clouds
+    /// (Assets/VolumetricCloudsURP), and gasgiant's Ocean-URP water (Assets/OceanURP), so the
+    /// atmosphere can be judged against the same water OceanURPLab uses.
     ///
     /// Needs its own URP renderer because all three vendored packages inject renderer features
     /// that no other scene wants; the renderer is appended to the existing pipeline assets and the
@@ -31,7 +31,8 @@ namespace Market.DebugTools.Editor
         private const string InputsProviderPath = "Assets/OceanURP/Presets/Beaufort 128x4 700m.asset";
         private const string PbSkyShaderName = "Hidden/Skybox/PhysicallyBasedSky";
         private const string PbSkyLutShaderName = "Hidden/Sky/PhysicallyBasedSkyPrecomputation";
-        private const string PbSkyFallbackMaterialPath = "Assets/PhysicallyBasedSkyURP/Shaders/Procedural Sky.mat";
+        private const string PbSkyFallbackMaterialPath =
+            "Packages/com.jiaozi158.unity-physically-based-sky-urp/Shaders/Procedural Sky.mat";
         private const string CloudsMaterialPath = "Assets/VolumetricCloudsURP/VolumetricClouds.mat";
 
         private static readonly string[] PipelineAssetPaths =
@@ -175,6 +176,10 @@ namespace Market.DebugTools.Editor
                 var serializedFeature = new SerializedObject(feature);
                 serializedFeature.FindProperty("material").objectReferenceValue =
                     AssetDatabase.LoadAssetAtPath<Material>(CloudsMaterialPath);
+                // Full-resolution clouds, as upstream's setup screenshot shows. The code default is
+                // 0.5 (half-res + bilateral upscale) for performance; this is a look-dev lab, so it
+                // takes the cost to avoid judging upscale artefacts as cloud shape.
+                serializedFeature.FindProperty("resolutionScale").floatValue = 1f;
                 serializedFeature.ApplyModifiedProperties();
                 return;
             }
@@ -351,6 +356,10 @@ namespace Market.DebugTools.Editor
 
             var clouds = profile.Add<VolumetricClouds>(true);
             clouds.state.value = true;
+            // Custom exposes the shape properties instead of driving them from a weather preset,
+            // which is what Add<T>(true) already implies - every parameter here is overridden.
+            // The Custom case is a no-op in ApplyCurrentCloudPreset, so no values are clobbered.
+            clouds.cloudPreset = VolumetricClouds.CloudPresets.Custom;
             AssetDatabase.AddObjectToAsset(clouds, profile);
 
             EditorUtility.SetDirty(profile);

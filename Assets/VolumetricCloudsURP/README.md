@@ -6,8 +6,8 @@ Volumetric clouds for URP, ported from HDRP, by jiaozi158, MIT licensed - see `L
 - Upstream target: Unity 2022.2 / URP 14
 - Vendored into: Unity 6000.5 / URP 17.5
 
-Sibling package to `Assets/PhysicallyBasedSkyURP` - designed by the same author to sit under the
-same sky.
+Sibling package to `Packages/com.jiaozi158.unity-physically-based-sky-urp` - designed by the same
+author to sit under the same sky, and integrated with it here (see "Sky integration" below).
 
 ## Scene setup (per upstream docs)
 
@@ -22,7 +22,7 @@ top of the Physically Based Sky and OceanURP water already there.
 ## Changes made to the upstream source
 
 **Ported the "Non Render Graph Pass" fallback out of the Unity 6000.4+ build**, identical reasoning
-and fix to `Assets/PhysicallyBasedSkyURP`: Unity 6000.4 removed the Render Graph Compatibility
+and fix to the sky package: Unity 6000.4 removed the Render Graph Compatibility
 Mode, and upstream only marks the fallback overrides `[Obsolete]` rather than excluding them, which
 still fails to compile (CS0115) once the base methods are gone. All three passes in
 `VolumetricCloudsURP.cs` (`VolumetricCloudsPass`, `VolumetricCloudsAmbientPass`,
@@ -31,26 +31,33 @@ still fails to compile (CS0115) once the base methods are gone. All three passes
 unmerged.
 
 **Null-guarded `VolumetricCloudsVolumeEditor.OnEnable`** against the same Unity 6 Play Mode timing
-issue documented in `Assets/PhysicallyBasedSkyURP/README.md` (a momentarily null `target` throwing
+issue documented in the sky package's `README.md` (a momentarily null `target` throwing
 `SerializedObjectNotCreatableException`).
+
+## Sky integration
+
+Upstream's README says to "install Physically Based Sky via the package manager" to customize the
+planet radius and center. That is not optional garnish - it is the only way the integration works,
+because this package reaches for the sky by *package path and package name*, not by assembly:
+
+- `VolumetricCloudsURP.asmdef` has a `versionDefines` entry that defines `URP_PBSKY` when a package
+  named `com.jiaozi158.unity-physically-based-sky-urp` at version >= 1.0.0 is present.
+- `VolumetricClouds.shader`'s two atmosphere-integrated passes declare
+  `PackageRequirements { "com.jiaozi158.unity-physically-based-sky-urp": "1.0.0" }` and
+  `#include "Packages/com.jiaozi158.unity-physically-based-sky-urp/Shaders/..."`.
+
+So the sky is vendored to `Packages/com.jiaozi158.unity-physically-based-sky-urp/` as an embedded
+package rather than into `Assets/`, which satisfies both. `URP_PBSKY` is then defined automatically
+- **do not add it to Scripting Define Symbols by hand.** Doing that while the sky sat in `Assets/`
+turned on the C# path while ShaderLab still stripped the passes, so the clouds code requested a
+non-existent pass by index (`Blitter.BlitCameraTexture(..., pass: 7)`) and crashed the Editor with
+`invalid pass index 7 in DrawProcedural` plus an access violation.
 
 ## Known limitations
 
 - Everything else is unmodified upstream source - only the changes above were needed to compile and
   run cleanly here.
-- **`URP_PBSKY` must stay undefined - do not add it to Scripting Define Symbols.** This package and
-  `PhysicallyBasedSkyURP` gate their cross-package code (clouds reading the sky's planet
-  radius/center, plus an atmosphere-integrated cloud "Combine" shader pass) behind a Package
-  Manager version-define keyed on a package named `com.jiaozi158.unity-physically-based-sky-urp`.
-  Setting `URP_PBSKY` manually only flips the *C#* side of that check - it cannot make the gated
-  shader pass exist, because `VolumetricClouds.shader`'s atmosphere-combine passes carry their own
-  `PackageRequirements { "com.jiaozi158.unity-physically-based-sky-urp": "1.0.0" }` directive,
-  which ShaderLab strips at compile time unless that literal package is installed. With the C#
-  define on and the shader pass missing, the atmospheric-scattering code path in
-  `VolumetricCloudsURP.cs` requests that stripped pass by index (`Blitter.BlitCameraTexture(...,
-  pass: 7)`), which threw `invalid pass index 7 in DrawProcedural` and crashed the Unity Editor
-  (access violation) when this was tried. Sky and clouds still render together fine without the
-  define - they just don't share the one shader pass that would otherwise blend clouds through the
-  sky's precomputed atmosphere at the pixel level. Fixing this for real means re-vendoring
-  `PhysicallyBasedSkyURP` as an embedded package under `Packages/com.jiaozi158.unity-physically-
-  based-sky-urp/` instead of a plain `Assets/` folder - not done here.
+- **Custom Cloud Map** overrides are upstream WIP.
+- **Orthographic cameras are not supported** (upstream limitation).
+- **Cloud shadows override the main directional light's cookie** when enabled (upstream behaviour),
+  so leave `Shadows` off unless nothing else needs that light's cookie.

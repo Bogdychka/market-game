@@ -7,6 +7,13 @@ see `LICENSE.md`.
 - Upstream target: Unity 2022.3 / URP 14
 - Vendored into: Unity 6000.5 / URP 17.5
 
+**Vendored as an embedded UPM package, not an `Assets/` folder** - deliberately, and it has to stay
+that way. `Assets/VolumetricCloudsURP` integrates with this package through two mechanisms that
+both key on the literal package name `com.jiaozi158.unity-physically-based-sky-urp`: an asmdef
+`versionDefines` entry that auto-defines `URP_PBSKY`, and `PackageRequirements` directives inside
+`VolumetricClouds.shader` that gate its atmosphere-integrated passes. Neither can be satisfied by a
+plain `Assets/` folder or by manually adding the scripting define. See "Known limitations" below.
+
 ## Scene setup (per upstream README)
 
 1. Add the **Physically Based Sky URP** renderer feature to the active URP renderer.
@@ -43,15 +50,13 @@ null, before any `serializedObject` access.
 
 - Everything else is unmodified upstream source (including its own `[Obsolete]` markers on the
   fallback passes) - only the two changes above were needed to compile and run cleanly here.
-- **No cross-package integration with `Assets/VolumetricCloudsURP`.** Both packages gate their
-  shared code behind a `URP_PBSKY` symbol - but on the clouds side that symbol also unlocks a
-  shader pass whose `.shader` file declares `PackageRequirements { "com.jiaozi158.unity-physically-
-  based-sky-urp": "1.0.0" }`, a ShaderLab directive that strips the pass unless that literal
-  package is installed via Package Manager. Since this sky is vendored into `Assets/` and not
-  installed as a package, that pass is always stripped regardless of any C# scripting define -
-  manually defining `URP_PBSKY` project-wide once made the clouds code *request* that stripped
-  pass by index, which corrupted the render command buffer and crashed the Editor. Do not add
-  `URP_PBSKY` to Scripting Define Symbols. Fixing this properly would mean re-vendoring this
-  package as an embedded Packages/ entry (`Packages/com.jiaozi158.unity-physically-based-sky-urp/`)
-  instead of a plain `Assets/` folder - not done here. See
-  `Assets/VolumetricCloudsURP/README.md` for the other half of this.
+- **Never move this package back under `Assets/`, and never set `URP_PBSKY` by hand.** It lived in
+  `Assets/PhysicallyBasedSkyURP/` briefly and that broke the clouds integration in a way that
+  crashed the Editor. `VolumetricClouds.shader`'s atmosphere-integrated passes carry
+  `PackageRequirements { "com.jiaozi158.unity-physically-based-sky-urp": "1.0.0" }`, which
+  ShaderLab evaluates against *installed packages only* - from `Assets/` those passes are always
+  stripped. Adding `URP_PBSKY` to Scripting Define Symbols to compensate only flips the C# half:
+  the clouds code then requested a stripped pass by index
+  (`Blitter.BlitCameraTexture(..., pass: 7)`), which raised `invalid pass index 7 in DrawProcedural`
+  and took the Editor down with an access violation. As an installed package both halves agree and
+  the define arrives automatically via asmdef `versionDefines` - no manual define needed.

@@ -37,6 +37,17 @@ namespace Market.DebugTools.Editor
             "Assets/OceanURP/Shaders/Resources/StereographicSky.shader",
         };
 
+        // Vendored jiaozi158 sky and clouds. passCount is the load-bearing number for the clouds
+        // shader: its last two passes are gated behind PackageRequirements on the sky package, so
+        // 9 means the sky integration compiled in and 7 means it was stripped - and a stripped
+        // pass 7 is what the clouds code then asks DrawProcedural for, which takes the Editor down.
+        private static readonly string[] SkyAndCloudsShaderPaths =
+        {
+            "Packages/com.jiaozi158.unity-physically-based-sky-urp/Shaders/PhysicallyBasedSky.shader",
+            "Packages/com.jiaozi158.unity-physically-based-sky-urp/Shaders/PhysicallyBasedSkyPrecomputation.shader",
+            "Assets/VolumetricCloudsURP/VolumetricClouds.shader",
+        };
+
         private static readonly string[] OceanUrpComputePaths =
         {
             "Assets/OceanURP/Shaders/Resources/ComputeShaders/FFT.compute",
@@ -90,6 +101,17 @@ namespace Market.DebugTools.Editor
 
             foreach (string computePath in OceanUrpComputePaths)
                 InspectComputeShader(computePath);
+        }
+
+        /// <summary>
+        /// Dumps compiler messages for the vendored physically based sky and volumetric clouds
+        /// shaders. Check the clouds shader's passCount: 9 = sky integration active, 7 = stripped.
+        /// </summary>
+        [MenuItem("Market/Debug/Rendering/Inspect Sky and Clouds Shader Errors")]
+        public static void InspectSkyAndClouds()
+        {
+            foreach (string shaderPath in SkyAndCloudsShaderPaths)
+                InspectShader(shaderPath);
         }
 
         private static void InspectComputeShader(string computePath)

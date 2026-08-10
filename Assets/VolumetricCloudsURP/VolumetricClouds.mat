@@ -12,7 +12,7 @@ Material:
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
-  - _CLOUDS_AMBIENT_PROBE
+  - _LOCAL_VOLUMETRIC_CLOUDS
   - _OUTPUT_CLOUDS_DEPTH
   - _PERCEPTUAL_BLENDING
   m_InvalidKeywords:
@@ -173,7 +173,7 @@ Material:
     - _SunSize: 0.04
     - _SunSizeConvergence: 5
     - _Surface: 0
-    - _VerticalErosionWindDisplacement: 25.323736
+    - _VerticalErosionWindDisplacement: -0.023287974
     - _VerticalShapeNoiseOffset: 0
     - _VerticalShapeWindDisplacement: 0
     - _WorkflowMode: 1

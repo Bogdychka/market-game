@@ -14,6 +14,33 @@ their historical agent attributions (Claude / Codex / user); new entries don't n
 
 ## [Unreleased]
 
+## [1.16.0] - 2026-08-10
+
+### Changed
+- **Physically Based Sky is now an embedded UPM package, which turns on the sky/clouds
+  integration** - moved from `Assets/PhysicallyBasedSkyURP/` to
+  `Packages/com.jiaozi158.unity-physically-based-sky-urp/` (upstream `package.json`, v1.0.4), which
+  is what the clouds package's own docs mean by "install Physically Based Sky via the package
+  manager". This was the unresolved half of v1.15.0: `VolumetricClouds.shader`'s two
+  atmosphere-integrated passes are gated by
+  `PackageRequirements { "com.jiaozi158.unity-physically-based-sky-urp": "1.0.0" }` and `#include`
+  that literal package path, so from `Assets/` they were always stripped - the clouds shader
+  compiled to 7 passes while the code asked for pass 7, which is what crashed the Editor. As an
+  installed package the shader now compiles to **9 passes**, pass 7 is valid, and `URP_PBSKY` is
+  defined automatically through asmdef `versionDefines` instead of by hand. Clouds now share the
+  sky's planet radius/center and blend through its precomputed atmospheric scattering. Files moved
+  with their `.meta`, so all GUIDs and scene/renderer references are unchanged. Verified:
+  `Market/Debug/Rendering/Inspect Sky and Clouds Shader Errors` reports `passCount=9`, 0 messages
+  for all three shaders; scene loads and rebuilds with 0 console errors.
+
+### Added
+- `Market/Debug/Rendering/Inspect Sky and Clouds Shader Errors` - dumps compiler messages and pass
+  counts for the sky and clouds shaders. The clouds `passCount` is the integration's canary: 9 =
+  sky integration compiled in, 7 = stripped (the crashing configuration).
+- Lab scene now follows the clouds setup screenshots: renderer feature **Resolution Scale 1**
+  (code default is 0.5 half-res; this is a look-dev lab) and volume **Cloud Preset = Custom**, which
+  matches the fully-overridden profile the builder writes.
+
 ## [1.15.0] - 2026-08-09
 
 ### Added
