@@ -14,6 +14,8 @@ their historical agent attributions (Claude / Codex / user); new entries don't n
 
 ## [Unreleased]
 
+## [1.16.4] - 2026-08-10
+
 ### Fixed
 - **The ocean really had no sky reflection - the sky map was never drawn.** v1.16.3 below claimed to
   fix this and did not; that diagnosis was wrong and its code change is reverted here. Measured in
