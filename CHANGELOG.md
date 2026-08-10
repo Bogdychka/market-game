@@ -14,6 +14,28 @@ their historical agent attributions (Claude / Codex / user); new entries don't n
 
 ## [Unreleased]
 
+### Changed
+- **Turned vsync on for the PC quality level.** The GPU pinning at 100% was not a cost problem: with
+  `vSyncCount: 0` and no `targetFrameRate`, nothing capped the frame rate, so the card rendered as
+  many frames as it physically could and was busy every millisecond by definition. Measured in the
+  sky lab at 1920x888 with `FrameTimingManager`'s GPU timer: **2.11 ms per frame, about 474 fps**.
+  Capped at a 60 Hz display that is roughly 13% GPU utilisation for the same picture. `Mobile` is
+  left uncapped; it is not a quality level this project runs.
+  GPU cost breakdown, each row measured with the rows above it already disabled (so the sky probe's
+  own number is understated - with clouds on it also composites them into the cube):
+  | subsystem | GPU ms | share |
+  | --- | --- | --- |
+  | volumetric clouds | 0.93 | 44% |
+  | ocean surface | 0.58 | 27% |
+  | dynamic sky ambient probe | 0.03 | 1% |
+  | everything else | 0.57 | 27% |
+  Nothing here needs shader work at present. The one real saving available, if the sky ever ships
+  alongside the market scene, is the clouds' `resolutionScale`, which is `1` (full resolution) on
+  the `Volumetric Clouds URP` feature in `SkyOcean_Renderer`. HDRP and most shipping games raymarch
+  clouds at half or quarter resolution and temporally upscale; `0.5` would cut that 0.93 ms to
+  roughly a quarter. It is left at full resolution deliberately - this is a look-dev lab, and the
+  frame has room.
+
 ## [1.16.4] - 2026-08-10
 
 ### Fixed
