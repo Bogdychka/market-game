@@ -176,10 +176,11 @@ namespace Market.DebugTools.Editor
                 var serializedFeature = new SerializedObject(feature);
                 serializedFeature.FindProperty("material").objectReferenceValue =
                     AssetDatabase.LoadAssetAtPath<Material>(CloudsMaterialPath);
-                // Full-resolution clouds, as upstream's setup screenshot shows. The code default is
-                // 0.5 (half-res + bilateral upscale) for performance; this is a look-dev lab, so it
-                // takes the cost to avoid judging upscale artefacts as cloud shape.
-                serializedFeature.FindProperty("resolutionScale").floatValue = 1f;
+                // Half-resolution clouds, matching the package default and what HDRP and most
+                // shipping games do - raymarching them at full resolution was 0.93 ms of a 2.11 ms
+                // frame. If half-res ever reads as noisy rather than soft, the paired fix is
+                // upscaleMode = Bilateral, which is what enables the shader's low-res clouds path.
+                serializedFeature.FindProperty("resolutionScale").floatValue = 0.5f;
                 serializedFeature.ApplyModifiedProperties();
                 return;
             }

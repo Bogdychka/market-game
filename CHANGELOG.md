@@ -14,6 +14,19 @@ their historical agent attributions (Claude / Codex / user); new entries don't n
 
 ## [Unreleased]
 
+### Changed
+- **Volumetric clouds now raymarch at half resolution** (`resolutionScale` 1 -> 0.5 on the
+  `Volumetric Clouds URP` feature in `SkyOcean_Renderer`, and in the lab builder so a rebuild keeps
+  it). This is the package's own default and what HDRP and most shipping games do. Measured with
+  `FrameTimingManager`'s GPU timer at 1920x888: whole frame **2.11 ms -> 1.58 ms**, a 25% cut.
+  Against the 1.18 ms measured previously with clouds off entirely, that puts the clouds themselves
+  at roughly **0.93 ms -> 0.40 ms**; not the full 4x the pixel count suggests, because the upscale
+  pass, the history buffers and the clouds composited into the sky's ambient probe do not scale
+  down with it.
+  `upscaleMode` is left at `Bilinear` as asked. If half-res now reads as noisy rather than soft,
+  the paired setting is `Bilateral` - it is what enables the shader's dedicated low-resolution
+  clouds path (`resolutionScale < 1` alone does not), at the cost of blurring cloud detail.
+
 ## [1.16.5] - 2026-08-10
 
 ### Changed
