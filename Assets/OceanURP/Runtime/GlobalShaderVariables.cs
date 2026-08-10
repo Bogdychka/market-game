@@ -7,7 +7,6 @@ namespace OceanSystem
         public static class Misc
         {
             public static readonly int SpecCube = Shader.PropertyToID("Ocean_SpecCube");
-            public static readonly int SpecCubeHdr = Shader.PropertyToID("Ocean_SpecCube_HDR");
             public static readonly int AbsorptionDepthScale = Shader.PropertyToID("Ocean_AbsorptionDepthScale");
             public static readonly int FogDensity = Shader.PropertyToID("Ocean_FogDensity");
             public static readonly int ReflectionMaskRadius = Shader.PropertyToID("Ocean_ReflectionsMaskRadius");

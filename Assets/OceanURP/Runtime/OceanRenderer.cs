@@ -131,41 +131,20 @@ namespace OceanSystem
                 (Shader.IsKeywordEnabled("OCEAN_UNDERWATER_ENABLED") ? CullMode.Off : CullMode.Back));
         }
 
-        // Decode instructions for a cubemap that stores radiance directly (no RGBM/dLDR encoding).
-        // Must never be left at zero: DecodeHDREnvironment multiplies by x, so an unset value is black.
-        private static readonly Vector4 UnencodedHdrDecodeValues = new Vector4(1, 1, 0, 0);
-
         private void SetEnvironmentSpecCube()
         {
-            Texture cube;
-            Vector4 hdrDecodeValues;
-
             if (_reflectionsMode == OceanReflectionsMode.RealtimeProbe && _probe != null)
             {
-                cube = _probe.realtimeTexture;
-                hdrDecodeValues = _probe.textureHDRDecodeValues;
+                Shader.SetGlobalTexture(GlobalShaderVariables.Misc.SpecCube, _probe.realtimeTexture);
             }
             else if (_reflectionsMode == OceanReflectionsMode.Custom && _cubemap != null)
             {
-                cube = _cubemap;
-                hdrDecodeValues = UnencodedHdrDecodeValues;
-            }
-            else if (RenderSettings.defaultReflectionMode == DefaultReflectionMode.Custom
-                && RenderSettings.customReflectionTexture != null)
-            {
-                // A dynamic sky (Physically Based Sky URP) publishes its cubemap here instead of
-                // baking one from RenderSettings.skybox, so ReflectionProbe.defaultTexture misses it.
-                cube = RenderSettings.customReflectionTexture;
-                hdrDecodeValues = UnencodedHdrDecodeValues;
+                Shader.SetGlobalTexture(GlobalShaderVariables.Misc.SpecCube, _cubemap);
             }
             else
             {
-                cube = ReflectionProbe.defaultTexture;
-                hdrDecodeValues = ReflectionProbe.defaultTextureHDRDecodeValues;
+                Shader.SetGlobalTexture(GlobalShaderVariables.Misc.SpecCube, ReflectionProbe.defaultTexture);
             }
-
-            Shader.SetGlobalTexture(GlobalShaderVariables.Misc.SpecCube, cube);
-            Shader.SetGlobalVector(GlobalShaderVariables.Misc.SpecCubeHdr, hdrDecodeValues);
         }
 
         private void SetGlobalColorVariables()

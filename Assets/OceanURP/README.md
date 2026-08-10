@@ -65,18 +65,27 @@ the sample asset points at is not in the repo), plus the shore-map baking shader
 already declares. Removed the `#pragma exclude_renderers gles` line, since `gles` is no longer
 a renderer Unity 6 knows.
 
-**Fixed black sky reflections.** `OceanRenderer.SetEnvironmentSpecCube` only ever set the
-`Ocean_SpecCube` texture, never the `Ocean_SpecCube_HDR` decode vector the shader passes to
-`DecodeHDREnvironment`. Unity fills `<name>_HDR` in automatically only for texture *properties*
-declared in a Properties block - `Ocean_SpecCube` is a bare global, so the vector stayed at zero
-and `DecodeHDREnvironment` multiplied the whole environment sample by zero. Everything sourced
-from the cubemap (`Reflection` via the stereographic sky map, `HorizonBlend`, backface
-refraction) was therefore black, leaving only the analytic sun specular. The method now sets the
-decode vector alongside the texture.
-The same method also gained a branch for `RenderSettings.customReflectionTexture`: a dynamic sky
-such as `Physically Based Sky URP` publishes its per-frame sky cubemap there and flips
-`RenderSettings.defaultReflectionMode` to `Custom`, and `ReflectionProbe.defaultTexture` (the
-upstream fallback) does not follow it.
+**Fixed black sky reflections (a bug in the Render Graph port above, not upstream).** The sky map
+pass was the one piece left on the legacy path: it drew with `CommandBuffer.Blit(null, rt, mat, 0)`
+inside a render graph unsafe pass, and `StereographicSky.shader` still used `BasicFullscreenVert`,
+the vertex entry that reads `POSITION`/`TEXCOORD0` from a mesh. A legacy `Blit` inside a render
+graph pass draws nothing and reports no error, so `Ocean_SkyMap` stayed cleared to black - and
+since `Reflection()` reads the whole sky through `MeanSkyRadiance(Ocean_SkyMap, ...)`, the water
+reflected nothing at all. Only the analytic `Specular()` sun survived, which is what the surface
+looked like: black mirror plus a sun glitter path. The pass is now a raster pass over an imported
+`RTHandle` drawing the same procedural quad as the other passes here, the shader uses
+`ProceduralFullscreenVert`, and an unsafe pass after it calls `GenerateMips` (the map is sampled
+with `SampleGrad`, so the mip chain carries surface roughness; rendering into mip 0 does not
+trigger the texture's own auto-generation). `Ocean_SkyMap` is bound as an engine global once at
+creation rather than per pass, because a render-graph global is reset when the graph finishes.
+Measured in Play Mode in the sky lab: the map's average colour went from `(0, 0, 0)` to
+`(0.14, 0.20, 0.26)`.
+
+Note for future debugging: `Ocean_SpecCube_HDR` looks unset - nothing in C# writes it - but Unity
+does fill in `<name>_HDR` for global cubemaps, and it measures `(1, 1, 0, 0)` at runtime. It is not
+a bug. Likewise `ReflectionProbe.defaultTexture` *does* follow
+`RenderSettings.customReflectionTexture`, so upstream's `Default` reflections mode already picks up
+a dynamic sky's cubemap; both were measured, and neither needed a change.
 
 **Preset**: `SimulationSettings.asset` has foam simulation enabled (upstream shipped it off).
 

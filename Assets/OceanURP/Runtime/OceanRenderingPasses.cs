@@ -17,11 +17,13 @@ namespace OceanSystem
         private const int SubmergenceResolution = 32;
         private const int SubmergencePass = 0;
         private const int UnderwaterPostEffectPass = 1;
+        private const int SkyMapPass = 0;
 
         private readonly OceanRendererFeature.OceanRenderingSettings _settings;
         private readonly Material _underwaterEffectMaterial;
         private readonly Material _skyMapMaterial;
         private RenderTexture _skyMap;
+        private RTHandle _skyMapHandle;
         private bool _skyMapRendered;
 
         private bool NeedToRenderSkyMap => _settings.updateSkyMap || !_skyMapRendered;
@@ -84,23 +86,26 @@ namespace OceanSystem
             }
         }
 
-        // The sky map is a persistent off-screen cubemap-substitute, not a graph resource, so it is
-        // filled through an unsafe pass with the legacy Blit the original project used.
+        // The sky map is a persistent off-screen cubemap-substitute, so it is imported into the graph
+        // and drawn with the same procedural fullscreen quad as the other passes here. It must not go
+        // back to the legacy CommandBuffer.Blit: inside a render graph pass that silently draws
+        // nothing, which leaves the map black and the ocean with no sky reflection at all.
         private void RecordSkyMap(RenderGraph renderGraph)
         {
             CreateSkyMapTexture();
 
-            using (var builder = renderGraph.AddUnsafePass<SkyMapPassData>("Ocean Sky Map", out var passData))
+            TextureHandle skyMap = renderGraph.ImportTexture(_skyMapHandle);
+
+            using (var builder = renderGraph.AddRasterRenderPass<FullscreenPassData>(
+                "Ocean Sky Map", out var passData))
             {
                 passData.material = _skyMapMaterial;
-                passData.skyMap = _skyMap;
+                passData.shaderPass = SkyMapPass;
+                builder.SetRenderAttachment(skyMap, 0);
+                builder.UseAllGlobalTextures(true);
                 builder.AllowPassCulling(false);
-                builder.SetRenderFunc((SkyMapPassData data, UnsafeGraphContext context) =>
-                {
-                    CommandBuffer cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
-                    cmd.Blit(null, data.skyMap, data.material, 0);
-                    cmd.SetGlobalTexture(GlobalShaderVariables.Misc.SkyMap, data.skyMap);
-                });
+                builder.SetRenderFunc((FullscreenPassData data, RasterGraphContext context) =>
+                    DrawFullscreenQuad(context.cmd, data));
             }
 
             _skyMapRendered = true;
@@ -206,12 +211,21 @@ namespace OceanSystem
                 filterMode = FilterMode.Trilinear,
                 anisoLevel = 9
             };
+            // MeanSkyRadiance samples the map with SampleGrad, so it needs the mip chain above;
+            // autoGenerateMips fills it once the graph is done using the texture as a target.
             _skyMap.Create();
+            _skyMapHandle = RTHandles.Alloc(_skyMap);
+
+            // The map is a persistent texture, so bind it as an engine global once here rather than
+            // per-pass: a render-graph global is reset once the graph finishes executing.
+            Shader.SetGlobalTexture(GlobalShaderVariables.Misc.SkyMap, _skyMap);
         }
 
         private void ReleaseSkyMap()
         {
             if (_skyMap == null) return;
+            _skyMapHandle?.Release();
+            _skyMapHandle = null;
             _skyMap.Release();
             CoreUtils.Destroy(_skyMap);
             _skyMap = null;
@@ -222,12 +236,6 @@ namespace OceanSystem
         {
             public Matrix4x4 inverseView;
             public Matrix4x4 inverseProjection;
-        }
-
-        private class SkyMapPassData
-        {
-            public Material material;
-            public RenderTexture skyMap;
         }
 
         private class FullscreenPassData

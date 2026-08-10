@@ -15,7 +15,7 @@ Shader "Hidden/Ocean/StereographicSky"
             Name "Stereographic Sky"
 
             HLSLPROGRAM
-            #pragma vertex BasicFullscreenVert
+            #pragma vertex ProceduralFullscreenVert
             #pragma fragment StereographicSkyFrag
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"

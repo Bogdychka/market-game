@@ -14,6 +14,39 @@ their historical agent attributions (Claude / Codex / user); new entries don't n
 
 ## [Unreleased]
 
+### Fixed
+- **The ocean really had no sky reflection - the sky map was never drawn.** v1.16.3 below claimed to
+  fix this and did not; that diagnosis was wrong and its code change is reverted here. Measured in
+  Play Mode instead of reasoned about: the environment cubemap the water samples is fine (per-face
+  averages are a proper sky, e.g. `+Y=(0.045, 0.087, 0.171)`), but `Ocean_SkyMap` - the
+  stereographic map `Reflection()` actually reads through `MeanSkyRadiance` - measured a flat
+  `(0, 0, 0)`.
+  The cause is in our own Unity 6 Render Graph port of `OceanRenderingPasses.cs`, not upstream: the
+  sky map pass was the only one left on the legacy path, drawing with
+  `CommandBuffer.Blit(null, rt, mat, 0)` inside a render graph unsafe pass while
+  `StereographicSky.shader` still used `BasicFullscreenVert` (the mesh-vertex entry). A legacy
+  `Blit` inside a render graph pass draws nothing and raises no error, so the map stayed black and
+  every sky-sourced term - reflection, horizon blend, backface refraction - went with it, leaving
+  only the analytic sun specular.
+  It is now a raster pass over an imported `RTHandle` drawing the same procedural quad as the
+  neighbouring passes, the shader moved to `ProceduralFullscreenVert`, an unsafe pass after it
+  calls `GenerateMips` (the map is sampled with `SampleGrad`, so mips carry surface roughness), and
+  `Ocean_SkyMap` is bound as an engine global once at creation because a render-graph global is
+  reset when the graph finishes. Measured after the fix: `Ocean_SkyMap` average
+  `(0.1397, 0.2047, 0.2632)`.
+  Verify: open `Assets/_Project/Scenes/PhysicallyBasedSkyLab.unity`, enter Play Mode, look at the
+  water away from the sun - it should carry the sky gradient and cloud shapes, and the horizon
+  should blend into the sky rather than into black.
+
+### Reverted
+- **v1.16.3's `OceanRenderer.SetEnvironmentSpecCube` change**, which changed nothing. Two claims in
+  it were false and both were checked directly at runtime: `Ocean_SpecCube_HDR` is never written by
+  any C# in the project but Unity fills `<name>_HDR` in for global cubemaps anyway (it measures
+  `(1, 1, 0, 0)` with the line removed), and `ReflectionProbe.defaultTexture` *does* follow
+  `RenderSettings.customReflectionTexture`, so upstream's `Default` mode already picked up
+  Physically Based Sky's dynamic cubemap. Both files are back to upstream; the reasoning is
+  recorded in `Assets/OceanURP/README.md` so it is not rediscovered.
+
 ## [1.16.3] - 2026-08-10
 
 ### Fixed
