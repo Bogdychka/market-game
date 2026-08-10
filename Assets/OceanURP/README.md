@@ -65,6 +65,19 @@ the sample asset points at is not in the repo), plus the shore-map baking shader
 already declares. Removed the `#pragma exclude_renderers gles` line, since `gles` is no longer
 a renderer Unity 6 knows.
 
+**Fixed black sky reflections.** `OceanRenderer.SetEnvironmentSpecCube` only ever set the
+`Ocean_SpecCube` texture, never the `Ocean_SpecCube_HDR` decode vector the shader passes to
+`DecodeHDREnvironment`. Unity fills `<name>_HDR` in automatically only for texture *properties*
+declared in a Properties block - `Ocean_SpecCube` is a bare global, so the vector stayed at zero
+and `DecodeHDREnvironment` multiplied the whole environment sample by zero. Everything sourced
+from the cubemap (`Reflection` via the stereographic sky map, `HorizonBlend`, backface
+refraction) was therefore black, leaving only the analytic sun specular. The method now sets the
+decode vector alongside the texture.
+The same method also gained a branch for `RenderSettings.customReflectionTexture`: a dynamic sky
+such as `Physically Based Sky URP` publishes its per-frame sky cubemap there and flips
+`RenderSettings.defaultReflectionMode` to `Custom`, and `ReflectionProbe.defaultTexture` (the
+upstream fallback) does not follow it.
+
 **Preset**: `SimulationSettings.asset` has foam simulation enabled (upstream shipped it off).
 
 ## Known limitations

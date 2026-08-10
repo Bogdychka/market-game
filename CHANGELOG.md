@@ -14,6 +14,28 @@ their historical agent attributions (Claude / Codex / user); new entries don't n
 
 ## [Unreleased]
 
+### Fixed
+- **The ocean had no sky reflection at all - only the sun.** Two independent causes in the vendored
+  `OceanURP`, both in `OceanRenderer.SetEnvironmentSpecCube`:
+  1. It set the `Ocean_SpecCube` global texture but never `Ocean_SpecCube_HDR`, the decode vector
+     `SampleOceanSpecCube` hands to `DecodeHDREnvironment`. Unity auto-fills `<name>_HDR` only for
+     texture *properties* declared in a shader's Properties block; `Ocean_SpecCube` is a bare
+     global, so the vector sat at `(0,0,0,0)` and `DecodeHDREnvironment` multiplied every
+     environment sample by zero. That blacked out the reflection (`Reflection` -> `Ocean_SkyMap` ->
+     `SampleOceanSpecCube`), the horizon blend, and backface refraction, leaving only the analytic
+     `Specular()` sun - exactly the reported symptom.
+  2. In `Default` reflections mode it read `ReflectionProbe.defaultTexture`, which is the cubemap
+     Unity bakes from `RenderSettings.skybox`. `Physically Based Sky URP` instead renders its sky
+     (with clouds composited in) to its own cube RT each frame, assigns it to
+     `RenderSettings.customReflectionTexture` and flips `defaultReflectionMode` to `Custom` - so in
+     the sky lab the ocean was pointed at a texture the dynamic sky never writes.
+  `Default` mode now prefers `RenderSettings.customReflectionTexture` when the reflection mode is
+  `Custom`, and every branch sets the matching decode vector.
+  Verify: open `Assets/_Project/Scenes/PhysicallyBasedSkyLab.unity`, enter Play Mode, look at the
+  water away from the sun - it should carry the sky gradient and the cloud shapes, and the horizon
+  line should blend into the sky instead of into black. Rotating `Sun` should recolour the whole
+  water surface, not just move the glitter.
+
 ## [1.16.2] - 2026-08-10
 
 ### Fixed
