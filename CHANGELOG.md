@@ -14,6 +14,8 @@ their historical agent attributions (Claude / Codex / user); new entries don't n
 
 ## [Unreleased]
 
+## [1.16.5] - 2026-08-10
+
 ### Changed
 - **Turned vsync on for the PC quality level.** The GPU pinning at 100% was not a cost problem: with
   `vSyncCount: 0` and no `targetFrameRate`, nothing capped the frame rate, so the card rendered as
