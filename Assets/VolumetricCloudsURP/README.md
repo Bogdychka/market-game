@@ -34,6 +34,20 @@ unmerged.
 issue documented in the sky package's `README.md` (a momentarily null `target` throwing
 `SerializedObjectNotCreatableException`).
 
+**Fixed a vertical-wind bug.** `VolumetricCloudsURP.cs` accumulated the vertical erosion offset
+from `erosionSpeedMultiplier` instead of `verticalErosionWindSpeed`:
+
+```csharp
+verticalShapeOffset   += deltaTime * cloudsVolume.verticalShapeWindSpeed.value;
+verticalErosionOffset += deltaTime * cloudsVolume.erosionSpeedMultiplier.value;  // <- was wrong
+```
+
+`erosionSpeedMultiplier` is a 0-1 multiplier that already has a correct home (it is sent to the
+shader as `_SmallWindSpeed`), so the effect was that the `Vertical Erosion Wind Speed` slider did
+nothing at all while the erosion layer drifted vertically at a fixed 0.25 no matter how the volume
+was configured - which also kept rewriting `_VerticalErosionWindDisplacement` in
+`VolumetricClouds.mat` and dirtying it in version control.
+
 ## Sky integration
 
 Upstream's README says to "install Physically Based Sky via the package manager" to customize the

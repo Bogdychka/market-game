@@ -14,6 +14,31 @@ their historical agent attributions (Claude / Codex / user); new entries don't n
 
 ## [Unreleased]
 
+## [1.16.1] - 2026-08-10
+
+### Fixed
+- **Clouds were completely static.** `VolumetricClouds.globalSpeed` defaults to 0 and the lab
+  builder never set it, so `windVector += deltaTime * globalSpeed * windDirection` never advanced.
+  Upstream's own sample profile leaves it at 0 too, so this is the package's out-of-the-box state
+  rather than a wiring mistake. The lab now sets 50 km/h with orientation 0 degrees, matching the
+  ocean's `_localWindDirection` so sky and sea drift the same way. Turn `Global Speed` down in
+  `PhysicallyBasedSkyLabProfile` for a calmer sky.
+- **Vendored clouds: `Vertical Erosion Wind Speed` did nothing.** `VolumetricCloudsURP.cs`
+  accumulated the vertical erosion offset from `erosionSpeedMultiplier` instead of
+  `verticalErosionWindSpeed` - a copy-paste slip visible against the correct line directly above it,
+  which uses `verticalShapeWindSpeed` for the shape offset. `erosionSpeedMultiplier` already has a
+  correct use (it goes to the shader as `_SmallWindSpeed`), so the slider was dead while the erosion
+  layer drifted vertically at a fixed 0.25 regardless of settings. That constant drift also kept
+  rewriting `_VerticalErosionWindDisplacement` in `VolumetricClouds.mat`, dirtying it in git every
+  session.
+
+### Changed
+- `PhysicallyBasedSkyLabSceneBuilder.EnsureSkyProfile` is now idempotent, like the renderer-feature
+  side: it creates the profile if missing and then re-applies the values the builder owns, instead
+  of returning an existing profile untouched. Rebuilding is how the lab returns to a known state, so
+  Inspector tuning is deliberately overwritten - and changing a builder default no longer requires
+  deleting the asset by hand.
+
 ## [1.16.0] - 2026-08-10
 
 ### Changed

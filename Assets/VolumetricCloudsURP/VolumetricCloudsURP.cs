@@ -593,7 +593,7 @@ public class VolumetricCloudsURP : ScriptableRendererFeature
             {
                 windVector += deltaTime * cloudsVolume.globalSpeed.value * windDirection;
                 verticalShapeOffset += deltaTime * cloudsVolume.verticalShapeWindSpeed.value;
-                verticalErosionOffset += deltaTime * cloudsVolume.erosionSpeedMultiplier.value;
+                verticalErosionOffset += deltaTime * cloudsVolume.verticalErosionWindSpeed.value;
                 // Reset the accumulated wind variables periodically to avoid extreme values.
                 windVector.x %= windNormalizationFactor;
                 windVector.y %= windNormalizationFactor;

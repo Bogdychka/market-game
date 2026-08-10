@@ -324,47 +324,65 @@ namespace Market.DebugTools.Editor
             volume.sharedProfile = EnsureSkyProfile();
         }
 
+        /// <summary>
+        /// Creates the profile if missing, then re-applies the values this builder owns. Like the
+        /// renderer features, this is idempotent rather than create-once: rebuilding is how the lab
+        /// gets back to a known state, so hand-tuning done in the Inspector is deliberately
+        /// overwritten here.
+        /// </summary>
         private static VolumeProfile EnsureSkyProfile()
         {
             string path = $"{GeneratedFolder}/PhysicallyBasedSkyLabProfile.asset";
-            var existing = AssetDatabase.LoadAssetAtPath<VolumeProfile>(path);
-            if (existing != null) return existing;
+            var profile = AssetDatabase.LoadAssetAtPath<VolumeProfile>(path);
+            if (profile == null)
+            {
+                profile = ScriptableObject.CreateInstance<VolumeProfile>();
+                AssetDatabase.CreateAsset(profile, path);
+            }
 
-            var profile = ScriptableObject.CreateInstance<VolumeProfile>();
-            AssetDatabase.CreateAsset(profile, path);
-
-            var visualEnvironment = profile.Add<VisualEnvironment>(true);
-            visualEnvironment.skyType.overrideState = true;
+            VisualEnvironment visualEnvironment = EnsureOverride<VisualEnvironment>(profile);
             visualEnvironment.skyType.value = (int)VisualEnvironment.SkyType.PhysicallyBased;
-            visualEnvironment.skyAmbientMode.overrideState = true;
             visualEnvironment.skyAmbientMode.value = VisualEnvironment.SkyAmbientMode.Dynamic;
-            AssetDatabase.AddObjectToAsset(visualEnvironment, profile);
 
-            var physicallyBasedSky = profile.Add<PhysicallyBasedSky>(true);
-            physicallyBasedSky.atmosphericScattering.overrideState = true;
+            PhysicallyBasedSky physicallyBasedSky = EnsureOverride<PhysicallyBasedSky>(profile);
             physicallyBasedSky.atmosphericScattering.value = true;
-            physicallyBasedSky.skyIntensityMode.overrideState = true;
             physicallyBasedSky.skyIntensityMode.value = PhysicallyBasedSky.SkyIntensityMode.Exposure;
-            physicallyBasedSky.exposure.overrideState = true;
             physicallyBasedSky.exposure.value = 0f;
-            AssetDatabase.AddObjectToAsset(physicallyBasedSky, profile);
 
-            var fog = profile.Add<Fog>(true);
-            fog.enabled.overrideState = true;
+            Fog fog = EnsureOverride<Fog>(profile);
             fog.enabled.value = true;
-            AssetDatabase.AddObjectToAsset(fog, profile);
 
-            var clouds = profile.Add<VolumetricClouds>(true);
+            VolumetricClouds clouds = EnsureOverride<VolumetricClouds>(profile);
             clouds.state.value = true;
             // Custom exposes the shape properties instead of driving them from a weather preset,
-            // which is what Add<T>(true) already implies - every parameter here is overridden.
-            // The Custom case is a no-op in ApplyCurrentCloudPreset, so no values are clobbered.
+            // which is what EnsureOverride's Add<T>(true) already implies - every parameter here is
+            // overridden. The Custom case is a no-op in ApplyCurrentCloudPreset, so nothing is
+            // clobbered by setting it.
             clouds.cloudPreset = VolumetricClouds.CloudPresets.Custom;
-            AssetDatabase.AddObjectToAsset(clouds, profile);
+            // Both the package default and upstream's own sample profile leave this at 0, which
+            // means the wind vector never advances and the clouds are completely static. Units are
+            // km/h. 50 is a brisk but meteorologically ordinary cloud-level wind that reads as
+            // clearly moving within a few seconds - turn it down for a calmer sky.
+            clouds.globalSpeed.value = 50f;
+            // Degrees from +X, matching the ocean's _localWindDirection so sky and sea drift the
+            // same way instead of visibly disagreeing.
+            clouds.globalOrientation.value = 0f;
 
             EditorUtility.SetDirty(profile);
             AssetDatabase.SaveAssets();
             return profile;
+        }
+
+        // Mirrors EnsureFeature<T> on the renderer side: Add<T> logs an error if the component is
+        // already on the profile, so an existing one has to be reused rather than re-added.
+        private static T EnsureOverride<T>(VolumeProfile profile) where T : VolumeComponent
+        {
+            if (profile.TryGet(out T existing))
+                return existing;
+
+            T component = profile.Add<T>(true);
+            AssetDatabase.AddObjectToAsset(component, profile);
+            return component;
         }
 
         // Identical wiring to OceanUrpLabSceneBuilder.BuildOcean - this is deliberately the same
