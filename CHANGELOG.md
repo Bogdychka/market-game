@@ -14,6 +14,20 @@ their historical agent attributions (Claude / Codex / user); new entries don't n
 
 ## [Unreleased]
 
+## [1.16.2] - 2026-08-10
+
+### Fixed
+- **Clouds still looked static after v1.16.1** - the 50 km/h set there was measurably advancing the
+  wind vector but far too slow to see, so the fix did not actually solve the reported problem.
+  Raised to 300 km/h. The shader samples shape noise at
+  `windVector / NOISE_TEXTURE_NORMALIZATION_FACTOR * shapeScale`, so with the 100000 factor and
+  `shapeScale` 5 one full noise tile spans 20 km: a realistic 50 km/h needs ~24 minutes to cross it,
+  which is physically correct and visually frozen. 300 km/h is deliberately ~6x real and is what a
+  look-dev lab needs. Measured in Play Mode from `_WindVector` on `VolumetricClouds.mat`: 2089 m of
+  drift over ~25 s = 83 m/s, matching 300 km/h, or one full noise tile every ~4 minutes. Adjust
+  `Global Speed` in `PhysicallyBasedSkyLabProfile` to taste - the reasoning and the arithmetic are
+  in the builder comment next to the value.
+
 ## [1.16.1] - 2026-08-10
 
 ### Fixed

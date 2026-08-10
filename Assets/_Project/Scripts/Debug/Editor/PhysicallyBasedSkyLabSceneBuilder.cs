@@ -360,10 +360,15 @@ namespace Market.DebugTools.Editor
             // clobbered by setting it.
             clouds.cloudPreset = VolumetricClouds.CloudPresets.Custom;
             // Both the package default and upstream's own sample profile leave this at 0, which
-            // means the wind vector never advances and the clouds are completely static. Units are
-            // km/h. 50 is a brisk but meteorologically ordinary cloud-level wind that reads as
-            // clearly moving within a few seconds - turn it down for a calmer sky.
-            clouds.globalSpeed.value = 50f;
+            // means the wind vector never advances and the clouds are completely static.
+            //
+            // Units are km/h, but a realistic value reads as no motion at all. The shader samples
+            // the shape noise at windVector / NOISE_TEXTURE_NORMALIZATION_FACTOR * shapeScale, so
+            // with the 100000 factor and shapeScale 5 one full noise tile spans 20 km: at an
+            // ordinary 50 km/h the cloud pattern needs ~24 minutes to cross it. That is physically
+            // correct and useless for look-dev, so this is deliberately exaggerated to about 6x
+            // real - roughly 1 km of cloud field per 12 s, which reads as a moving sky.
+            clouds.globalSpeed.value = 300f;
             // Degrees from +X, matching the ocean's _localWindDirection so sky and sea drift the
             // same way instead of visibly disagreeing.
             clouds.globalOrientation.value = 0f;
