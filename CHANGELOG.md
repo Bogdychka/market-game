@@ -14,6 +14,8 @@ their historical agent attributions (Claude / Codex / user); new entries don't n
 
 ## [Unreleased]
 
+## [1.17.1] - 2026-08-12
+
 ### Fixed
 - **The beach lab's terrain painted every square metre in its first layer.** `BuildTerrainData`
   filled a `TerrainData` in memory and saved it with `AssetDatabase.CreateAsset` afterwards; the
