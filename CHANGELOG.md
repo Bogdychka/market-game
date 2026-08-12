@@ -14,6 +14,39 @@ their historical agent attributions (Claude / Codex / user); new entries don't n
 
 ## [Unreleased]
 
+### Added
+- **Beach lab** (`Assets/_Project/Scenes/BeachLab.unity`, built by `Market/Debug/Build Beach Lab`):
+  the sky lab's atmosphere and Ocean-URP water over a generated 1 km shore - seabed, approach
+  slope, sandbar, meandering waterline at Z = 0, berm, dunes - so the water can be judged where it
+  is judged in game, against sand. The renderer, pipeline, sky-profile and water wiring the two labs
+  share moved out of `PhysicallyBasedSkyLabSceneBuilder` into `SkyOceanLabRig`; that builder now
+  only places its own content.
+- **Beach lab ground brushes from the Handpainted Grass & Ground pack.** The lab's four procedural
+  noise layers are replaced by eight `TerrainLayer` assets in `Assets/_Project/Art/Terrain/BeachLab`,
+  built from the pack's own tiles: `dirt_claydarked` (seabed), `dirt_desatured` (wet sand),
+  `dirt_lighted` (dry sand), `Grass_desatured` (dune). They are ordinary terrain layers, so
+  Paint Texture in the Terrain inspector lists all eight as brushes and hand-painting on top of the
+  generated splat works until the next rebuild.
+- **The pack's tile rotations are used, not ignored.** The pack ships each tile as four pre-rotated
+  copies (`_up/_right/_down/_left` = 0/90/180/270); each material takes two of them, so the eight
+  layers are four materials x `R0`/`R90`. `GenerateSplat` hands a material's weight to one rotation
+  or the other through a ~90 m Perlin mask, per material seed, pushed towards 0 or 1 - patches of
+  one orientation rather than an even blend, which is what actually breaks a hand-painted tile's
+  repeat (an even blend of a painting with itself just averages back to mush). The `R90` copy also
+  gets its tile size scaled by 1.41 and offset by half a tile, so the two copies' seams never line
+  up into a grid.
+- Verified: `recompile_scripts` clean, `Market/Debug/Build Beach Lab` rebuilt the scene with no
+  errors, `get_health_report` `ok`. To check by eye: open `BeachLab.unity`, select `Beach Terrain`,
+  Paint Texture - eight brushes, and the shore shows sand patches at two orientations.
+
+### Changed
+- `BeachLabSceneBuilder` now validates the texture pack before opening the empty scene (a missing
+  tile aborts with the list of paths instead of leaving a half-built lab), bumps those eight pack
+  textures to anisotropic level 4 (sand is looked at from grazing angles here), deletes the four
+  legacy `BeachLab_*` layers and their generated `_Tex` noise textures on rebuild, and caches its
+  Perlin seed offsets - the splat now asks for six noise fields per texel, and a `System.Random`
+  per sample was most of the build's runtime.
+
 ## [1.16.6] - 2026-08-10
 
 ### Changed
