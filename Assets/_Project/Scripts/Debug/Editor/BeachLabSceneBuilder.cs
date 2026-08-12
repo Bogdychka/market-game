@@ -185,21 +185,26 @@ namespace Market.DebugTools.Editor
             // in-place rewrite of an open TerrainData leaves stale detail/tree data behind.
             AssetDatabase.DeleteAsset(TerrainDataPath);
 
-            var data = new TerrainData
-            {
-                name = "BeachLab_TerrainData",
-                heightmapResolution = HeightmapRes,
-                alphamapResolution = AlphamapRes,
-                baseMapResolution = 512,
-                size = new Vector3(TerrainSize, TerrainHeight, TerrainSize)
-            };
+            // Created as an asset before anything is written into it. A TerrainData filled in
+            // memory and saved afterwards loses its alphamap - CreateAsset serialises the layer
+            // list but the splat comes back as "all weight on layer 0", which paints the whole
+            // shore in the first layer and is invisible if the layers are all much of a muchness.
+            var data = new TerrainData { name = "BeachLab_TerrainData" };
+            AssetDatabase.CreateAsset(data, TerrainDataPath);
+
+            data.heightmapResolution = HeightmapRes;
+            data.alphamapResolution = AlphamapRes;
+            data.baseMapResolution = 512;
+            data.size = new Vector3(TerrainSize, TerrainHeight, TerrainSize);
             data.SetDetailResolution(256, 16);
 
             data.SetHeights(0, 0, GenerateHeights());
             data.terrainLayers = BuildTerrainLayers();
             data.SetAlphamaps(0, 0, GenerateSplat());
+            data.SetBaseMapDirty();   // the basemap is what the terrain shows past basemapDistance
 
-            AssetDatabase.CreateAsset(data, TerrainDataPath);
+            EditorUtility.SetDirty(data);
+            AssetDatabase.SaveAssets();
             return data;
         }
 

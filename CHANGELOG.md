@@ -14,6 +14,17 @@ their historical agent attributions (Claude / Codex / user); new entries don't n
 
 ## [Unreleased]
 
+### Fixed
+- **The beach lab's terrain painted every square metre in its first layer.** `BuildTerrainData`
+  filled a `TerrainData` in memory and saved it with `AssetDatabase.CreateAsset` afterwards; the
+  layer list survives that, the alphamap does not - it comes back as "all weight on layer 0". The
+  asset is now created first and written into afterwards, with `SetBaseMapDirty` and an explicit
+  `SaveAssets`. The bug predates the handpainted layers and was invisible while all four layers
+  were muted procedural noise of the same value; with a real palette the whole kilometre of shore
+  came out dark seabed brown.
+  Verified by probing the saved `TerrainData`: the shore now reads seabed 1.00 -> wet sand 1.00 ->
+  dry sand 0.88/0.12 -> dune grass 1.00 across the profile, with weight landing on both rotations.
+
 ## [1.17.0] - 2026-08-12
 
 ### Added
