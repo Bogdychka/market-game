@@ -14,6 +14,8 @@ their historical agent attributions (Claude / Codex / user); new entries don't n
 
 ## [Unreleased]
 
+## [1.17.0] - 2026-08-12
+
 ### Added
 - **Beach lab** (`Assets/_Project/Scenes/BeachLab.unity`, built by `Market/Debug/Build Beach Lab`):
   the sky lab's atmosphere and Ocean-URP water over a generated 1 km shore - seabed, approach
